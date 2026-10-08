@@ -1,0 +1,7 @@
+SYNTHETIC CARDIAC CARE
+12 LEAD ECG REPORT
+Patient Name: Rahul Patil
+Report Date: 04/10/2026
+Heart rate: 72 bpm. Rhythm: normal sinus rhythm. PR interval 160 ms, QRS 90 ms, QT interval normal.
+ST segment and T wave are unremarkable. Axis is normal.
+Impression: Normal ECG. No acute ischemic changes.

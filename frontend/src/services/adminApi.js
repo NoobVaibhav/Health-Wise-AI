@@ -1,0 +1,11 @@
+import api from "./api";
+
+export const getAdminDashboard = () => api.get("/admin/dashboard").then((r) => r.data);
+export const listPeople = (role, q) => api.get("/admin/people", { params: { ...(role ? { role } : {}), ...(q ? { q } : {}) } }).then((r) => r.data);
+export const listUsers = (role) => api.get("/admin/users", { params: role ? { role } : {} }).then((r) => r.data);
+export const createStaff = (kind, data) => api.post(`/admin/${kind}`, data).then((r) => r.data); // doctors | employees | pharmacy-staff
+export const updateUser = (id, data) => api.put(`/admin/users/${id}`, data).then((r) => r.data);
+export const listDepartments = () => api.get("/admin/departments").then((r) => r.data);
+export const createDepartment = (name) => api.post("/admin/departments", { name }).then((r) => r.data);
+export const getAuditLogs = (action) => api.get("/admin/audit-logs", { params: action ? { action } : {} }).then((r) => r.data);
+export const getEmployeeDashboard = () => api.get("/employee/dashboard").then((r) => r.data);

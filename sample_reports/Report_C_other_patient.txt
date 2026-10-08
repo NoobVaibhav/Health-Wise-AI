@@ -1,0 +1,10 @@
+Sample Diagnostics
+Patient Name: Sunita Kulkarni
+Collected On: 12 Jan 2026
+Fasting Blood Sugar: 92 mg/dL (70 - 99)
+Vitamin D
+27 ng/mL
+TSH
+2.1 uIU/mL
+Reference: 0.4 - 4.0
+Platelet Count 250000 /cumm 150000 - 410000

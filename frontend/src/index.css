@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #ecfeff;
+  --color-brand-100: #cffafe;
+  --color-brand-200: #a5f3fc;
+  --color-brand-500: #06b6d4;
+  --color-brand-600: #0891b2;
+  --color-brand-700: #0e7490;
+  --color-brand-800: #155e75;
+  --color-brand-900: #164e63;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  @apply text-slate-800 antialiased;
+  font-size: 16px;
+  background: linear-gradient(180deg, #f0fbfd 0%, #f8fafc 260px, #f8fafc 100%);
+  background-attachment: fixed;
+}
+
+/* gentle entrance for every page */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.page-enter { animation: rise 0.35s ease-out; }
+
+/* soft card hover for clickable tiles */
+.tile { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.tile:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -10px rgba(8, 145, 178, 0.35); }
+
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.5); } 100% { box-shadow: 0 0 0 12px rgba(8, 145, 178, 0); } }
+.pulse-ring { animation: pulse-ring 1.6s ease-out infinite; }
+
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+.toast-in { animation: toast-in 0.25s ease-out; }
+
+/* first letter of a sentence in capitals, even if the doctor typed it in lower case */
+.capitalize-first::first-letter { text-transform: uppercase; }

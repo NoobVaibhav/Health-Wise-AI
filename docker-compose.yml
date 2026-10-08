@@ -1,0 +1,40 @@
+# Run everything:  docker compose up --build     then open http://localhost:8080
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: healthwise
+      POSTGRES_PASSWORD: healthwise
+      POSTGRES_DB: healthwise
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U healthwise"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://healthwise:healthwise@postgres:5432/healthwise
+      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-long-random-secret-before-deploying}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      UPLOAD_DIR: /data/uploads
+      MAX_FILE_SIZE: 10485760
+      CORS_ORIGINS: http://localhost:8080
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  uploads:
