@@ -1,4 +1,4 @@
-import { CheckCircle2, ClipboardList, Clock, PackageCheck, Pill, Package, History } from "lucide-react";
+import { CheckCircle2, ClipboardList, Clock, PackageCheck, Pill, Package, History, ReceiptText } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import { getPharmacyDashboard } from "../../services/pharmacyApi";
 import HealthCard, { Section } from "../../components/HealthCard";
@@ -16,16 +16,17 @@ export default function PharmacyDashboard() {
   return (
     <div className="space-y-6">
       <Hero title={`${greeting()}, ${user.full_name}`} subtitle={open > 0 ? `${open} prescription${open === 1 ? "" : "s"} still need medicine given out.` : "No prescriptions are waiting right now."}>
-        <HeroButton to="/pharmacy/prescriptions" primary>Give medicine now</HeroButton>
+        <HeroButton to="/pharmacy/billing" primary>Sell medicine and make a bill</HeroButton>
+        <HeroButton to="/pharmacy/prescriptions">Give prescribed medicine</HeroButton>
         <HeroButton to="/pharmacy/inventory">Medicine stock</HeroButton>
       </Hero>
 
-      <h2 className="-mb-3 text-xl font-extrabold text-slate-900">What do you want to do?</h2>
+      <h2 className="text-xl font-extrabold text-slate-900">What do you want to do?</h2>
       <QuickActions items={[
+        { to: "/pharmacy/billing", icon: ReceiptText, label: "Sell & make bill", hint: "Scan the barcode, take payment, print the bill" },
         { to: "/pharmacy/prescriptions", icon: ClipboardList, label: "Give medicine", hint: "Open a prescription and hand over the medicine" },
         { to: "/pharmacy/inventory", icon: Package, label: "Medicine stock", hint: "See what is on the shelf, add new stock" },
         { to: "/pharmacy/history", icon: History, label: "Medicine history", hint: "See what was already given" },
-        { to: "/pharmacy/prescriptions", icon: Pill, label: "Find a patient", hint: "Search by name or code (RX-00001)" },
       ]} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

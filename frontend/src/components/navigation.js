@@ -1,7 +1,7 @@
-import { Briefcase, CalendarClock, ClipboardList, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
+import { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
 
 // Icon lookup (only the icons used in menus are bundled).
-export const ICONS = { Briefcase, CalendarClock, ClipboardList, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
+export const ICONS = { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
 
 // Sidebar menu for each role: [path, label, icon name]. The backend enforces the same permissions.
 export const NAV = {
@@ -17,6 +17,7 @@ export const NAV = {
     ["/admin/reports", "Reports", "FileText"],
     ["/admin/audit-logs", "Activity Log", "ScrollText"],
     ["/admin/settings", "Settings", "Settings"],
+    ["/admin/profile", "My Profile", "CircleUser"],
   ],
   DOCTOR: [
     ["/doctor", "Dashboard", "LayoutDashboard"],
@@ -35,6 +36,7 @@ export const NAV = {
     ["/employee/appointments", "Appointments", "CalendarClock"],
     ["/employee/reports", "Reports", "FileText"],
     ["/employee/tests", "Tests Advised", "FlaskConical"],
+    ["/employee/profile", "My Profile", "CircleUser"],
   ],
   PATIENT: [
     ["/patient", "Dashboard", "LayoutDashboard"],
@@ -44,16 +46,20 @@ export const NAV = {
     ["/patient/recommendations", "Doctor's Advice", "ListChecks"],
     ["/patient/prescriptions", "My Medicines", "Pill"],
     ["/patient/appointments", "Appointments", "CalendarClock"],
-    ["/patient/profile", "Profile", "UserRound"],
+    ["/patient/profile", "My Profile", "CircleUser"],
   ],
   PHARMACY: [
     ["/pharmacy", "Dashboard", "LayoutDashboard"],
+    ["/pharmacy/billing", "Sell & Bill", "ReceiptText"],
+    ["/pharmacy/bills", "Bills", "FileText"],
     ["/pharmacy/prescriptions", "Prescriptions", "ClipboardList"],
     ["/pharmacy/history", "Medicine History", "History"],
     ["/pharmacy/inventory", "Medicine Stock", "Package"],
+    ["/pharmacy/profile", "My Profile", "CircleUser"],
   ],
   LAB: [
     ["/lab", "Tests to do", "FlaskConical"],
+    ["/lab/profile", "My Profile", "CircleUser"],
   ],
 };
 

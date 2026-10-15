@@ -1,5 +1,6 @@
 // Friendly building blocks that replace dense tables: avatars, person cards, date tiles, stock meters,
 // and helpers that turn raw dates into words like "Today" or "2 hours ago".
+import useAvatarUrl from "../hooks/useAvatarUrl";
 import { ArrowRight, Clock, MessageSquareText } from "lucide-react";
 import { StatusPill } from "./StatusBadge";
 
@@ -43,21 +44,26 @@ export const localDayKey = (utcIso) => {
 const AVATAR_TONES = ["from-brand-500 to-brand-700", "from-sky-400 to-blue-600", "from-emerald-400 to-emerald-600",
   "from-violet-400 to-violet-600", "from-amber-400 to-orange-500", "from-rose-400 to-rose-600"];
 
-export function Avatar({ name, size = 48 }) {
+export function Avatar({ name, size = 48, userId, version, round }) {
+  const picture = useAvatarUrl(userId, version);      // only people who have a photo (version is set) are fetched
+  const shape = round ? "rounded-full" : "rounded-2xl";
+  if (picture) {
+    return <img src={picture} alt={`Photo of ${name}`} width={size} height={size} style={{ width: size, height: size }} className={`shrink-0 object-cover shadow ${shape}`} />;
+  }
   const initials = name.replace(/^(dr\.?|mr\.?|mrs\.?|ms\.?)\s+/i, "").split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
   const tone = AVATAR_TONES[[...name].reduce((sum, c) => sum + c.charCodeAt(0), 0) % AVATAR_TONES.length];
   return (
-    <span className={`flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br font-extrabold text-white shadow ${tone}`}
-      style={{ width: size, height: size, fontSize: size * 0.36 }}>{initials}</span>
+    <span className={`flex shrink-0 items-center justify-center bg-gradient-to-br font-extrabold text-white shadow ${shape} ${tone}`}
+      style={{ width: size, height: size, fontSize: size * 0.36 }} aria-label={name} role="img">{initials}</span>
   );
 }
 
 /** One person as a card: avatar, name, small facts as label/value pairs, optional buttons on the right. */
-export function PersonCard({ name, subtitle, badge, facts = [], actions, muted }) {
+export function PersonCard({ name, subtitle, badge, facts = [], actions, muted, userId, avatarVersion }) {
   return (
     <div className={`flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200/70 bg-white p-4 shadow-sm ${muted ? "opacity-60" : ""}`}>
       <div className="flex min-w-0 items-center gap-4">
-        <Avatar name={name} />
+        <Avatar name={name} userId={userId} version={avatarVersion} />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-lg font-extrabold text-slate-900">{name}</p>

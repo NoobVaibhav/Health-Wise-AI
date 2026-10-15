@@ -27,13 +27,13 @@ const TILE_TONES = ["from-brand-500 to-brand-700", "from-sky-400 to-blue-600", "
 // items: [{ to, icon, label, hint }]
 export function QuickActions({ items }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
       {items.map((item, i) => {
         const Icon = item.icon;
         return (
-          <Link key={item.to + item.label} to={item.to} className="tile flex items-center gap-3 rounded-3xl border-2 border-brand-200 bg-white p-4 shadow-sm hover:border-brand-600">
+          <Link key={item.to + item.label} to={item.to} className="tile flex min-h-24 items-center gap-4 rounded-3xl border-2 border-brand-200 bg-white p-5 shadow-sm hover:border-brand-600">
             <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow ${TILE_TONES[i % TILE_TONES.length]}`}><Icon size={24} /></span>
-            <span className="flex-1">
+            <span className="min-w-0 flex-1">
               <span className="block text-lg font-extrabold text-slate-900">{item.label}</span>
               {item.hint && <span className="block text-base text-slate-600">{item.hint}</span>}
             </span>

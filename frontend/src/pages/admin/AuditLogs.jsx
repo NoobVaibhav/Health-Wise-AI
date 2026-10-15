@@ -34,6 +34,7 @@ const ACTIONS = {
   RECOMMENDATION_ADDED: { cat: "Doctor work", icon: Stethoscope, tone: "bg-emerald-500", say: (l) => ["wrote", l.entity_label] },
   PRESCRIPTION_CREATED: { cat: "Doctor work", icon: Pill, tone: "bg-emerald-500", say: (l) => ["wrote", l.entity_label] },
   PRESCRIPTION_CANCELLED: { cat: "Doctor work", icon: Pill, tone: "bg-red-500", say: (l) => ["cancelled", l.entity_label] },
+  SALE_CREATED: { cat: "Medicines", icon: Pill, tone: "bg-amber-500", say: (l) => ["made the bill", l.details || ""] },
   PRESCRIPTION_VIEWED: { cat: "Medicines", icon: Eye, tone: "bg-amber-500", say: (l) => ["opened", l.entity_label] },
   MEDICINE_DISPENSED: { cat: "Medicines", icon: Pill, tone: "bg-amber-500", say: (l) => { const q = /qty (\d+)/.exec(l.details || ""); return [q && q[1] !== "0" ? `gave ${q[1]} unit${q[1] === "1" ? "" : "s"} of medicine for` : "marked a medicine as not in stock for", l.entity_label]; } },
   APPOINTMENT_CREATED: { cat: "Appointments", icon: CalendarClock, tone: "bg-indigo-500", say: (l) => ["booked an appointment:", l.entity_label] },

@@ -256,6 +256,8 @@ def test_doctor_pick_lists_for_medicines_and_tests(client, world):
     assert "HbA1c (glycated haemoglobin)" in test_names and "ECG" in test_names
     # only doctors may use the pick-lists
     assert client.get("/api/catalog/medicines", headers=world.employee).status_code == 403
+    assert client.get("/api/catalog/medicines", headers=world.pharmacy).status_code == 200    # names only, for adding stock
+    assert client.get("/api/catalog/tests", headers=world.pharmacy).status_code == 403          # the pharmacy never sees tests
     assert client.get("/api/catalog/tests", headers=world.patient).status_code == 403
 
 

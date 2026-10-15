@@ -11,13 +11,15 @@ from app.schemas.auth import (
     ChangePasswordRequest, FirstAdminRequest, LoginRequest, TokenResponse, UserOut,
 )
 from app.services import audit_service, user_service
+from app.services.profile_service import avatar_version
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 def user_out(user: User) -> UserOut:
     return UserOut(id=user.id, email=user.email, full_name=user.full_name, role=user.role,
-                   is_active=user.is_active, must_change_password=user.must_change_password)
+                   is_active=user.is_active, must_change_password=user.must_change_password,
+                   has_avatar=bool(user.avatar_path), avatar_version=avatar_version(user))
 
 
 @router.get("/setup-status")

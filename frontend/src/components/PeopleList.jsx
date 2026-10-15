@@ -36,7 +36,7 @@ export default function PeopleList({ role, reloadKey, emptyHint }) {
       ) : (
         <div className="space-y-3">
           {data.map((p) => (
-            <PersonCard key={p.id} name={p.full_name} muted={!p.is_active}
+            <PersonCard key={p.id} name={p.full_name} muted={!p.is_active} userId={p.id} avatarVersion={p.has_avatar ? p.avatar_version : null}
               subtitle={p.email}
               badge={<>{!role && <StatusPill value={p.role} />}{!p.is_active && <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">Cannot log in</span>}</>}
               facts={[...p.details, ...(p.phone ? [["Phone", p.phone]] : []), ["Last login", timeAgo(p.last_login)]]}

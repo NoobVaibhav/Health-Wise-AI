@@ -17,6 +17,8 @@ class InventoryCreate(BaseModel):
     expiry_date: date | None = None
     manufacturer: str | None = Field(default=None, max_length=150)
     unit_price: float | None = Field(default=None, ge=0)
+    barcode: str | None = Field(default=None, max_length=64)
+    gst_percent: float | None = Field(default=None, ge=0, le=100)
 
 
 class InventoryUpdate(BaseModel):
@@ -25,6 +27,8 @@ class InventoryUpdate(BaseModel):
     unit_price: float | None = Field(default=None, ge=0)
     batch_number: str | None = Field(default=None, max_length=50)
     manufacturer: str | None = Field(default=None, max_length=150)
+    barcode: str | None = Field(default=None, max_length=64)
+    gst_percent: float | None = Field(default=None, ge=0, le=100)
 
 
 class InventoryOut(BaseModel):
@@ -35,6 +39,8 @@ class InventoryOut(BaseModel):
     expiry_date: date | None
     manufacturer: str | None
     unit_price: float | None
+    barcode: str | None = None
+    gst_percent: float | None = None
 
 
 class DispensingOut(BaseModel):

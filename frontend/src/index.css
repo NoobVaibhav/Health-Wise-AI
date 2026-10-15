@@ -35,3 +35,12 @@ body {
 
 /* first letter of a sentence in capitals, even if the doctor typed it in lower case */
 .capitalize-first::first-letter { text-transform: uppercase; }
+
+/* printing: only the bill / barcode stickers are printed, not the menu, buttons or page frame */
+@media print {
+  body { background: #fff !important; }
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; border-color: #000 !important; }
+  .no-print { display: none !important; }
+}

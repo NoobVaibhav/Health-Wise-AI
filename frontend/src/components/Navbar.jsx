@@ -1,5 +1,7 @@
+import { Link } from "react-router-dom";
 import { Menu } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { Avatar } from "./DataViews";
+import { ROLE_HOME, useAuth } from "../context/AuthContext";
 import { ROLE_LABEL } from "./navigation";
 
 // Top bar: menu button on mobile, and who is logged in.
@@ -11,15 +13,13 @@ export default function Navbar({ onMenu }) {
         <Menu size={24} />
       </button>
       <p className="hidden text-sm font-medium text-slate-500 md:block">Your health reports, explained simply</p>
-      <div className="flex items-center gap-3">
+      <Link to={`${ROLE_HOME[user.role]}/profile`} title="Open my profile" className="flex items-center gap-3 rounded-2xl p-1.5 hover:bg-slate-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-200">
         <div className="text-right leading-tight">
           <p className="text-base font-bold text-slate-900">{user.full_name}</p>
           <p className="mt-0.5 inline-block rounded-full bg-brand-100 px-2.5 py-0.5 text-sm font-bold text-brand-800">Logged in as: {ROLE_LABEL[user.role]}</p>
         </div>
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-base font-extrabold text-white shadow">
-          {user.full_name[0].toUpperCase()}
-        </span>
-      </div>
+        <Avatar name={user.full_name} size={44} userId={user.id} version={user.avatar_version} round />
+      </Link>
     </header>
   );
 }

@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.permissions import DOCTOR, require_roles
+from app.core.permissions import DOCTOR, PHARMACY, require_roles
 from app.database.connection import get_db
 from app.database.models import User
 from app.services import hospital_catalog
@@ -11,7 +11,8 @@ router = APIRouter(prefix="/api/catalog", tags=["catalog"])
 
 
 @router.get("/medicines")
-def medicines(user: User = Depends(require_roles(DOCTOR)), db: Session = Depends(get_db)):
+def medicines(user: User = Depends(require_roles(DOCTOR, PHARMACY)), db: Session = Depends(get_db)):
+    """Medicine names only (no patient data), so the pharmacy can pick them when adding stock."""
     return hospital_catalog.medicine_options(db)
 
 

@@ -25,6 +25,8 @@ class UserOut(BaseModel):
     role: str
     is_active: bool
     must_change_password: bool = False
+    has_avatar: bool = False
+    avatar_version: str | None = None      # changes whenever the picture changes (so browsers reload it)
 
 
 class TokenResponse(BaseModel):

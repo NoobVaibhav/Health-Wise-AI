@@ -7,6 +7,7 @@ import Layout from "./components/Layout";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ChangePassword from "./pages/auth/ChangePassword";
+import Profile from "./pages/shared/Profile";
 
 import Appointments from "./pages/shared/Appointments";
 import PatientsList from "./pages/shared/PatientsList";
@@ -36,10 +37,11 @@ import HealthHistory from "./pages/patient/HealthHistory";
 import PatientNotes from "./pages/patient/DoctorNotes";
 import PatientRecommendations from "./pages/patient/Recommendations";
 import PatientPrescriptions from "./pages/patient/Prescriptions";
-import PatientProfile from "./pages/patient/Profile";
 
 import TestOrders from "./pages/lab/TestOrders";
 import PharmacyDashboard from "./pages/pharmacy/Dashboard";
+import Billing from "./pages/pharmacy/Billing";
+import Bills from "./pages/pharmacy/Bills";
 import PharmacyPrescriptions from "./pages/pharmacy/Prescriptions";
 import Dispensing from "./pages/pharmacy/Dispensing";
 import DispensingHistory from "./pages/pharmacy/DispensingHistory";
@@ -68,6 +70,7 @@ export default function App() {
             <Route path="employees" element={<StaffManager kind="employees" />} />
             <Route path="pharmacy-staff" element={<StaffManager kind="pharmacy-staff" />} />
             <Route path="lab-staff" element={<StaffManager kind="lab-staff" />} />
+            <Route path="profile" element={<Profile />} />
             <Route path="patients" element={<PatientsList />} />
             <Route path="appointments" element={<Appointments />} />
             <Route path="reports" element={<ReportsList base="/admin/reports" title="Reports" subtitle="Report status only. Clinical values are visible to doctors and the patient." />} />
@@ -86,6 +89,7 @@ export default function App() {
             <Route path="notes" element={<DoctorNotes />} />
             <Route path="recommendations" element={<DoctorRecommendations />} />
             <Route path="prescriptions" element={<DoctorPrescriptions />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
 
           <Route path="/employee" element={<RoleRoute roles={["EMPLOYEE"]} />}>
@@ -97,10 +101,12 @@ export default function App() {
             <Route path="reports" element={<ReportsList base="/employee/reports" title="Reports" subtitle="Upload status of reports. Clinical values are visible to the doctor and the patient." />} />
             <Route path="reports/:id" element={<ReportDetails />} />
             <Route path="tests" element={<TestOrders />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
 
           <Route path="/lab" element={<RoleRoute roles={["LAB"]} />}>
             <Route index element={<TestOrders />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
 
           <Route path="/patient" element={<RoleRoute roles={["PATIENT"]} />}>
@@ -112,11 +118,14 @@ export default function App() {
             <Route path="recommendations" element={<PatientRecommendations />} />
             <Route path="prescriptions" element={<PatientPrescriptions />} />
             <Route path="appointments" element={<Appointments />} />
-            <Route path="profile" element={<PatientProfile />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
 
           <Route path="/pharmacy" element={<RoleRoute roles={["PHARMACY"]} />}>
             <Route index element={<PharmacyDashboard />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="bills" element={<Bills />} />
             <Route path="prescriptions" element={<PharmacyPrescriptions />} />
             <Route path="dispensing/:id" element={<Dispensing />} />
             <Route path="history" element={<DispensingHistory />} />

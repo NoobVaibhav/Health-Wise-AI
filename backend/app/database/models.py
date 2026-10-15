@@ -28,6 +28,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(20), index=True)  # ADMIN / DOCTOR / EMPLOYEE / PATIENT / PHARMACY / LAB
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
+    avatar_path: Mapped[str | None] = mapped_column(String(255))   # profile picture, inside the private upload folder
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
@@ -69,6 +70,9 @@ class Doctor(Base):
     department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
     specialization: Mapped[str | None] = mapped_column(String(120))
     phone: Mapped[str | None] = mapped_column(String(30))
+    qualification: Mapped[str | None] = mapped_column(String(150))
+    registration_number: Mapped[str | None] = mapped_column(String(50))
+    experience_years: Mapped[int | None] = mapped_column(Integer)
 
     user: Mapped[User] = relationship()
     department: Mapped[Department | None] = relationship()
@@ -81,6 +85,7 @@ class Employee(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
     designation: Mapped[str | None] = mapped_column(String(100))  # receptionist, lab assistant ...
     phone: Mapped[str | None] = mapped_column(String(30))
+    address: Mapped[str | None] = mapped_column(String(300))
 
     user: Mapped[User] = relationship()
 
@@ -92,6 +97,8 @@ class PharmacyStaff(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
     pharmacy_name: Mapped[str | None] = mapped_column(String(150))
     phone: Mapped[str | None] = mapped_column(String(30))
+    license_number: Mapped[str | None] = mapped_column(String(50))
+    address: Mapped[str | None] = mapped_column(String(300))
 
     user: Mapped[User] = relationship()
 
@@ -103,6 +110,8 @@ class LabStaff(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
     lab_name: Mapped[str | None] = mapped_column(String(150))
     phone: Mapped[str | None] = mapped_column(String(30))
+    registration_number: Mapped[str | None] = mapped_column(String(50))
+    address: Mapped[str | None] = mapped_column(String(300))
 
     user: Mapped[User] = relationship()
 
@@ -285,7 +294,51 @@ class MedicineInventory(Base):
     quantity: Mapped[int] = mapped_column(Integer, default=0)
     expiry_date: Mapped[date | None] = mapped_column(Date)
     manufacturer: Mapped[str | None] = mapped_column(String(150))
-    unit_price: Mapped[float | None] = mapped_column(Float)
+    unit_price: Mapped[float | None] = mapped_column(Float)       # selling price of ONE unit, before GST
+    barcode: Mapped[str | None] = mapped_column(String(64), index=True)   # printed on the pack (or made by the system)
+    gst_percent: Mapped[float | None] = mapped_column(Float)
+
+
+class Sale(Base):
+    """One bill handed to a customer."""
+    __tablename__ = "sales"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    bill_number: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    pharmacy_staff_id: Mapped[int] = mapped_column(ForeignKey("pharmacy_staff.id"))
+    prescription_id: Mapped[int | None] = mapped_column(ForeignKey("prescriptions.id"))
+    customer_name: Mapped[str | None] = mapped_column(String(150))
+    customer_phone: Mapped[str | None] = mapped_column(String(30))
+    payment_method: Mapped[str] = mapped_column(String(10), default="CASH")   # CASH / UPI / CARD
+    subtotal: Mapped[float] = mapped_column(Float, default=0)
+    discount: Mapped[float] = mapped_column(Float, default=0)
+    tax: Mapped[float] = mapped_column(Float, default=0)
+    total: Mapped[float] = mapped_column(Float, default=0)
+
+    pharmacy_staff: Mapped[PharmacyStaff] = relationship()
+    items: Mapped[list["SaleItem"]] = relationship(
+        back_populates="sale", cascade="all, delete-orphan", order_by="SaleItem.id")
+
+
+class SaleItem(Base):
+    """One line of a bill. The price, GST and batch are copied here so an old bill never changes."""
+    __tablename__ = "sale_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    sale_id: Mapped[int] = mapped_column(ForeignKey("sales.id"), index=True)
+    inventory_id: Mapped[int | None] = mapped_column(ForeignKey("medicine_inventory.id"))
+    prescription_item_id: Mapped[int | None] = mapped_column(ForeignKey("prescription_items.id"), index=True)
+    medicine_name: Mapped[str] = mapped_column(String(200))
+    batch_number: Mapped[str | None] = mapped_column(String(50))
+    expiry_date: Mapped[date | None] = mapped_column(Date)
+    quantity: Mapped[int] = mapped_column(Integer)
+    unit_price: Mapped[float] = mapped_column(Float)
+    gst_percent: Mapped[float] = mapped_column(Float, default=0)
+    line_total: Mapped[float] = mapped_column(Float)     # quantity x price, before GST
+    tax_amount: Mapped[float] = mapped_column(Float, default=0)
+
+    sale: Mapped[Sale] = relationship(back_populates="items")
 
 
 class MedicineDispensing(Base):

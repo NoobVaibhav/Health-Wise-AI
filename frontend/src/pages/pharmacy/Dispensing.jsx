@@ -10,6 +10,7 @@ import { StatusPill } from "../../components/StatusBadge";
 import { Button, Input, fmtDate } from "../../components/ui";
 import { ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 import { useToast } from "../../components/Toast";
+import PrescriptionBill from "../../components/PrescriptionBill";
 
 export default function Dispensing() {
   const { id } = useParams();
@@ -19,7 +20,7 @@ export default function Dispensing() {
   const open = ["ACTIVE", "PARTIALLY_DISPENSED"].includes(rx.status);
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <PageTitle title={`Give medicine: ${rx.code}`} subtitle={`Patient: ${rx.patient_name} (${rx.patient_code}). Check each medicine below, then press the green button.`} />
+      <PageTitle title={`Give medicine: ${rx.code}`} subtitle={`Patient: ${rx.patient_name} (${rx.patient_code}). Step 1: give each medicine. Step 2: make the bill.`} />
       <Section>
         <div className="grid gap-2 text-base sm:grid-cols-2">
           <p><span className="text-slate-500">Prescribed by:</span> {rx.doctor_name}</p>
@@ -30,7 +31,9 @@ export default function Dispensing() {
         </div>
         {!open && <p className="mt-3 rounded-lg bg-slate-100 p-2 text-sm text-slate-600">This prescription is {rx.status.toLowerCase().replace("_", " ")} and cannot be given out.</p>}
       </Section>
+      <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-900"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-lg text-white">1</span> Step 1: Give the medicines</h2>
       {rx.items.map((item) => <ItemRow key={item.id} item={item} canDispense={open} onDone={setData} />)}
+      <PrescriptionBill rx={rx} />
     </div>
   );
 }

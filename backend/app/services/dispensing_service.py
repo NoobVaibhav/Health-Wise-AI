@@ -53,7 +53,10 @@ def _refresh_prescription_status(rx: Prescription) -> None:
         rx.status = "ACTIVE"
 
 
-def dispense(db: Session, staff: PharmacyStaff, data: DispenseRequest) -> MedicineDispensing:
+def dispense(db: Session, staff: PharmacyStaff, data: DispenseRequest, *, deduct_stock: bool = True,
+             commit: bool = True) -> MedicineDispensing:
+    """deduct_stock=False and commit=False are used by billing, which has already taken the stock and commits the
+    whole sale in one go."""
     item = db.get(PrescriptionItem, data.prescription_item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No active prescription found.")
@@ -76,7 +79,8 @@ def dispense(db: Session, staff: PharmacyStaff, data: DispenseRequest) -> Medici
         if quantity > remaining:
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 f"Only {remaining} remaining to dispense for {item.medicine_name}.")
-        _deduct_stock(db, item.medicine_name, quantity)
+        if deduct_stock:
+            _deduct_stock(db, item.medicine_name, quantity)
         item.dispense_status = "DISPENSED" if already + quantity >= item.quantity else "PARTIALLY_DISPENSED"
 
     record = MedicineDispensing(
@@ -88,6 +92,7 @@ def dispense(db: Session, staff: PharmacyStaff, data: DispenseRequest) -> Medici
     db.flush()
     db.refresh(rx)
     _refresh_prescription_status(rx)
-    db.commit()
-    db.refresh(record)
+    if commit:
+        db.commit()
+        db.refresh(record)
     return record

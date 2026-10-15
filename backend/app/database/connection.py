@@ -30,6 +30,9 @@ def init_db() -> None:
 
     Base.metadata.create_all(bind=engine)
     add_missing_columns()
+    from app.services.billing_service import backfill_barcodes
+    with SessionLocal() as db:
+        backfill_barcodes(db)
 
 
 def add_missing_columns(bind=None) -> None:

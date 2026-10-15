@@ -1,7 +1,7 @@
 """Pharmacy module: view authorized prescriptions, dispense medicines, manage stock.
 The pharmacy has NO endpoint that creates or edits a prescription."""
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.permissions import PHARMACY, forbidden, require_roles
@@ -69,7 +69,8 @@ def dispensing_history(_: User = Depends(pharmacy_only), db: Session = Depends(g
 def list_inventory(q: str | None = None, _: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
     query = select(MedicineInventory).order_by(MedicineInventory.medicine_name, MedicineInventory.expiry_date)
     if q:
-        query = query.where(MedicineInventory.medicine_name.ilike(f"%{q.strip()}%"))
+        term = f"%{q.strip()}%"
+        query = query.where(or_(MedicineInventory.medicine_name.ilike(term), MedicineInventory.barcode.ilike(term)))
     return list(db.scalars(query))
 
 

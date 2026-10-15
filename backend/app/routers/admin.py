@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.services.profile_service import avatar_version
 from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PHARMACY, require_roles
 from app.database.connection import get_db
 from app.database.models import (
@@ -81,6 +82,7 @@ def people(role: str | None = None, q: str | None = None, _: User = Depends(admi
             "id": u.id, "full_name": u.full_name, "email": u.email, "role": u.role, "is_active": u.is_active,
             "created_at": u.created_at.isoformat(), "last_login": last_login[u.id].isoformat() if u.id in last_login else None,
             "phone": phone, "details": [[label, value] for label, value in details if value],
+            "has_avatar": bool(u.avatar_path), "avatar_version": avatar_version(u),
         })
     return result
 
