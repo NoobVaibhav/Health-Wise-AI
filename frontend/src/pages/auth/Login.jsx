@@ -57,7 +57,7 @@ export function AuthShell({ title, subtitle, children }) {
 // Demo shortcuts are shown ONLY when running `npm run dev` (never in a production build).
 const DEMO = [
   ["Patient", "rahul.patil@healthwise.demo.com"], ["Doctor", "anjali.sharma@healthwise.demo.com"],
-  ["Employee", "priya.joshi@healthwise.demo.com"], ["Pharmacy", "pharmacy@healthwise.demo.com"], ["Admin", "admin@healthwise.demo.com"],
+  ["Employee", "priya.joshi@healthwise.demo.com"], ["Pharmacy", "pharmacy@healthwise.demo.com"], ["Lab", "lab@healthwise.demo.com"], ["Admin", "admin@healthwise.demo.com"],
 ];
 
 export default function Login() {

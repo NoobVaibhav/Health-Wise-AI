@@ -243,3 +243,60 @@ def test_delete_report_rules_and_cleanup(client, world):
     # the deletions are in the audit log, with the file names
     logs = client.get("/api/admin/audit-logs?action=REPORT_DELETED", headers=world.admin).json()
     assert {l["details"].split(" (")[0] for l in logs} == {"wrong.pdf", "right.pdf"}
+
+
+def test_doctor_pick_lists_for_medicines_and_tests(client, world):
+    meds = client.get("/api/catalog/medicines", headers=world.doctor)
+    assert meds.status_code == 200
+    names = [m["name"] for m in meds.json()]
+    assert "Paracetamol 500 mg tablet" in names and all("in_stock" in m for m in meds.json())
+    tests = client.get("/api/catalog/tests", headers=world.doctor)
+    assert tests.status_code == 200
+    test_names = [t["name"] for t in tests.json()]
+    assert "HbA1c (glycated haemoglobin)" in test_names and "ECG" in test_names
+    # only doctors may use the pick-lists
+    assert client.get("/api/catalog/medicines", headers=world.employee).status_code == 403
+    assert client.get("/api/catalog/tests", headers=world.patient).status_code == 403
+
+
+def test_tests_advised_reach_lab_and_employee_but_never_the_pharmacy(client, world):
+    # admin creates a laboratory staff account
+    created = client.post("/api/admin/lab-staff", headers=world.admin, json={
+        "email": "lab@hospital.example.com", "full_name": "Lab Tech", "password": "StrongPass123", "lab_name": "City Lab"})
+    assert created.status_code == 201, created.text
+    assert created.json()["user"]["role"] == "LAB"
+    lab = login(client, "lab@hospital.example.com")
+
+    # the doctor prescribes a medicine and advises two tests
+    rx = client.post("/api/prescriptions", headers=world.doctor, json={
+        "patient_id": world.patient_id, "notes": "Take rest",
+        "items": [{"medicine_name": "Paracetamol 500 mg tablet", "dosage": "1 tablet", "frequency": "Twice daily",
+                   "duration": "5 days", "quantity": 10}],
+        "tests": ["2D Echo", "Lipid profile", "2d echo"]})
+    assert rx.status_code == 201, rx.text
+    assert rx.json()["tests"] == ["2D Echo", "Lipid profile"]       # duplicates removed
+    rx_id = rx.json()["id"]
+
+    # lab and employee see the order; searching by test name works
+    for who in (lab, world.employee):
+        orders = client.get("/api/lab/test-orders", headers=who).json()
+        assert [o["id"] for o in orders] == [rx_id] and orders[0]["tests"] == ["2D Echo", "Lipid profile"]
+        assert len(client.get("/api/lab/test-orders", params={"q": "echo"}, headers=who).json()) == 1
+        assert client.get("/api/lab/test-orders", params={"q": "xray"}, headers=who).json() == []
+
+    # the pharmacy gets the medicine but no tests, in every endpoint it can use
+    for response in (client.get("/api/pharmacy/prescriptions", headers=world.pharmacy),
+                     client.get("/api/prescriptions", headers=world.pharmacy)):
+        assert response.status_code == 200
+        rows = response.json()
+        assert rows and all(r["tests"] == [] for r in rows)
+        assert "2D Echo" not in response.text
+    assert client.get(f"/api/prescriptions/{rx_id}", headers=world.pharmacy).json()["tests"] == []
+    # the pharmacy, the patient and the doctor-only catalog are not allowed to use the lab list
+    assert client.get("/api/lab/test-orders", headers=world.pharmacy).status_code == 403
+    assert client.get("/api/lab/test-orders", headers=world.patient).status_code == 403
+    # the lab cannot see medicine data
+    assert client.get("/api/pharmacy/prescriptions", headers=lab).status_code == 403
+    assert client.get("/api/prescriptions", headers=lab).status_code == 403
+    # the doctor still sees the tests
+    assert client.get(f"/api/prescriptions/{rx_id}", headers=world.doctor).json()["tests"] == ["2D Echo", "Lipid profile"]

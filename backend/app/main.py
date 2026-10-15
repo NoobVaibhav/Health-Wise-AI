@@ -9,7 +9,7 @@ from app.core.config import get_settings
 from app.core.errors import ReportError
 from app.database.connection import init_db
 from app.routers import (
-    admin, appointments, auth, dashboard, doctors, employees, patient_portal, patients, pharmacy, prescriptions,
+    admin, appointments, auth, catalog, dashboard, lab, doctors, employees, patient_portal, patients, pharmacy, prescriptions,
     reports,
 )
 from app.services.ocr_service import ocr_is_available
@@ -39,7 +39,7 @@ async def report_error_handler(_: Request, exc: ReportError):
 
 
 for module in (auth, admin, patients, doctors, employees, reports, appointments, prescriptions, pharmacy,
-               patient_portal, dashboard):
+               patient_portal, dashboard, catalog, lab):
     app.include_router(module.router)
 app.include_router(doctors.directory)
 

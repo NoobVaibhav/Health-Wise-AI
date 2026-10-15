@@ -37,11 +37,11 @@ export default function ReportReview() {
         {r.doctor_review_status === "REVIEWED"
           ? <p className="text-slate-600">This report has been reviewed. You can still add notes, recommendations or a prescription below.</p>
           : <ReviewPanel report={r} onReviewed={refresh} />}
-        <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
-          <Button variant="secondary" onClick={() => setModal("note")}><StickyNote size={18} /> Write a note</Button>
-          <Button variant="secondary" onClick={() => setModal("rec")}><Stethoscope size={18} /> Write advice for the patient</Button>
-          <Button variant="secondary" onClick={() => setModal("rx")}><Pill size={18} /> Prescribe medicine</Button>
-          <Link to={`/doctor/patients/${r.patient_id}`} className="ml-auto inline-flex min-h-11 items-center rounded-xl border-2 border-brand-700 bg-white px-5 text-base font-bold text-brand-800 hover:bg-brand-50">Open the patient's full record →</Link>
+        <div className="mt-4 grid grid-cols-1 gap-2 border-t pt-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Button variant="secondary" className="w-full" onClick={() => setModal("note")}><StickyNote size={18} /> Write a note</Button>
+          <Button variant="secondary" className="w-full" onClick={() => setModal("rec")}><Stethoscope size={18} /> Write advice for the patient</Button>
+          <Button variant="secondary" className="w-full" onClick={() => setModal("rx")}><Pill size={18} /> Prescribe medicine</Button>
+          <Link to={`/doctor/patients/${r.patient_id}`} className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border-2 border-brand-700 bg-white px-5 text-base font-bold text-brand-800 hover:bg-brand-50">Open the patient's full record →</Link>
         </div>
       </Section>
 

@@ -19,7 +19,8 @@ DOCTOR = "DOCTOR"
 EMPLOYEE = "EMPLOYEE"
 PATIENT = "PATIENT"
 PHARMACY = "PHARMACY"
-ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY)
+LAB = "LAB"   # laboratory staff: sees the tests doctors advise, never medicines or reports
+ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB)
 
 FORBIDDEN_MESSAGE = "You do not have permission to access this information."
 

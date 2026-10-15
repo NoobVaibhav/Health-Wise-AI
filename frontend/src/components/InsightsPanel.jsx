@@ -9,6 +9,8 @@ import { refreshInsights } from "../services/reportApi";
 import { getErrorMessage } from "../services/api";
 import { useToast } from "./Toast";
 
+const TOP = 4;   // show only the top points / tips so the page stays easy to read
+
 const CONCERN = {
   attention: ["Worth a look", "bg-amber-100 text-amber-900", AlertTriangle],
   normal: ["Looks normal", "bg-emerald-100 text-emerald-800", CheckCircle2],
@@ -69,10 +71,10 @@ export function DoctorInsights({ report, onUseAsAdvice, onChanged }) {
         </div>
       )}
 
-      <Section title="Points for the doctor to think about" action={<SourceNote source={ins.source} />}>
+      <Section title="Top 4 points for the doctor to think about" action={<SourceNote source={ins.source} />}>
         <p className="mb-3 flex items-center gap-2 text-base text-slate-600"><Stethoscope size={16} /> These are ideas from the computer. The doctor decides.</p>
         <ul className="space-y-2">
-          {ins.doctor_suggestions.map((s, i) => (
+          {ins.doctor_suggestions.slice(0, TOP).map((s, i) => (
             <li key={i} className="flex gap-3 rounded-2xl bg-violet-50 p-3 text-[15px] text-slate-800">
               <Lightbulb className="mt-0.5 shrink-0 text-violet-500" size={18} /> <span>{s}</span>
             </li>
@@ -83,10 +85,10 @@ export function DoctorInsights({ report, onUseAsAdvice, onChanged }) {
         </div>
       </Section>
 
-      <Section title="Tips for the patient (draft)">
+      <Section title="Top 4 tips for the patient (draft)">
         <p className="mb-3 text-sm text-slate-500">The patient will see these simple tips after you check the report. Press the button next to a tip to turn it into your own advice.</p>
         <ul className="space-y-2">
-          {ins.patient_recommendations.map((t, i) => (
+          {ins.patient_recommendations.slice(0, TOP).map((t, i) => (
             <li key={i} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-sky-50 p-3 text-[15px] text-slate-800">
               <span className="flex-1">{t}</span>
               {onUseAsAdvice && <Button variant="soft" onClick={() => onUseAsAdvice(t)}>Use as my advice</Button>}

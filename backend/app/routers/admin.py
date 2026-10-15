@@ -3,11 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, PHARMACY, require_roles
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PHARMACY, require_roles
 from app.database.connection import get_db
 from app.database.models import (
     Appointment, AuditLog, Department, Doctor, DoctorNote, DoctorRecommendation, Employee, HealthReport, Patient,
-    PharmacyStaff, Prescription, User,
+    LabStaff, PharmacyStaff, Prescription, User,
 )
 from app.services.user_service import age_from_dob
 from app.routers.auth import user_out
@@ -48,6 +48,7 @@ def people(role: str | None = None, q: str | None = None, _: User = Depends(admi
     doctors = {d.user_id: d for d in db.scalars(select(Doctor))}
     employees = {e.user_id: e for e in db.scalars(select(Employee))}
     pharmacy = {p.user_id: p for p in db.scalars(select(PharmacyStaff))}
+    lab = {l.user_id: l for l in db.scalars(select(LabStaff))}
     patients = {p.user_id: p for p in db.scalars(select(Patient))}
 
     result = []
@@ -66,6 +67,10 @@ def people(role: str | None = None, q: str | None = None, _: User = Depends(admi
             ph = pharmacy[u.id]
             phone = ph.phone
             details = [["Pharmacy", ph.pharmacy_name]]
+        elif u.id in lab:
+            lb = lab[u.id]
+            phone = lb.phone
+            details = [["Laboratory", lb.lab_name]]
         elif u.id in patients:
             pt = patients[u.id]
             phone = pt.phone
@@ -102,6 +107,12 @@ def create_employee(data: StaffCreate, request: Request, admin: User = Depends(a
 def create_pharmacy_staff(data: StaffCreate, request: Request, admin: User = Depends(admin_only),
                           db: Session = Depends(get_db)):
     return _create(PHARMACY, data, admin, request, db)
+
+
+@router.post("/lab-staff", response_model=CreatedUserResponse, status_code=status.HTTP_201_CREATED)
+def create_lab_staff(data: StaffCreate, request: Request, admin: User = Depends(admin_only),
+                     db: Session = Depends(get_db)):
+    return _create(LAB, data, admin, request, db)
 
 
 @router.put("/users/{user_id}", response_model=UserOut)

@@ -26,6 +26,7 @@ def create_prescription(db: Session, doctor: Doctor, data: PrescriptionCreate) -
     rx = Prescription(
         patient_id=patient.id, doctor_id=doctor.id, report_id=data.report_id, prescription_date=date.today(),
         clinical_indication=data.clinical_indication, notes=data.notes, status="ACTIVE",
+        tests_advised="\n".join(data.tests) or None,
     )
     rx.items = [PrescriptionItem(**item.model_dump(), dispense_status="PENDING") for item in data.items]
     db.add(rx)

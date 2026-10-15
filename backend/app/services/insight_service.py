@@ -412,12 +412,12 @@ def build_lab_insights(items: list[LabItem]) -> dict:
     if outside:
         doctor.append(f"{len(outside)} of {len(items)} values are outside the range printed on the report. "
                       "Compare with the patient's earlier reports (see the Compare tab) before drawing conclusions.")
-        doctor += [LAB_DOCTOR_BY_CATEGORY[c] for c in categories if c in LAB_DOCTOR_BY_CATEGORY]
     else:
         doctor.append("All values that have a printed range are inside it. Routine follow-up as you judge appropriate.")
-    if unknown:
+    if unknown:   # right after the count, so it is never lost when only the top points are shown
         doctor.append(f"{len(unknown)} value(s) have no printed range ({', '.join(i.name for i in unknown[:5])}) "
                       "and cannot be judged here. Check them against your local reference ranges.")
+    doctor += [LAB_DOCTOR_BY_CATEGORY[c] for c in categories if c in LAB_DOCTOR_BY_CATEGORY]
 
     red_flags = [f"{i.name} is far from the printed range ({i.value:g}{(' ' + i.unit) if i.unit else ''} vs {i.low if i.low is not None else ''}"
                  f"{'-' if i.low is not None and i.high is not None else ''}{i.high if i.high is not None else ''}). "

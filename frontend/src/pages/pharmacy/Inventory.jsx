@@ -16,7 +16,7 @@ export default function Inventory() {
   const toast = useToast();
 
   const restock = async (item) => {
-    const value = window.prompt(`How many ${item.medicine_name} are in stock now? (batch ${item.batch_number || "-"})`, item.quantity);
+    const value = window.prompt(`How many ${item.medicine_name} are on the shelf now? (batch ${item.batch_number || "-"})`, item.quantity);
     if (value === null) return;
     try { await updateInventory(item.id, { quantity: Number(value) }); toast("Stock updated"); reload(); } catch (e) { toast(getErrorMessage(e), "error"); }
   };
@@ -25,14 +25,14 @@ export default function Inventory() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageTitle title="Medicine stock" subtitle="What you have on the shelf. Stock goes down automatically when you give medicine." icon={Package} />
-        <Button onClick={() => setAdding(true)}><Plus size={16} className="mr-1.5 inline" /> Add stock</Button>
+        <Button onClick={() => setAdding(true)}><Plus size={20} /> Add new stock</Button>
       </div>
       <div className="relative">
         <Search className="pointer-events-none absolute left-3.5 top-3 text-slate-400" size={18} />
-        <input className={`${inputClass} pl-10`} placeholder="Search medicines" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className={`${inputClass} pl-10`} placeholder="Type a medicine name to search" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       {loading && !data ? <Loading /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.length === 0 ? (
-        <EmptyState message={q ? "No medicine matches your search" : "No stock recorded yet"} hint={q ? undefined : 'Use "Add stock" to record the medicines you have.'} icon={Package} />
+        <EmptyState message={q ? "No medicine matches your search" : "No stock recorded yet"} hint={q ? undefined : 'Press "Add new stock" to record the medicines you have.'} icon={Package} />
       ) : (
         <div className="space-y-3">
           {data.map((i) => {
@@ -45,17 +45,17 @@ export default function Inventory() {
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white"><Pill size={24} /></span>
                   <div>
                     <p className="text-lg font-extrabold text-slate-900">{i.medicine_name}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-base text-slate-600">
                       {i.batch_number ? `Batch ${i.batch_number}` : "No batch number"}{i.manufacturer && ` - ${i.manufacturer}`}{i.unit_price != null && ` - price ${i.unit_price} each`}
                     </p>
-                    <p className={`text-sm font-semibold ${expired ? "text-red-600" : soon ? "text-amber-600" : "text-slate-500"}`}>
+                    <p className={`text-base font-semibold ${expired ? "text-red-600" : soon ? "text-amber-600" : "text-slate-500"}`}>
                       {i.expiry_date ? (expired ? `Expired on ${fmtDate(i.expiry_date)} - do not give` : soon ? `Expires soon: ${fmtDate(i.expiry_date)}` : `Expires ${fmtDate(i.expiry_date)}`) : "No expiry date"}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-5">
                   <StockMeter quantity={i.quantity} />
-                  <Button variant="secondary" onClick={() => restock(i)}>Update stock</Button>
+                  <Button variant="secondary" onClick={() => restock(i)}>Change count</Button>
                 </div>
               </div>
             );
@@ -91,7 +91,7 @@ function AddStock({ onClose, onSaved }) {
         </div>
         <Field label="Manufacturer"><Input value={form.manufacturer} onChange={set("manufacturer")} /></Field>
         {error && <ErrorBox message={error} />}
-        <Button>Save</Button>
+        <Button className="w-full">✓ Save this stock</Button>
       </form>
     </Modal>
   );

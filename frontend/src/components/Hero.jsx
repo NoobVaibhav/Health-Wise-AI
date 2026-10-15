@@ -17,8 +17,8 @@ export function Hero({ title, subtitle, children }) {
 }
 
 export const HeroButton = ({ to, children, primary }) => (
-  <Link to={to} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold ${primary ? "bg-white text-brand-800 hover:bg-brand-50" : "bg-white/15 text-white hover:bg-white/25"}`}>
-    {children} <ArrowRight size={15} />
+  <Link to={to} className={`inline-flex min-h-12 items-center gap-2 rounded-xl border-2 px-5 py-2.5 text-base font-bold shadow-md ${primary ? "border-white bg-white text-brand-900 hover:bg-brand-50" : "border-white bg-brand-900/50 text-white hover:bg-brand-900/70"}`}>
+    {children} <ArrowRight size={18} />
   </Link>
 );
 
@@ -31,12 +31,13 @@ export function QuickActions({ items }) {
       {items.map((item, i) => {
         const Icon = item.icon;
         return (
-          <Link key={item.to + item.label} to={item.to} className="tile flex items-center gap-3 rounded-3xl border border-slate-200/70 bg-white p-4 shadow-sm">
+          <Link key={item.to + item.label} to={item.to} className="tile flex items-center gap-3 rounded-3xl border-2 border-brand-200 bg-white p-4 shadow-sm hover:border-brand-600">
             <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow ${TILE_TONES[i % TILE_TONES.length]}`}><Icon size={24} /></span>
-            <span>
-              <span className="block font-bold text-slate-900">{item.label}</span>
-              {item.hint && <span className="block text-sm text-slate-500">{item.hint}</span>}
+            <span className="flex-1">
+              <span className="block text-lg font-extrabold text-slate-900">{item.label}</span>
+              {item.hint && <span className="block text-base text-slate-600">{item.hint}</span>}
             </span>
+            <ArrowRight size={20} className="shrink-0 text-brand-700" />
           </Link>
         );
       })}

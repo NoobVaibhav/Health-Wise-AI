@@ -12,7 +12,7 @@ import { clockTime, friendlyDay, localDayKey, timeAgo } from "../../components/D
 import { EmptyState, ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 import { inputClass } from "../../components/ui";
 
-const ROLE_WORD = { DOCTOR: "a doctor", EMPLOYEE: "an employee", PHARMACY: "a pharmacy staff", "first admin": "the first administrator" };
+const ROLE_WORD = { DOCTOR: "a doctor", EMPLOYEE: "an employee", PHARMACY: "a pharmacy staff", LAB: "a laboratory staff", "first admin": "the first administrator" };
 const READ_WORD = { pdf_text: "the PDF text", ocr: "a scan or photo (OCR)", text: "a text file" };
 const DECISION = { APPROVED: "and agreed with the computer's summary", MODIFIED: "and changed the computer's summary", CLARIFIED: "and added an explanation" };
 

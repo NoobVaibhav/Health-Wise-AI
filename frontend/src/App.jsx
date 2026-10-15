@@ -38,6 +38,7 @@ import PatientRecommendations from "./pages/patient/Recommendations";
 import PatientPrescriptions from "./pages/patient/Prescriptions";
 import PatientProfile from "./pages/patient/Profile";
 
+import TestOrders from "./pages/lab/TestOrders";
 import PharmacyDashboard from "./pages/pharmacy/Dashboard";
 import PharmacyPrescriptions from "./pages/pharmacy/Prescriptions";
 import Dispensing from "./pages/pharmacy/Dispensing";
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="doctors" element={<StaffManager kind="doctors" />} />
             <Route path="employees" element={<StaffManager kind="employees" />} />
             <Route path="pharmacy-staff" element={<StaffManager kind="pharmacy-staff" />} />
+            <Route path="lab-staff" element={<StaffManager kind="lab-staff" />} />
             <Route path="patients" element={<PatientsList />} />
             <Route path="appointments" element={<Appointments />} />
             <Route path="reports" element={<ReportsList base="/admin/reports" title="Reports" subtitle="Report status only. Clinical values are visible to doctors and the patient." />} />
@@ -94,6 +96,11 @@ export default function App() {
             <Route path="appointments" element={<Appointments />} />
             <Route path="reports" element={<ReportsList base="/employee/reports" title="Reports" subtitle="Upload status of reports. Clinical values are visible to the doctor and the patient." />} />
             <Route path="reports/:id" element={<ReportDetails />} />
+            <Route path="tests" element={<TestOrders />} />
+          </Route>
+
+          <Route path="/lab" element={<RoleRoute roles={["LAB"]} />}>
+            <Route index element={<TestOrders />} />
           </Route>
 
           <Route path="/patient" element={<RoleRoute roles={["PATIENT"]} />}>

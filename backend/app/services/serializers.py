@@ -178,7 +178,11 @@ def effective_status(rx: Prescription) -> str:
     return rx.status
 
 
-def prescription_out(rx: Prescription) -> PrescriptionOut:
+def tests_of(rx: Prescription) -> list[str]:
+    return [line.strip() for line in (rx.tests_advised or "").splitlines() if line.strip()]
+
+
+def prescription_out(rx: Prescription, include_tests: bool = True) -> PrescriptionOut:
     items = []
     for it in rx.items:
         done = dispensed_quantity(it)
@@ -194,4 +198,5 @@ def prescription_out(rx: Prescription) -> PrescriptionOut:
         report_id=rx.report_id, prescription_date=rx.prescription_date,
         valid_until=rx.prescription_date + timedelta(days=PRESCRIPTION_VALID_DAYS),
         clinical_indication=rx.clinical_indication, notes=rx.notes, status=effective_status(rx), items=items,
+        tests=tests_of(rx) if include_tests else [],
     )

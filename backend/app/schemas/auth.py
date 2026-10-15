@@ -46,6 +46,8 @@ class StaffCreate(BaseModel):
     designation: str | None = Field(default=None, max_length=100)
     # pharmacy
     pharmacy_name: str | None = Field(default=None, max_length=150)
+    # laboratory
+    lab_name: str | None = Field(default=None, max_length=150)
 
 
 class CreatedUserResponse(BaseModel):

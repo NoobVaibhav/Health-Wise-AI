@@ -1,4 +1,4 @@
-import { Activity, CalendarClock, ClipboardList, FileText, Pill, ScrollText, Stethoscope, UserRound, Users } from "lucide-react";
+import { Activity, CalendarClock, ClipboardList, FileText, FlaskConical, Pill, ScrollText, Stethoscope, UserRound, Users } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import { getAdminDashboard } from "../../services/adminApi";
 import HealthCard, { Section } from "../../components/HealthCard";
@@ -25,6 +25,7 @@ export default function AdminDashboard() {
         { to: "/admin/doctors", icon: Stethoscope, label: "Doctors", hint: "Add or view" },
         { to: "/admin/employees", icon: Users, label: "Employees", hint: "Reception and lab" },
         { to: "/admin/pharmacy-staff", icon: Pill, label: "Pharmacy staff", hint: "Medicine counter" },
+        { to: "/admin/lab-staff", icon: FlaskConical, label: "Laboratory staff", hint: "Tests and scans" },
         { to: "/admin/audit-logs", icon: ScrollText, label: "Activity log", hint: "Who did what" },
       ]} />
 
@@ -33,6 +34,7 @@ export default function AdminDashboard() {
         <HealthCard title="Doctors" icon={Stethoscope} tone="sky" value={d.total_doctors} />
         <HealthCard title="Employees" icon={Users} tone="slate" value={d.total_employees} />
         <HealthCard title="Pharmacy staff" icon={Pill} tone="amber" value={d.total_pharmacy_staff} />
+        <HealthCard title="Laboratory staff" icon={FlaskConical} tone="violet" value={d.total_lab_staff} />
         <HealthCard title="Reports" icon={FileText} tone="violet" value={d.total_reports} />
         <HealthCard title="Waiting for a doctor" icon={ClipboardList} tone="amber" value={d.reports_pending_review} />
         <HealthCard title="Appointments today" icon={CalendarClock} tone="sky" value={d.appointments_today} />

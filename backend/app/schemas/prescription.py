@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class PrescriptionItemCreate(BaseModel):
@@ -18,6 +18,19 @@ class PrescriptionCreate(BaseModel):
     clinical_indication: str | None = Field(default=None, max_length=300)
     notes: str | None = Field(default=None, max_length=2000)
     items: list[PrescriptionItemCreate] = Field(min_length=1, max_length=30)
+    tests: list[str] = Field(default_factory=list, max_length=30)   # tests to get done (lab); not shown to the pharmacy
+
+    @field_validator("tests")
+    @classmethod
+    def clean_tests(cls, value: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        for name in value:
+            name = " ".join(name.split())
+            if len(name) < 2 or len(name) > 200:
+                raise ValueError("Each test name must be between 2 and 200 characters.")
+            if name.lower() not in [c.lower() for c in cleaned]:
+                cleaned.append(name)
+        return cleaned
 
 
 class PrescriptionItemOut(BaseModel):
@@ -48,4 +61,5 @@ class PrescriptionOut(BaseModel):
     notes: str | None
     status: str
     items: list[PrescriptionItemOut]
+    tests: list[str] = []   # empty for the pharmacy, which never sees tests
     label: str = "Prescribed by a doctor"

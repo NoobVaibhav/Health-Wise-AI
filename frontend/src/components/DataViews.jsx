@@ -168,7 +168,7 @@ export function StockMeter({ quantity, max = 100 }) {
       <div className="h-2.5 overflow-hidden rounded-full bg-slate-200">
         <div className={`h-full rounded-full ${low ? "bg-red-500" : quantity <= 30 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
       </div>
-      <p className={`mt-1 text-xs font-bold ${low ? "text-red-600" : "text-slate-500"}`}>{quantity} in stock{low ? " - running low" : ""}</p>
+      <p className={`mt-1 text-sm font-bold ${low ? "text-red-700" : "text-slate-600"}`}>{quantity} in stock{low ? " - running low" : ""}</p>
     </div>
   );
 }

@@ -6,9 +6,9 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY
 from app.core.security import hash_password
-from app.database.models import Department, Doctor, Employee, Patient, PharmacyStaff, User
+from app.database.models import Department, Doctor, Employee, LabStaff, Patient, PharmacyStaff, User
 from app.schemas.auth import StaffCreate
 from app.schemas.patient import PatientCreate
 
@@ -57,6 +57,8 @@ def create_staff(db: Session, role: str, data: StaffCreate) -> tuple[User, str |
         db.add(Employee(user_id=user.id, designation=data.designation, phone=data.phone))
     elif role == PHARMACY:
         db.add(PharmacyStaff(user_id=user.id, pharmacy_name=data.pharmacy_name, phone=data.phone))
+    elif role == LAB:
+        db.add(LabStaff(user_id=user.id, lab_name=data.lab_name, phone=data.phone))
     db.commit()
     db.refresh(user)
     return user, temporary

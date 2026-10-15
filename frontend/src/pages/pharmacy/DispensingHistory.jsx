@@ -32,12 +32,12 @@ export default function DispensingHistory() {
                   <li key={d.id} className="flex items-start gap-3">
                     <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${none ? "bg-red-500" : d.status === "DISPENSED" ? "bg-emerald-500" : "bg-amber-500"}`}><Icon size={17} /></span>
                     <div className="flex-1">
-                      <p className="text-[15px] text-slate-700">
+                      <p className="text-base text-slate-700">
                         {none
                           ? <><b className="text-slate-900">{d.medicine_name}</b> was marked as <b>not in stock</b> for <b className="text-slate-900">{d.patient_name}</b></>
                           : <><b className="text-slate-900">{d.quantity_dispensed}</b> of {d.quantity_prescribed} <b className="text-slate-900">{d.medicine_name}</b> given to <b className="text-slate-900">{d.patient_name}</b></>}
                       </p>
-                      <p className="text-xs text-slate-400">Prescription {d.prescription_code} - by {d.pharmacy_staff_name} - {clockTime(d.dispensed_at + "Z")} ({timeAgo(d.dispensed_at)})</p>
+                      <p className="text-sm text-slate-500">Prescription {d.prescription_code} - by {d.pharmacy_staff_name} - {clockTime(d.dispensed_at + "Z")} ({timeAgo(d.dispensed_at)})</p>
                       {d.notes && <p className="mt-0.5 text-sm text-slate-500">Note: {d.notes}</p>}
                     </div>
                     <StatusPill value={d.status} />

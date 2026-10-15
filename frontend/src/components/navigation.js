@@ -1,7 +1,7 @@
-import { Briefcase, CalendarClock, ClipboardList, FileSearch, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
+import { Briefcase, CalendarClock, ClipboardList, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
 
 // Icon lookup (only the icons used in menus are bundled).
-export const ICONS = { Briefcase, CalendarClock, ClipboardList, FileSearch, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
+export const ICONS = { Briefcase, CalendarClock, ClipboardList, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
 
 // Sidebar menu for each role: [path, label, icon name]. The backend enforces the same permissions.
 export const NAV = {
@@ -11,6 +11,7 @@ export const NAV = {
     ["/admin/doctors", "Doctors", "Stethoscope"],
     ["/admin/employees", "Employees", "Briefcase"],
     ["/admin/pharmacy-staff", "Pharmacy Staff", "Pill"],
+    ["/admin/lab-staff", "Laboratory Staff", "FlaskConical"],
     ["/admin/patients", "Patients", "UserRound"],
     ["/admin/appointments", "Appointments", "CalendarClock"],
     ["/admin/reports", "Reports", "FileText"],
@@ -33,6 +34,7 @@ export const NAV = {
     ["/employee/upload", "Upload Report", "Upload"],
     ["/employee/appointments", "Appointments", "CalendarClock"],
     ["/employee/reports", "Reports", "FileText"],
+    ["/employee/tests", "Tests Advised", "FlaskConical"],
   ],
   PATIENT: [
     ["/patient", "Dashboard", "LayoutDashboard"],
@@ -50,6 +52,9 @@ export const NAV = {
     ["/pharmacy/history", "Medicine History", "History"],
     ["/pharmacy/inventory", "Medicine Stock", "Package"],
   ],
+  LAB: [
+    ["/lab", "Tests to do", "FlaskConical"],
+  ],
 };
 
-export const ROLE_LABEL = { ADMIN: "Admin", DOCTOR: "Doctor", EMPLOYEE: "Hospital Employee", PATIENT: "Patient", PHARMACY: "Pharmacy" };
+export const ROLE_LABEL = { ADMIN: "Admin", DOCTOR: "Doctor", EMPLOYEE: "Hospital Employee", PATIENT: "Patient", PHARMACY: "Pharmacy staff", LAB: "Laboratory staff" };

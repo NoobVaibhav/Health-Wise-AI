@@ -8,7 +8,7 @@ from datetime import date, timedelta
 
 from sqlalchemy import select
 
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, PHARMACY
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PHARMACY
 from app.database.connection import SessionLocal, init_db
 from app.database.models import Department, Doctor, MedicineInventory, Patient, User
 from app.schemas.auth import StaffCreate
@@ -45,6 +45,10 @@ def main() -> None:
             user_service.create_staff(db, PHARMACY, StaffCreate(
                 email="pharmacy@healthwise.demo.com", full_name="MediCare Pharmacy Staff", password=DEMO_PASSWORD,
                 pharmacy_name="MediCare Pharmacy"))
+        if not exists("lab@healthwise.demo.com"):
+            user_service.create_staff(db, LAB, StaffCreate(
+                email="lab@healthwise.demo.com", full_name="City Lab Technician", password=DEMO_PASSWORD,
+                lab_name="City Diagnostic Lab"))
         if not exists("rahul.patil@healthwise.demo.com"):
             doctor = db.scalar(select(Doctor).join(User, Doctor.user_id == User.id)
                                .where(User.email == "anjali.sharma@healthwise.demo.com"))
@@ -63,7 +67,7 @@ def main() -> None:
     print("Demo accounts ready (password for all: %s)" % DEMO_PASSWORD)
     for role, email in (("Admin", "admin@healthwise.demo.com"), ("Doctor", "anjali.sharma@healthwise.demo.com"),
                         ("Employee", "priya.joshi@healthwise.demo.com"), ("Patient", "rahul.patil@healthwise.demo.com"),
-                        ("Pharmacy", "pharmacy@healthwise.demo.com")):
+                        ("Pharmacy", "pharmacy@healthwise.demo.com"), ("Lab", "lab@healthwise.demo.com")):
         print(f"  {role:9s} {email}")
 
 

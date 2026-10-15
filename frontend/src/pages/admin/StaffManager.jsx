@@ -1,4 +1,4 @@
-// One reusable page for creating and listing doctors, employees and pharmacy staff (admin only).
+// One reusable page for creating and listing doctors, employees, pharmacy staff and laboratory staff (admin only).
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
@@ -13,6 +13,7 @@ const KINDS = {
   doctors: { role: "DOCTOR", title: "Doctors", single: "doctor" },
   employees: { role: "EMPLOYEE", title: "Employees", single: "employee" },
   "pharmacy-staff": { role: "PHARMACY", title: "Pharmacy Staff", single: "pharmacy staff member" },
+  "lab-staff": { role: "LAB", title: "Laboratory Staff", single: "laboratory staff member" },
 };
 
 export default function StaffManager({ kind }) {
@@ -42,7 +43,7 @@ export default function StaffManager({ kind }) {
 
 function CreateModal({ kind, cfg, onClose, onCreated }) {
   const { data: departments } = useFetch(listDepartments, []);
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", department_id: "", specialization: "", designation: "", pharmacy_name: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", department_id: "", specialization: "", designation: "", pharmacy_name: "", lab_name: "" });
   const [error, setError] = useState("");
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const submit = async (e) => {
@@ -68,6 +69,7 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
         </>)}
         {kind === "employees" && <Field label="Designation"><Input placeholder="Receptionist, lab assistant ..." value={form.designation} onChange={set("designation")} /></Field>}
         {kind === "pharmacy-staff" && <Field label="Pharmacy name"><Input value={form.pharmacy_name} onChange={set("pharmacy_name")} /></Field>}
+        {kind === "lab-staff" && <Field label="Laboratory name"><Input value={form.lab_name} onChange={set("lab_name")} /></Field>}
         {error && <ErrorBox message={error} />}
         <Button>Create account</Button>
       </form>

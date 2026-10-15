@@ -43,7 +43,7 @@ def search_prescriptions(q: str | None = None, status_filter: str | None = None,
                          user: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
     """Search by prescription code (RX-00001), patient name or patient id."""
     rows = prescription_service.list_prescriptions_for_user(db, user, q)
-    result = [prescription_out(r) for r in rows]
+    result = [prescription_out(r, include_tests=False) for r in rows]
     if status_filter:
         result = [r for r in result if r.status == status_filter.upper()]
     return result
@@ -55,7 +55,7 @@ def dispense(data: DispenseRequest, request: Request, user: User = Depends(pharm
     record = dispensing_service.dispense(db, _staff(db, user), data)
     audit_service.log_action(db, user, audit_service.MEDICINE_DISPENSED, "prescription", record.prescription_id,
                              request, f"item {record.prescription_item_id} qty {record.quantity_dispensed}")
-    return prescription_out(record.item.prescription)
+    return prescription_out(record.item.prescription, include_tests=False)
 
 
 @router.get("/history", response_model=list[DispensingOut])

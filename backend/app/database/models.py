@@ -25,7 +25,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(150))
-    role: Mapped[str] = mapped_column(String(20), index=True)  # ADMIN / DOCTOR / EMPLOYEE / PATIENT / PHARMACY
+    role: Mapped[str] = mapped_column(String(20), index=True)  # ADMIN / DOCTOR / EMPLOYEE / PATIENT / PHARMACY / LAB
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -91,6 +91,17 @@ class PharmacyStaff(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
     pharmacy_name: Mapped[str | None] = mapped_column(String(150))
+    phone: Mapped[str | None] = mapped_column(String(30))
+
+    user: Mapped[User] = relationship()
+
+
+class LabStaff(Base):
+    __tablename__ = "lab_staff"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
+    lab_name: Mapped[str | None] = mapped_column(String(150))
     phone: Mapped[str | None] = mapped_column(String(30))
 
     user: Mapped[User] = relationship()
@@ -238,6 +249,7 @@ class Prescription(Base):
     clinical_indication: Mapped[str | None] = mapped_column(String(300))
     status: Mapped[str] = mapped_column(String(25), default="ACTIVE")  # ACTIVE/PARTIALLY_DISPENSED/DISPENSED/CANCELLED/EXPIRED
     notes: Mapped[str | None] = mapped_column(Text)
+    tests_advised: Mapped[str | None] = mapped_column(Text)  # tests the doctor wants done, one per line; NEVER shown to the pharmacy
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     patient: Mapped[Patient] = relationship()

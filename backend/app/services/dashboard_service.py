@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.permissions import doctor_patient_ids, get_doctor_profile, get_patient_profile
 from app.database.models import (
     Appointment, Doctor, DoctorNote, DoctorRecommendation, Employee, HealthReport, MedicineDispensing,
-    MedicineInventory, Patient, PharmacyStaff, Prescription, User,
+    LabStaff, MedicineInventory, Patient, PharmacyStaff, Prescription, User,
 )
 from app.services import report_service
 from app.services.history_service import build_timeline
@@ -38,6 +38,7 @@ def admin_dashboard(db: Session) -> dict:
         "total_doctors": _count(db, Doctor),
         "total_employees": _count(db, Employee),
         "total_pharmacy_staff": _count(db, PharmacyStaff),
+        "total_lab_staff": _count(db, LabStaff),
         "total_reports": _count(db, HealthReport),
         "reports_pending_review": _count(db, HealthReport, HealthReport.doctor_review_status == "PENDING"),
         "appointments_today": _count(db, Appointment, Appointment.scheduled_at >= start, Appointment.scheduled_at < end),

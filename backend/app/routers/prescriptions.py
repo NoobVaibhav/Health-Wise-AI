@@ -27,7 +27,7 @@ def list_prescriptions(q: str | None = None, patient_id: int | None = None,
                        user: User = Depends(require_roles(DOCTOR, PATIENT, PHARMACY)),
                        db: Session = Depends(get_db)):
     rows = prescription_service.list_prescriptions_for_user(db, user, q, patient_id)
-    return [prescription_out(r) for r in rows]
+    return [prescription_out(r, include_tests=user.role != PHARMACY) for r in rows]
 
 
 @router.get("/{prescription_id}", response_model=PrescriptionOut)
@@ -37,7 +37,7 @@ def get_prescription(prescription_id: int, request: Request,
     rx = prescription_service.get_prescription_for_user(db, user, prescription_id)
     if user.role == PHARMACY:
         audit_service.log_action(db, user, audit_service.PRESCRIPTION_VIEWED, "prescription", rx.id, request)
-    return prescription_out(rx)
+    return prescription_out(rx, include_tests=user.role != PHARMACY)
 
 
 @router.put("/{prescription_id}/cancel", response_model=PrescriptionOut)

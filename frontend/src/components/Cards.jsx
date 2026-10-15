@@ -84,12 +84,12 @@ export function PrescriptionCard({ rx, showPatient }) {
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white"><Pill size={20} /></span>
           <div>
             <p className="font-extrabold text-slate-900">Prescription {rx.code}</p>
-            <p className="text-xs text-slate-500">By {rx.doctor_name} on {fmtDate(rx.prescription_date)} - valid until {fmtDate(rx.valid_until)}</p>
+            <p className="text-sm text-slate-600">By {rx.doctor_name} on {fmtDate(rx.prescription_date)} - valid until {fmtDate(rx.valid_until)}</p>
           </div>
         </div>
         <StatusPill value={rx.status} />
       </div>
-      {showPatient && <p className="mb-1 text-sm font-semibold text-slate-700">Patient: {rx.patient_name} ({rx.patient_code})</p>}
+      {showPatient && <p className="mb-1 text-base font-semibold text-slate-800">Patient: {rx.patient_name} ({rx.patient_code})</p>}
       {rx.clinical_indication && <p className="mb-2 text-sm text-slate-600">Reason: {rx.clinical_indication}</p>}
       <div className="space-y-2">
         {rx.items.map((i) => (
@@ -101,11 +101,17 @@ export function PrescriptionCard({ rx, showPatient }) {
             </div>
             <div className="text-right">
               <StatusPill value={i.dispense_status} />
-              <p className="mt-1 text-xs text-slate-500">{i.dispensed_quantity} of {i.quantity} given</p>
+              <p className="mt-1 text-sm text-slate-600">{i.dispensed_quantity} of {i.quantity} given</p>
             </div>
           </div>
         ))}
       </div>
+      {rx.tests?.length > 0 && (
+        <div className="mt-3 rounded-2xl bg-violet-50 p-3">
+          <p className="text-sm font-bold text-violet-900">Tests to get done</p>
+          <ul className="mt-1 flex flex-wrap gap-2">{rx.tests.map((t) => <li key={t} className="rounded-full border-2 border-violet-300 bg-white px-3 py-1 text-sm font-bold text-violet-900">{t}</li>)}</ul>
+        </div>
+      )}
       {rx.notes && <p className="mt-2 text-sm text-slate-600">Doctor's remark: {rx.notes}</p>}
     </div>
   );

@@ -1,6 +1,9 @@
 // Forms only doctors see. Each posts to a doctor-only API; everything saved is labelled "Doctor's ...".
-import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Trash2, X } from "lucide-react";
+import Autocomplete from "./Autocomplete";
+import { calculateQuantity } from "../utils/prescriptionMath";
+import { getMedicineOptions, getTestOptions } from "../services/catalogApi";
 import { addHistoryEntry, addNote, addRecommendation, reviewReport } from "../services/doctorApi";
 import { createPrescription } from "../services/prescriptionApi";
 import { getErrorMessage } from "../services/api";
@@ -73,17 +76,65 @@ export function RecommendationModal({ patientId, reportId, onClose, onSaved, ini
   );
 }
 
-const EMPTY_ITEM = { medicine_name: "", dosage: "", frequency: "", duration: "", quantity: 1, instructions: "" };
+// quick picks for the dosage / frequency / duration boxes (the doctor can still type anything)
+const DOSAGES = ["1 tablet", "2 tablets", "1 capsule", "5 ml", "10 ml", "1 puff", "1 drop in each eye", "Apply thin layer", "250 mg", "500 mg", "1000 mg"];
+const FREQUENCIES = ["Once daily", "Twice daily", "Three times daily", "Four times daily", "Every 8 hours", "Every 12 hours",
+  "At bedtime", "Before breakfast", "After meals", "Only when needed"];
+const DURATIONS = ["3 days", "5 days", "7 days", "10 days", "14 days", "1 month", "3 months", "Continue until next visit"];
+
+// Under the quantity box: how the number was worked out, or why the doctor must type it.
+function QuantityHint({ item, onUse }) {
+  const calc = calculateQuantity(item);
+  if (!calc) {
+    const filled = item.dosage && item.frequency && item.duration;
+    return <p className="mt-1 text-sm text-slate-500">{filled ? "Cannot be counted automatically (syrup, drops, \"only when needed\" ...). Please type the quantity." : "Fill dosage, frequency and duration and the quantity is worked out for you."}</p>;
+  }
+  const same = Number(item.quantity) === calc.quantity;
+  return (
+    <p className="mt-1 text-sm font-semibold text-emerald-700">
+      {calc.text}
+      {!same && <button type="button" onClick={onUse} className="ml-2 rounded-lg border-2 border-brand-700 bg-white px-2 py-0.5 text-sm font-bold text-brand-800 hover:bg-brand-50">Use {calc.quantity}</button>}
+    </p>
+  );
+}
+
+const EMPTY_ITEM ={ medicine_name: "", dosage: "", frequency: "", duration: "", quantity: 1, instructions: "" };
 
 export function PrescriptionModal({ patientId, reportId, onClose, onSaved }) {
   const [items, setItems] = useState([{ ...EMPTY_ITEM }]);
   const [indication, setIndication] = useState("");
   const [notes, setNotes] = useState("");
-  const setItem = (i, k) => (e) => setItems(items.map((it, n) => (n === i ? { ...it, [k]: e.target.value } : it)));
+  const [tests, setTests] = useState([]);          // tests the doctor wants done, picked from the hospital list
+  const [testText, setTestText] = useState("");
+  const [medicineList, setMedicineList] = useState([]);
+  const [testList, setTestList] = useState([]);
+  // the pick-lists are only a shortcut: if they cannot be loaded the doctor can still type everything
+  useEffect(() => {
+    getMedicineOptions().then((list) => setMedicineList(list.map((m) => ({ name: m.name, hint: m.in_stock ? "In stock" : undefined })))).catch(() => {});
+    getTestOptions().then((list) => setTestList(list.map((t) => ({ name: t.name, hint: t.group })))).catch(() => {});
+  }, []);
+  // dose x times per day x days = total quantity. It refills by itself until the doctor types a quantity by hand.
+  const setItemValue = (i, k) => (value) => setItems((all) => all.map((it, n) => {
+    if (n !== i) return it;
+    const next = { ...it, [k]: value };
+    if (k === "quantity") next.qtyManual = true;
+    else if (!next.qtyManual) { const calc = calculateQuantity(next); if (calc) next.quantity = calc.quantity; }
+    return next;
+  }));
+  const setItem = (i, k) => (e) => setItemValue(i, k)(e.target.value);
+  const useCalculated = (i) => setItems((all) => all.map((it, n) => {
+    const calc = n === i && calculateQuantity(it);
+    return calc ? { ...it, quantity: calc.quantity, qtyManual: false } : it;
+  }));
+  const addTest = (name) => {
+    const clean = (name || "").trim();
+    if (clean && !tests.some((t) => t.toLowerCase() === clean.toLowerCase())) setTests([...tests, clean]);
+    setTestText("");
+  };
   const { submit, error, busy } = useSubmit(
     () => createPrescription({
-      patient_id: patientId, report_id: reportId || null, clinical_indication: indication || null, notes: notes || null,
-      items: items.map((it) => ({ ...it, quantity: Number(it.quantity), instructions: it.instructions || null })),
+      patient_id: patientId, report_id: reportId || null, clinical_indication: indication || null, notes: notes || null, tests,
+      items: items.map(({ qtyManual, ...it }) => ({ ...it, quantity: Number(it.quantity), instructions: it.instructions || null })),
     }),
     () => { onSaved(); onClose(); }, "Prescription created");
   return (
@@ -93,17 +144,34 @@ export function PrescriptionModal({ patientId, reportId, onClose, onSaved }) {
         {items.map((it, i) => (
           <div key={i} className="rounded-xl border border-slate-200 p-3">
             <div className="grid gap-3 sm:grid-cols-3">
-              <Field label="Medicine"><Input required value={it.medicine_name} onChange={setItem(i, "medicine_name")} /></Field>
-              <Field label="Dosage"><Input required placeholder="e.g. 500 mg" value={it.dosage} onChange={setItem(i, "dosage")} /></Field>
-              <Field label="Frequency"><Input required placeholder="e.g. Twice daily" value={it.frequency} onChange={setItem(i, "frequency")} /></Field>
-              <Field label="Duration"><Input required placeholder="e.g. 5 days" value={it.duration} onChange={setItem(i, "duration")} /></Field>
-              <Field label="Quantity"><Input required type="number" min={1} value={it.quantity} onChange={setItem(i, "quantity")} /></Field>
+              <Field label="Medicine (type a few letters)"><Autocomplete required options={medicineList} placeholder="e.g. para" value={it.medicine_name} onChange={setItemValue(i, "medicine_name")} /></Field>
+              <Field label="Dosage"><Autocomplete required options={DOSAGES} placeholder="e.g. 1 tablet" value={it.dosage} onChange={setItemValue(i, "dosage")} /></Field>
+              <Field label="Frequency"><Autocomplete required options={FREQUENCIES} placeholder="e.g. Twice daily" value={it.frequency} onChange={setItemValue(i, "frequency")} /></Field>
+              <Field label="Duration"><Autocomplete required options={DURATIONS} placeholder="e.g. 5 days" value={it.duration} onChange={setItemValue(i, "duration")} /></Field>
+              <div>
+                <Field label="Quantity (total)"><Input required type="number" min={1} value={it.quantity} onChange={setItem(i, "quantity")} /></Field>
+                <QuantityHint item={it} onUse={() => useCalculated(i)} />
+              </div>
               <Field label="Instructions"><Input value={it.instructions} onChange={setItem(i, "instructions")} /></Field>
             </div>
             {items.length > 1 && <button type="button" onClick={() => setItems(items.filter((_, n) => n !== i))} className="mt-2 flex items-center gap-1 text-xs text-red-600"><Trash2 size={14} /> Remove medicine</button>}
           </div>
         ))}
         <Button type="button" variant="secondary" onClick={() => setItems([...items, { ...EMPTY_ITEM }])}><Plus size={14} className="mr-1 inline" /> Add another medicine</Button>
+        <div className="rounded-xl border border-slate-200 p-3">
+          <Field label="Tests to get done (type a few letters, then pick). Shown to the lab and the reception, not to the pharmacy.">
+            <Autocomplete options={testList} placeholder="e.g. lipid, HbA1c, ECG" value={testText} onChange={setTestText} onPick={addTest} onEnter={() => addTest(testText)} />
+          </Field>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Button type="button" variant="soft" disabled={!testText.trim()} onClick={() => addTest(testText)}><Plus size={16} /> Add this test</Button>
+            {tests.map((t) => (
+              <span key={t} className="inline-flex items-center gap-1 rounded-full border-2 border-brand-300 bg-brand-100 py-1 pl-3 pr-1.5 text-sm font-bold text-brand-900">
+                {t}
+                <button type="button" onClick={() => setTests(tests.filter((x) => x !== t))} aria-label={`Remove ${t}`} className="rounded-full p-0.5 hover:bg-brand-200"><X size={14} /></button>
+              </span>
+            ))}
+          </div>
+        </div>
         <Field label="Clinical indication (optional)"><Input value={indication} onChange={(e) => setIndication(e.target.value)} /></Field>
         <Field label="Notes (optional)"><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
         {error && <ErrorBox message={error} />}

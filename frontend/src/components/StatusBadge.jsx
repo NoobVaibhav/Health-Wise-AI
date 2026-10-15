@@ -38,7 +38,7 @@ const PILL = {
   EXPIRED: ["Expired", GRAY, XCircle], UNAVAILABLE: ["Not in stock", RED, XCircle],
   NORMAL: ["Normal", GRAY], IMPORTANT: ["Important", AMBER, AlertTriangle], FOLLOW_UP_REQUIRED: ["Follow-up needed", RED, AlertTriangle],
   APPROVED: ["Doctor agreed", GREEN, CheckCircle2], MODIFIED: ["Doctor changed it", AMBER], CLARIFIED: ["Doctor explained", BLUE],
-  ADMIN: ["Admin", GRAY], DOCTOR: ["Doctor", BLUE], EMPLOYEE: ["Employee", GRAY], PATIENT: ["Patient", GREEN], PHARMACY: ["Pharmacy", AMBER],
+  ADMIN: ["Admin", GRAY], DOCTOR: ["Doctor", BLUE], EMPLOYEE: ["Employee", GRAY], PATIENT: ["Patient", GREEN], PHARMACY: ["Pharmacy", AMBER], LAB: ["Laboratory", INDIGO],
 };
 
 export function StatusPill({ value }) {

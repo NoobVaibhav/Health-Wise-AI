@@ -5,7 +5,7 @@ import { tokenStore } from "../services/api";
 const AuthContext = createContext(null);
 
 // Where each role lands after login.
-export const ROLE_HOME = { ADMIN: "/admin", DOCTOR: "/doctor", EMPLOYEE: "/employee", PATIENT: "/patient", PHARMACY: "/pharmacy" };
+export const ROLE_HOME = { ADMIN: "/admin", DOCTOR: "/doctor", EMPLOYEE: "/employee", PATIENT: "/patient", PHARMACY: "/pharmacy", LAB: "/lab" };
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

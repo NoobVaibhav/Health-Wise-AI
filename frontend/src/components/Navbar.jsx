@@ -13,8 +13,8 @@ export default function Navbar({ onMenu }) {
       <p className="hidden text-sm font-medium text-slate-500 md:block">Your health reports, explained simply</p>
       <div className="flex items-center gap-3">
         <div className="text-right leading-tight">
-          <p className="text-sm font-bold text-slate-800">{user.full_name}</p>
-          <p className="text-xs text-slate-500">{ROLE_LABEL[user.role]}</p>
+          <p className="text-base font-bold text-slate-900">{user.full_name}</p>
+          <p className="mt-0.5 inline-block rounded-full bg-brand-100 px-2.5 py-0.5 text-sm font-bold text-brand-800">Logged in as: {ROLE_LABEL[user.role]}</p>
         </div>
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-base font-extrabold text-white shadow">
           {user.full_name[0].toUpperCase()}

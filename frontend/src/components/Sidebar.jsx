@@ -23,14 +23,14 @@ export default function Sidebar({ open, onClose }) {
             const Icon = ICONS[icon] || Circle;
             return (
               <NavLink key={to} to={to} end={to === home} onClick={onClose}
-                className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[15px] font-semibold transition ${isActive ? "bg-white text-brand-800 shadow" : "text-brand-100 hover:bg-white/10"}`}>
+                className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-base font-bold transition ${isActive ? "bg-white text-brand-800 shadow" : "text-brand-100 hover:bg-white/10"}`}>
                 <Icon size={19} /> {label}
               </NavLink>
             );
           })}
         </nav>
-        <button onClick={logout} className="m-3 flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[15px] font-semibold text-brand-100 hover:bg-white/10">
-          <LogOut size={19} /> Log out
+        <button onClick={logout} className="m-3 flex items-center justify-center gap-3 rounded-2xl border-2 border-white/70 bg-white/10 px-3.5 py-3 text-base font-bold text-white hover:bg-white/25">
+          <LogOut size={20} /> Log out
         </button>
       </aside>
     </>
