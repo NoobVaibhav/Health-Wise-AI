@@ -15,7 +15,7 @@ class ReportError(Exception):
 class UnsupportedFileError(ReportError):
     status_code = 415
     code = "UNSUPPORTED_FILE"
-    message = "Unsupported file format. Please upload PDF, JPG, JPEG, PNG or WEBP."
+    message = "Wrong file uploaded. This file type is not accepted. Please upload a medical report as a PDF, JPG, JPEG, PNG or WEBP file."
 
 
 class FileTooLargeError(ReportError):
@@ -31,8 +31,9 @@ class UnreadableReportError(ReportError):
 
 class InvalidHealthReportError(ReportError):
     code = "NOT_A_HEALTH_REPORT"
-    message = ("This file does not appear to contain recognizable laboratory health parameters. "
-               "It also does not look like a medical report (scan, ECG, summary, prescription).")
+    message = ("Wrong file uploaded. This file does not appear to contain recognizable laboratory health parameters. "
+               "It also does not look like a medical report (scan, ECG, summary, prescription). "
+               "Please upload a medical report file.")
 
 
 class OCRUnavailableError(ReportError):

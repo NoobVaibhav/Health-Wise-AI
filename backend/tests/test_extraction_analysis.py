@@ -173,3 +173,20 @@ def test_normal_white_cell_count_is_not_flagged():
     result = report_processor.process_report("cbc.txt", sd.lines_to_text(
         ["Patient Name: Test Person", "Total Leucocyte Count 6,500 /cumm 4,000 - 11,000"]))
     assert result.parameters[0].status == WITHIN
+
+
+def test_hba1c_without_printed_range_is_extracted_as_unknown():
+    text = ("HBA1C (GLYCATED HEMOGLOBIN) , WHOLE BLOOD EDTA\n"
+            "HBA1C, GLYCATED HEMOGLOBIN 7.2 % HPLC\n"
+            "ESTIMATED AVERAGE GLUCOSE (eAG) 160 mg/dL Calculated\n")
+    params = {p.normalized_name: p for p in extract_parameters(text)}
+    assert params["HbA1c"].value == 7.2
+    assert params["HbA1c"].unit == "%"
+    assert params["HbA1c"].reference_text is None
+
+
+def test_report_date_prefers_collected_date_with_slash_month():
+    from datetime import date
+    text = ("Collected : 04/Jun/2026 09:22AM\nReceived : 05/Jun/2026 12:36PM\n"
+            "Reported : 06/Jun/2026 02:54PM\n")
+    assert extract_report_date(text) == date(2026, 6, 4)

@@ -33,7 +33,7 @@ NOT_UNITS = {"ref", "reference", "normal", "range", "high", "low", "h", "l", "re
 SIMPLE_UNITS = {"fl", "pg", "g", "mg", "ng", "ug", "µg", "u", "iu", "mm", "mmol", "meq"}
 ALLOWED_GAP_WORDS = re.compile(
     r"\b(?:result|value|levels?|count|calc(?:ulated)?|direct|method|hplc|enzymatic|serum|plasma|blood|"
-    r"fasting|random|pp|ppbs|post|prandial)\b",
+    r"fasting|random|pp|ppbs|post|prandial|glycated|glycosylated|h(?:a)?emoglobin|whole|edta)\b",
     re.IGNORECASE,
 )
 SECTION_WORDS = {
@@ -211,7 +211,7 @@ _DATE_LABEL = re.compile(r"report(?:ed)?|collect|sample|date|reg", re.IGNORECASE
 _DATE_PATTERNS = [
     (re.compile(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b"), "ymd"),
     (re.compile(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b"), "dmy"),
-    (re.compile(r"\b(\d{1,2})[ -]([A-Za-z]{3})[a-z]*[ ,-]+(\d{4})\b"), "d_mon_y"),
+    (re.compile(r"\b(\d{1,2})[ /-]([A-Za-z]{3})[a-z]*[ ,/-]+(\d{4})\b"), "d_mon_y"),
     (re.compile(r"\b([A-Za-z]{3})[a-z]*\.? (\d{1,2}),? (\d{4})\b"), "mon_d_y"),
 ]
 
@@ -231,11 +231,11 @@ def _try_date(kind: str, g: tuple[str, ...]) -> date | None:
     return None
 
 
-def extract_report_date(text: str) -> date | None:
-    """Find the report/collection date. Only lines that mention a date label are considered."""
-    for line in text.split("\n")[:80]:
-        if not _DATE_LABEL.search(line):
-            continue
+_COLLECTED_LABEL = re.compile(r"collect|sample", re.IGNORECASE)
+
+
+def _date_in_lines(lines: list[str]) -> date | None:
+    for line in lines:
         for pattern, kind in _DATE_PATTERNS:
             m = pattern.search(line)
             if m:
@@ -243,6 +243,13 @@ def extract_report_date(text: str) -> date | None:
                 if found and 2000 <= found.year <= date.today().year + 1:
                     return found
     return None
+
+
+def extract_report_date(text: str) -> date | None:
+    """Find the collection date (when the sample was taken). If the report has none, fall back to the
+    reported/other dated lines. Only lines that mention a date label are considered."""
+    labelled = [line for line in text.split("\n")[:80] if _DATE_LABEL.search(line)]
+    return _date_in_lines([l for l in labelled if _COLLECTED_LABEL.search(l)]) or _date_in_lines(labelled)
 
 
 # ---------------------------------------------------------------- patient name (safety check)

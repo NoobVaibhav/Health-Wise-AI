@@ -1,9 +1,12 @@
 // Shows one report of ANY kind (lab table, scan, ECG, summary ...). Used by every role; the BACKEND decides what is
 // included (patients get no analysis until a doctor has reviewed it, employees never get clinical content).
+import { useNavigate } from "react-router-dom";
 import { Bot, FileDown, Hourglass } from "lucide-react";
 import { Section } from "./HealthCard";
 import ParameterTable from "./ParameterTable";
 import ReportJourney from "./ReportJourney";
+import KeyNumbers from "./KpiPanel";
+import DeleteReportButton from "./DeleteReport";
 import { DoctorInsights, KeyFindings, PatientTips } from "./InsightsPanel";
 import { StatusPill } from "./StatusBadge";
 import { Hint } from "./Feedback";
@@ -15,6 +18,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, onChanged }) {
   const toast = useToast();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const open = () => openReportFile(report.id).catch((e) => toast(getErrorMessage(e), "error"));
   const c = report.counts;
@@ -32,7 +36,10 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
           </p>
           <p className="mt-1"><span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-800">{report.report_type_label}</span></p>
         </div>
-        {canOpenFile && <Button variant="secondary" onClick={open}><FileDown size={16} className="mr-1.5 inline" /> Open original file</Button>}
+        <div className="flex flex-wrap gap-2">
+          {canOpenFile && <Button variant="secondary" onClick={open}><FileDown size={16} className="mr-1.5 inline" /> Open original file</Button>}
+          <DeleteReportButton report={report} onDeleted={() => navigate(-1)} />
+        </div>
       </div>
 
       <ReportJourney report={report} />
@@ -69,6 +76,8 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
             )}
             {outside > 0 && isPatient && <div className="mt-4"><Hint title="Is a result outside the range a problem?">A result outside the normal range is not a diagnosis. Many things can change a result. Please talk to your doctor about it.</Hint></div>}
           </Section>
+
+          {(isDoctor || isPatient) && <KeyNumbers report={report} />}
 
           {isDoctor && <DoctorInsights report={report} onUseAsAdvice={onUseAsAdvice} onChanged={onChanged} />}
 

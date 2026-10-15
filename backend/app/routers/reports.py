@@ -114,6 +114,19 @@ def refresh_insights(report_id: int, request: Request, user: User = Depends(requ
     return report_detail(report, user.role)
 
 
+@router.delete("/{report_id}")
+def delete_report(report_id: int, request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete a report that was uploaded by mistake (wrong patient or wrong file). The action is written to the audit log."""
+    report = report_service.get_report_for_user(db, user, report_id)
+    if not report_service.can_delete(user, report):
+        raise HTTPException(status.HTTP_403_FORBIDDEN,
+                            "You can delete a report only if you are the doctor, or if you uploaded it and the doctor has not reviewed it yet.")
+    patient_name = report.patient.user.full_name
+    name = report_service.delete_report(db, report)
+    audit_service.log_action(db, user, audit_service.REPORT_DELETED, "report", report_id, request, f"{name} (patient {patient_name})")
+    return {"deleted": True, "id": report_id, "filename": name}
+
+
 @router.get("/{report_id}/file")
 def download_file(report_id: int, request: Request, user: User = Depends(get_current_user),
                   db: Session = Depends(get_db)):

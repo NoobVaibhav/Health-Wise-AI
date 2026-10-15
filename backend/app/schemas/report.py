@@ -26,6 +26,7 @@ class ReportListItem(BaseModel):
     report_date: date | None
     uploaded_at: datetime
     uploaded_by_name: str
+    uploaded_by_id: int
     parameter_count: int
     processing_status: str
     doctor_review_status: str

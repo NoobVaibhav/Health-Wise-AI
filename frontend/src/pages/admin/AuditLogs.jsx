@@ -2,7 +2,7 @@
 // with plain-word filters. Nobody needs to know what "USER_CREATED" means.
 import { useMemo, useState } from "react";
 import {
-  CalendarClock, ClipboardCheck, FileText, KeyRound, LogIn, Pill, Search, ShieldAlert, StickyNote, Stethoscope, UserPlus, UserCog, Eye,
+  CalendarClock, ClipboardCheck, FileText, KeyRound, LogIn, Pill, Search, ShieldAlert, StickyNote, Stethoscope, UserPlus, UserCog, Eye, Trash2,
 } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import { getAuditLogs } from "../../services/adminApi";
@@ -29,6 +29,7 @@ const ACTIONS = {
   REPORT_ANALYZED: { cat: "Reports", icon: FileText, tone: "bg-violet-500", say: (l) => { const m = /(\d+) parameters via (\w+)/.exec(l.details || ""); return [`- the computer read the report and found ${m ? m[1] : "some"} test results by reading ${m ? READ_WORD[m[2]] || m[2] : "it"}:`, l.entity_label]; }, computer: true },
   REPORT_REVIEWED: { cat: "Doctor work", icon: ClipboardCheck, tone: "bg-emerald-500", say: (l) => [`checked the report`, `${l.entity_label || ""} ${DECISION[l.details] || ""}`.trim()] },
   REPORT_FILE_VIEWED: { cat: "Reports", icon: Eye, tone: "bg-slate-400", say: (l) => ["opened the original file of", l.entity_label] },
+  REPORT_DELETED: { cat: "Reports", icon: Trash2, tone: "bg-red-500", say: (l) => ["deleted the report", l.details || l.entity_label] },
   NOTE_ADDED: { cat: "Doctor work", icon: StickyNote, tone: "bg-emerald-500", say: (l) => ["wrote", l.entity_label] },
   RECOMMENDATION_ADDED: { cat: "Doctor work", icon: Stethoscope, tone: "bg-emerald-500", say: (l) => ["wrote", l.entity_label] },
   PRESCRIPTION_CREATED: { cat: "Doctor work", icon: Pill, tone: "bg-emerald-500", say: (l) => ["wrote", l.entity_label] },

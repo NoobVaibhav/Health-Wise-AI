@@ -103,4 +103,8 @@ def build_summary(analyzed: list[AnalyzedParameter]) -> str:
     if outside:
         text += (" Results outside the normal range: " + ", ".join(outside) +
                  ". This is not a diagnosis; a doctor must review these results.")
+    no_range = [a.extracted.normalized_name for a in analyzed if a.status == UNKNOWN]
+    if no_range:
+        text += (" No normal range is printed for: " + ", ".join(no_range) +
+                 ". The doctor should check these against the lab's own comments or tables.")
     return text

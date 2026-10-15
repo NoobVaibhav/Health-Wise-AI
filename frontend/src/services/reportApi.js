@@ -17,6 +17,7 @@ export const listReports = (patientId) =>
   api.get("/reports", { params: patientId ? { patient_id: patientId } : {} }).then((r) => r.data);
 export const getReport = (id) => api.get(`/reports/${id}`).then((r) => r.data);
 export const refreshInsights = (id) => api.post(`/reports/${id}/insights/refresh`).then((r) => r.data);
+export const deleteReport = (id) => api.delete(`/reports/${id}`).then((r) => r.data);
 export const reportFileUrl = (id) => `/api/reports/${id}/file`;
 
 /** The original file is private, so it is fetched with the login token and opened as a blob. */

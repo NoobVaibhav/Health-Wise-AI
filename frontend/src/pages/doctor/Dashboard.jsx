@@ -1,4 +1,5 @@
-import { CalendarClock, ClipboardList, FileSearch, Pill, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, CalendarClock, ClipboardList, FileSearch, Pill, Users } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import { getDoctorDashboard } from "../../services/doctorApi";
 import HealthCard, { Section } from "../../components/HealthCard";
@@ -23,12 +24,16 @@ export default function DoctorDashboard() {
         <HeroButton to="/doctor/patients">My patients</HeroButton>
       </Hero>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <HealthCard title="Urgent wording" icon={AlertTriangle} tone="rose" value={d.waiting_urgent_count} sub="Reports waiting with urgent wording" />
+        <HealthCard title="Values to look at" icon={FileSearch} tone="amber" value={d.waiting_outside_values} sub="Outside range, in waiting reports" />
         <HealthCard title="Today's appointments" icon={CalendarClock} value={d.todays_appointments.length} />
         <HealthCard title="My patients" icon={Users} tone="sky" value={d.my_patients_count} />
         <HealthCard title="Reports to review" icon={FileSearch} tone="amber" value={waiting} sub="Computer-read, waiting for you" />
         <HealthCard title="Follow-ups coming up" icon={ClipboardList} tone="violet" value={d.pending_follow_ups.length} />
       </div>
+
+      <AttentionQueue items={d.attention_queue} />
 
       <QuickActions items={[
         { to: "/doctor/reports", icon: FileSearch, label: "Reports to review", hint: `${waiting} waiting` },
@@ -57,5 +62,37 @@ export default function DoctorDashboard() {
         {d.recent_prescriptions.length === 0 ? <p className="text-slate-500">No prescriptions yet.</p> : <div className="space-y-3">{d.recent_prescriptions.map((p) => <PrescriptionCard key={p.id} rx={p} showPatient />)}</div>}
       </Section>
     </div>
+  );
+}
+
+// The reports that most need a doctor's eyes first, with the important values already pulled out.
+function AttentionQueue({ items }) {
+  if (!items?.length) return null;
+  return (
+    <Section title="Look at these first">
+      <p className="-mt-2 mb-4 text-sm text-slate-500">Reports waiting for you, with urgent wording or the most values outside the normal range at the top.</p>
+      <div className="space-y-3">
+        {items.map((i) => (
+          <Link key={i.report_id} to={`/doctor/reports/${i.report_id}`} className="tile block rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="font-bold text-slate-900">{i.patient_name} <span className="text-sm font-normal text-slate-400">{i.patient_code}</span></p>
+                <p className="text-sm text-slate-500">{i.report_type_label} - {i.filename}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {i.red_flags > 0 && <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-800">Urgent wording</span>}
+                {i.outside_count > 0 && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">{i.outside_count} to look at</span>}
+                {i.red_flags === 0 && i.outside_count === 0 && <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">Nothing flagged</span>}
+              </div>
+            </div>
+            {i.highlights.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {i.highlights.map((h) => <span key={h} className="rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-700">{h}</span>)}
+              </div>
+            )}
+          </Link>
+        ))}
+      </div>
+    </Section>
   );
 }

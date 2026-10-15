@@ -12,7 +12,7 @@ import { useToast } from "./Toast";
 const CONCERN = {
   attention: ["Worth a look", "bg-amber-100 text-amber-900", AlertTriangle],
   normal: ["Looks normal", "bg-emerald-100 text-emerald-800", CheckCircle2],
-  neutral: ["For information", "bg-slate-100 text-slate-600", Eye],
+  neutral: ["Note", "bg-slate-100 text-slate-600", Eye],
 };
 
 const SourceNote = ({ source }) => (
@@ -24,11 +24,15 @@ const SourceNote = ({ source }) => (
 
 /** The report's own sentences, each marked "looks normal" or "worth a look". */
 export function KeyFindings({ findings, title = "What the report says" }) {
+  const [all, setAll] = useState(false);
   if (!findings?.length) return null;
+  const order = { attention: 0, neutral: 1, normal: 2 };                   // "worth a look" first
+  const sorted = [...findings].sort((a, b) => (order[a.concern] ?? 1) - (order[b.concern] ?? 1));
+  const shown = all ? sorted : sorted.slice(0, 8);
   return (
     <Section title={title}>
       <ul className="space-y-2">
-        {findings.map((f, i) => {
+        {shown.map((f, i) => {
           const [label, style, Icon] = CONCERN[f.concern] || CONCERN.neutral;
           return (
             <li key={i} className="flex items-start gap-3 rounded-2xl bg-slate-50 p-3">
@@ -38,6 +42,7 @@ export function KeyFindings({ findings, title = "What the report says" }) {
           );
         })}
       </ul>
+      {sorted.length > 8 && <button onClick={() => setAll(!all)} className="mt-3 text-sm font-semibold text-brand-700 hover:underline">{all ? "Show fewer" : `Show all ${sorted.length} sentences`}</button>}
       <p className="mt-3 text-xs text-slate-400">The computer picked these sentences from the report and marked them by wording alone. It can be wrong, so please read the original.</p>
     </Section>
   );

@@ -12,7 +12,8 @@ from app.schemas.patient import PatientBasic, PatientFull
 from app.schemas.prescription import PrescriptionItemOut, PrescriptionOut
 from app.schemas.report import ParameterOut, ReportDetail, ReportListItem
 from app.services.analysis_engine import STATUS_LABELS
-from app.services.insight_service import REPORT_TYPE_LABELS, LabItem, build_lab_insights
+from app.services.insight_service import (REPORT_TYPE_LABELS, LabItem, build_lab_insights, build_narrative_insights,
+                                          detect_report_type, extract_metrics)
 from app.services.parameter_catalog import get_parameter_info
 from app.services.safety_filter import DISCLAIMER
 from app.services.user_service import age_from_dob
@@ -55,7 +56,7 @@ def report_list_item(r: HealthReport) -> ReportListItem:
     return ReportListItem(
         id=r.id, patient_id=r.patient_id, patient_name=r.patient.user.full_name, patient_code=r.patient.patient_code,
         filename=r.filename, report_date=r.report_date, uploaded_at=r.uploaded_at,
-        uploaded_by_name=r.uploader.full_name, parameter_count=len(r.parameters),
+        uploaded_by_name=r.uploader.full_name, uploaded_by_id=r.uploaded_by, parameter_count=len(r.parameters),
         processing_status=r.processing_status, doctor_review_status=r.doctor_review_status,
         display_status=display_status(r), processing_method=r.processing_method,
         assigned_doctor_name=r.assigned_doctor.user.full_name if r.assigned_doctor else None,
@@ -66,7 +67,14 @@ def report_list_item(r: HealthReport) -> ReportListItem:
 def stored_insights(r: HealthReport) -> dict | None:
     """The insights saved with the report. Older lab reports have none, so they are built now from the stored values."""
     if r.insights_json:
-        return json.loads(r.insights_json)
+        data = json.loads(r.insights_json)
+        if "metrics" not in data and not r.parameters and r.extracted_text:
+            # saved before 'key numbers' existed: read the numbers now (and re-read the sentences unless an AI model wrote them)
+            if data.get("source") == "llm":
+                data["metrics"] = extract_metrics(r.extracted_text)
+            else:
+                data = build_narrative_insights(r.extracted_text, data.get("report_type") or detect_report_type(r.extracted_text))
+        return data
     if r.parameters:
         items = []
         for p in r.parameters:
@@ -77,7 +85,7 @@ def stored_insights(r: HealthReport) -> dict | None:
     return None
 
 
-PATIENT_INSIGHT_KEYS = ("report_type", "source", "summary", "key_findings", "patient_recommendations")
+PATIENT_INSIGHT_KEYS = ("report_type", "source", "summary", "key_findings", "metrics", "patient_recommendations")
 
 
 def insights_for_role(r: HealthReport, role: str) -> dict | None:

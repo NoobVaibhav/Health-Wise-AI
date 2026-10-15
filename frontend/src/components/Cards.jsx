@@ -4,6 +4,7 @@ import { ChevronRight, ClipboardList, Pill, Stethoscope, StickyNote } from "luci
 import { Avatar, CountdownChip, DateTile, daysFromToday } from "./DataViews";
 import { StatusPill } from "./StatusBadge";
 import { fmtDate, fmtUtc, fmtUtcDate } from "./ui";
+import DeleteReportButton from "./DeleteReport";
 
 // Left-edge colour tells the urgency at a glance: green = normal, amber = important, red = follow-up needed.
 const ACCENT = { NORMAL: "bg-emerald-400", IMPORTANT: "bg-amber-400", FOLLOW_UP_REQUIRED: "bg-red-500" };
@@ -111,7 +112,7 @@ export function PrescriptionCard({ rx, showPatient }) {
 }
 
 // Table of reports (used by employee, admin, doctor, patient). `base` is the role's URL prefix.
-export function ReportsTable({ reports, base, showPatient = true }) {
+export function ReportsTable({ reports, base, showPatient = true, onChanged }) {
   if (!reports.length) return <p className="py-4 text-center text-slate-500">No reports found.</p>;
   return (
     <div className="space-y-2">
@@ -128,6 +129,7 @@ export function ReportsTable({ reports, base, showPatient = true }) {
           </div>
           <div className="flex items-center gap-2">
             <StatusPill value={r.display_status} />
+            {onChanged && <DeleteReportButton report={r} compact onDeleted={onChanged} />}
             <ChevronRight className="text-slate-400" size={20} />
           </div>
         </Link>

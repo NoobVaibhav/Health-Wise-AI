@@ -11,7 +11,9 @@ from app.core.permissions import (
     ADMIN, DOCTOR, EMPLOYEE, PATIENT, doctor_can_access_patient, doctor_patient_ids, forbidden,
     get_doctor_profile, get_patient_profile,
 )
-from app.database.models import HealthParameter, HealthReport, Patient, User, utcnow
+from app.database.models import (
+    DoctorNote, DoctorRecommendation, HealthParameter, HealthReport, Patient, Prescription, ReportComparison, User, utcnow,
+)
 from app.services.report_processor import ProcessedReport
 
 REVIEW_DECISIONS = ("APPROVED", "MODIFIED", "CLARIFIED")
@@ -74,6 +76,34 @@ def get_report_for_user(db: Session, user: User, report_id: int) -> HealthReport
     elif user.role not in (ADMIN, EMPLOYEE):
         raise forbidden()
     return report
+
+
+def can_delete(user: User, report: HealthReport) -> bool:
+    """A doctor may delete a report of a patient they are authorised for (it was uploaded by mistake, or is the wrong file).
+    An employee may delete only a report they uploaded themselves and only until the doctor has reviewed it.
+    Patients and administrators never delete reports."""
+    if user.role == DOCTOR:
+        return True
+    return user.role == EMPLOYEE and report.uploaded_by == user.id and report.doctor_review_status == "PENDING"
+
+
+def delete_report(db: Session, report: HealthReport) -> str:
+    """Remove the report, its results and its file. Notes, advice and prescriptions that were written about it stay in the
+    patient's history (they just no longer point to the deleted report). Returns the file name for the audit log."""
+    import os
+    name, path = report.filename, report.file_path
+    db.query(ReportComparison).filter((ReportComparison.previous_report_id == report.id)
+                                      | (ReportComparison.latest_report_id == report.id)).delete(synchronize_session=False)
+    for model in (DoctorNote, DoctorRecommendation, Prescription):
+        db.query(model).filter(model.report_id == report.id).update({model.report_id: None}, synchronize_session=False)
+    db.delete(report)                       # its test results are deleted with it (cascade)
+    db.commit()
+    if path and os.path.exists(path):
+        try:
+            os.remove(path)
+        except OSError:
+            pass                            # the database is already clean; a leftover file is harmless
+    return name
 
 
 def refresh_insights(db: Session, report: HealthReport) -> HealthReport:

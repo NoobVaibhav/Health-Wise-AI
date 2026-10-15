@@ -13,7 +13,7 @@ export default function UploadBox({ onFile, disabled }) {
   const handle = (file) => {
     if (!file) return;
     const ext = file.name.split(".").pop().toLowerCase();
-    if (!ALLOWED.includes(ext)) return setProblem("Unsupported file format. Please upload PDF, JPG, JPEG, PNG or WEBP.");
+    if (!ALLOWED.includes(ext)) return setProblem("Wrong file uploaded. Please upload a medical report as a PDF, JPG, JPEG, PNG or WEBP file.");
     if (file.size > MAX_MB * 1024 * 1024) return setProblem(`The file is too large. Maximum size is ${MAX_MB} MB.`);
     setProblem("");
     onFile(file);

@@ -233,3 +233,54 @@ def test_new_columns_are_added_to_an_existing_database(tmp_path):
     with old.connect() as c:
         assert c.execute(text("SELECT filename FROM health_reports")).scalar() == "old.pdf"   # existing row survived
     add_missing_columns(old)                 # running it twice is harmless
+
+
+HOLTER_TEXT = """HOLTER ECG REPORT
+Patient Name: Rahul Patil   Age: 45   Date: 12/10/2026
+Total beats: 98562  Heart rate: Max 142 bpm  Min 48 bpm  Avg 72 bpm
+Total No. of episodes: 0 VTAC No. of episodes: 0
+VPB Isolated Ectopics: 3 Pairs: 0 Run Beats: 0 SVT No. of episodes: 2
+Total No. of episodes: 0 VTAC No. of episodes: 0
+QT interval: 410 ms (350 - 440)
+Impression: Predominant sinus rhythm. No evidence of sustained ventricular tachycardia. Occasional isolated ventricular ectopics seen.
+"""
+
+
+def test_table_rows_become_numbers_not_broken_sentences():
+    from app.services.insight_service import build_narrative_insights, split_statements
+    statements = split_statements(HOLTER_TEXT)
+    assert all(": 0 VTAC" not in s and not s.lower().startswith("of episodes") for s in statements)
+    insights = build_narrative_insights(HOLTER_TEXT, "ECG")
+    texts = [f["text"] for f in insights["key_findings"]]
+    assert "No evidence of sustained ventricular tachycardia." in texts       # "No." inside a sentence is not a break
+    by_label = {m["label"]: m for m in insights["metrics"]}
+    assert by_label["VPB Isolated Ectopics"]["value"] == 3 and by_label["VPB Isolated Ectopics"]["concern"] == "attention"
+    assert by_label["SVT No. of episodes"]["value"] == 2
+    assert by_label["VTAC No. of episodes"]["concern"] == "normal"                # a zero count is not a finding
+    assert by_label["Heart rate (highest)"]["value"] == 142 and by_label["Heart rate (highest)"]["unit"] == "bpm"
+    assert by_label["QT interval"]["concern"] == "normal"                            # inside the range printed next to it
+    assert "Age" not in by_label and "Patient Name" not in by_label                  # personal / admin fields are not KPIs
+
+
+def test_extract_metrics_ignores_ids_and_repeats():
+    from app.services.insight_service import extract_metrics
+    metrics = extract_metrics("Age: 45\nMRN: 12345\nPhone: 9999999999\nPauses No. of episodes: 0\nPauses No. of episodes: 0\n")
+    assert [m["label"] for m in metrics] == ["Pauses No. of episodes"]
+
+
+WRONG_FILES = {
+    "project_report": "Software Requirements Specification\nTable of Contents\nChapter 1 Introduction\nThe hospital management system lets a doctor review a patient report, "
+                      "prescription and diagnosis. Abstract: this project report describes the methodology.\n",
+    "assignment": "Assignment 3 Semester V\nName: Vaibhav Lad Roll No: 57\nUnderstand the architecture of a pre-trained model in deep learning. "
+                  "Explain the patient data, hospital records and clinical use of such a model.\n",
+    "invoice": "INVOICE\nBill to: City Hospital\nGST No 27ABCDE1234F1Z5\nTotal amount: 4,500\nUnit price 450 x 10 tablets of paracetamol for the clinic and doctor.\n",
+    "cv": "Curriculum Vitae\nObjective: seeking a position as a hospital administrator. Worked with doctor teams, patient records and clinic software.\n",
+}
+
+
+@pytest.mark.parametrize("kind", list(WRONG_FILES))
+def test_wrong_files_are_rejected_with_a_clear_message(kind):
+    from app.core.errors import InvalidHealthReportError
+    with pytest.raises(InvalidHealthReportError) as caught:
+        process(kind + ".txt", WRONG_FILES[kind].split("\n"))
+    assert "Wrong file uploaded" in str(caught.value)

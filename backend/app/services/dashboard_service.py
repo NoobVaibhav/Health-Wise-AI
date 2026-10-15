@@ -12,7 +12,8 @@ from app.database.models import (
 from app.services import report_service
 from app.services.history_service import build_timeline
 from app.services.serializers import (
-    appointment_out, note_out, prescription_out, recommendation_out, report_list_item,
+    REPORT_TYPE_LABELS, appointment_out, effective_report_type, note_out, prescription_out, recommendation_out,
+    report_list_item, stored_insights,
 )
 
 PATIENT_ROLE = "PATIENT"
@@ -52,6 +53,29 @@ def admin_dashboard(db: Session) -> dict:
 
 
 # ------------------------------------------------------------------ doctor
+def _attention_item(r: HealthReport) -> dict:
+    """What a doctor most needs to know about a report waiting for review, in a few words."""
+    insights = stored_insights(r) or {}
+    red_flags = len(insights.get("red_flags") or [])
+    outside = [p for p in r.parameters if p.status in ("ABOVE_RANGE", "BELOW_RANGE")]
+    highlights = []
+    if outside:
+        def spread(p):   # how far outside the printed range, as a ratio of the limit that was crossed
+            limit = p.reference_high if p.status == "ABOVE_RANGE" else p.reference_low
+            return abs(p.value - limit) / abs(limit) if limit else 0
+        for p in sorted(outside, key=spread, reverse=True)[:3]:
+            unit = f" {p.unit}" if p.unit else ""
+            highlights.append(f"{p.normalized_name} {p.value:g}{unit} ({'high' if p.status == 'ABOVE_RANGE' else 'low'})")
+    else:
+        flagged = [m for m in insights.get("metrics", []) if m.get("concern") == "attention"]
+        for m in flagged[:3]:
+            highlights.append(f"{m['label']}: {m['value']}{(' ' + m['unit']) if m.get('unit') else ''}")
+    outside_count = len(outside) or sum(1 for m in insights.get("metrics", []) if m.get("concern") == "attention")
+    return {"report_id": r.id, "patient_name": r.patient.user.full_name, "patient_code": r.patient.patient_code,
+            "filename": r.filename, "report_type_label": REPORT_TYPE_LABELS.get(effective_report_type(r), "Medical report"),
+            "red_flags": red_flags, "outside_count": outside_count, "highlights": highlights}
+
+
 def doctor_dashboard(db: Session, user: User) -> dict:
     doctor = get_doctor_profile(db, user)
     patient_ids = doctor_patient_ids(db, doctor)
@@ -68,7 +92,11 @@ def doctor_dashboard(db: Session, user: User) -> dict:
                        .order_by(DoctorNote.id.desc()).limit(5)).all()
     prescriptions = db.scalars(select(Prescription).where(Prescription.doctor_id == doctor.id)
                                .order_by(Prescription.id.desc()).limit(5)).all()
+    queue = sorted((_attention_item(r) for r in waiting), key=lambda i: (-i["red_flags"], -i["outside_count"]))
     return {
+        "attention_queue": queue[:6],
+        "waiting_urgent_count": sum(1 for i in queue if i["red_flags"]),
+        "waiting_outside_values": sum(i["outside_count"] for i in queue),
         "todays_appointments": [appointment_out(a).model_dump(mode="json") for a in todays],
         "my_patients_count": len(patient_ids),
         "reports_waiting_count": len(waiting),

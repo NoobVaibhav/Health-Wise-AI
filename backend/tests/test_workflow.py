@@ -214,3 +214,32 @@ def login_patient(client, email):
         user.password_hash = hash_password("StrongPass123")
         db.commit()
     return login(client, email)
+
+
+def test_delete_report_rules_and_cleanup(client, world):
+    import os
+    first = upload(client, world.employee, world.patient_id, "wrong.pdf", sd.lines_to_pdf(sd.REPORT_A_LINES)).json()
+    second = upload(client, world.employee, world.patient_id, "right.pdf", sd.lines_to_pdf(sd.REPORT_B_LINES)).json()
+    # the patient and the administrator can never delete a report
+    assert client.delete(f"/api/reports/{first['id']}", headers=world.patient).status_code == 403
+    assert client.delete(f"/api/reports/{first['id']}", headers=world.admin).status_code == 403
+    # the employee who uploaded it can delete it while it is waiting for the doctor
+    stored = client.get("/api/reports", headers=world.doctor).json()
+    assert len(stored) == 2
+    done = client.delete(f"/api/reports/{first['id']}", headers=world.employee)
+    assert done.status_code == 200 and done.json()["filename"] == "wrong.pdf"
+    assert client.get(f"/api/reports/{first['id']}", headers=world.doctor).status_code == 404
+    assert [r["id"] for r in client.get("/api/reports", headers=world.doctor).json()] == [second["id"]]
+    # once the doctor has reviewed a report, an employee can no longer delete it, but the doctor can
+    client.put(f"/api/doctor/reports/{second['id']}/review", headers=world.doctor, json={"decision": "APPROVED"})
+    assert client.delete(f"/api/reports/{second['id']}", headers=world.employee).status_code == 403
+    note = client.post("/api/doctor/notes", headers=world.doctor, json={
+        "patient_id": world.patient_id, "report_id": second["id"], "priority": "NORMAL", "note": "Please discuss the results at the visit."})
+    assert note.status_code == 201
+    assert client.delete(f"/api/reports/{second['id']}", headers=world.doctor).status_code == 200
+    assert client.get("/api/reports", headers=world.doctor).json() == []
+    # the note written about the report stays in the patient's history
+    assert len(client.get("/api/doctor/notes", headers=world.doctor).json()) == 1
+    # the deletions are in the audit log, with the file names
+    logs = client.get("/api/admin/audit-logs?action=REPORT_DELETED", headers=world.admin).json()
+    assert {l["details"].split(" (")[0] for l in logs} == {"wrong.pdf", "right.pdf"}

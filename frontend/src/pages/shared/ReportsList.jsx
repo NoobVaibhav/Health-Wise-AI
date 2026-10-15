@@ -21,7 +21,7 @@ export default function ReportsList({ base, pendingOnly = false, title = "Report
       <PageTitle title={title} subtitle={subtitle} />
       <input className={inputClass} placeholder="Filter by patient, patient ID or file name" value={q} onChange={(e) => setQ(e.target.value)} />
       <Section>
-        {pendingOnly && rows.length === 0 ? <p className="py-4 text-center text-slate-500">No reports are waiting for review.</p> : <ReportsTable reports={rows} base={base} />}
+        {pendingOnly && rows.length === 0 ? <p className="py-4 text-center text-slate-500">No reports are waiting for review.</p> : <ReportsTable reports={rows} base={base} onChanged={reload} />}
       </Section>
     </div>
   );

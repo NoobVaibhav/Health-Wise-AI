@@ -75,8 +75,12 @@ def process_report(filename: str, content: bytes) -> ProcessedReport:
     if len(cleaned) < MIN_CLEAN_TEXT_CHARS:
         raise UnreadableReportError()
 
+    if insight_service.looks_like_other_document(cleaned):
+        raise InvalidHealthReportError()       # a project report, assignment, invoice or CV: wrong file
+
     parameters = extract_parameters(cleaned)
-    if parameters:
+    # a single stray number is not enough: with fewer than two test results the file must still show signs of a report
+    if parameters and (len(parameters) >= 2 or insight_service.has_report_signs(cleaned)):
         analyzed = analyze_parameters(parameters)
         summary = build_summary(analyzed)
         summary = llm_service.enhance_explanations(analyzed, summary)  # no-op when no LLM key
