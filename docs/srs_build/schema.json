@@ -1,0 +1,1290 @@
+{
+ "departments": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "name",
+   "type": "VARCHAR(100)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": true
+  }
+ ],
+ "medicine_inventory": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "medicine_name",
+   "type": "VARCHAR(200)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "batch_number",
+   "type": "VARCHAR(50)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "quantity",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "expiry_date",
+   "type": "DATE",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "manufacturer",
+   "type": "VARCHAR(150)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "unit_price",
+   "type": "FLOAT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "users": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "email",
+   "type": "VARCHAR(255)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": true
+  },
+  {
+   "name": "password_hash",
+   "type": "VARCHAR(255)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "full_name",
+   "type": "VARCHAR(150)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "role",
+   "type": "VARCHAR(20)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "is_active",
+   "type": "BOOLEAN",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "must_change_password",
+   "type": "BOOLEAN",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "created_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "audit_logs": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "user_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "users.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "action",
+   "type": "VARCHAR(50)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "entity_type",
+   "type": "VARCHAR(50)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "entity_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "details",
+   "type": "VARCHAR(300)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "ip_address",
+   "type": "VARCHAR(60)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "timestamp",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "doctors": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "user_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "users.id"
+   ],
+   "unique": true
+  },
+  {
+   "name": "department_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "departments.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "specialization",
+   "type": "VARCHAR(120)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "phone",
+   "type": "VARCHAR(30)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "employees": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "user_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "users.id"
+   ],
+   "unique": true
+  },
+  {
+   "name": "designation",
+   "type": "VARCHAR(100)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "phone",
+   "type": "VARCHAR(30)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "pharmacy_staff": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "user_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "users.id"
+   ],
+   "unique": true
+  },
+  {
+   "name": "pharmacy_name",
+   "type": "VARCHAR(150)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "phone",
+   "type": "VARCHAR(30)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "patients": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "user_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "users.id"
+   ],
+   "unique": true
+  },
+  {
+   "name": "patient_code",
+   "type": "VARCHAR(20)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": true
+  },
+  {
+   "name": "date_of_birth",
+   "type": "DATE",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "gender",
+   "type": "VARCHAR(30)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "phone",
+   "type": "VARCHAR(30)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "address",
+   "type": "VARCHAR(300)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "emergency_contact",
+   "type": "VARCHAR(150)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "blood_group",
+   "type": "VARCHAR(10)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "allergies",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "medical_history_text",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "current_medications",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "assigned_doctor_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "doctors.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "created_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "appointments": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "patient_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "patients.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "doctor_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "doctors.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "department_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "departments.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "scheduled_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "reason",
+   "type": "VARCHAR(300)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "status",
+   "type": "VARCHAR(20)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "created_by",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "users.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "created_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "health_reports": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "patient_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "patients.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "uploaded_by",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "users.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "assigned_doctor_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "doctors.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "filename",
+   "type": "VARCHAR(255)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "file_path",
+   "type": "VARCHAR(500)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "report_date",
+   "type": "DATE",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "uploaded_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "processing_status",
+   "type": "VARCHAR(20)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "doctor_review_status",
+   "type": "VARCHAR(20)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "reviewed_by",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "doctors.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "reviewed_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "review_decision",
+   "type": "VARCHAR(20)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "review_comment",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "extracted_text",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "processing_method",
+   "type": "VARCHAR(20)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "ai_summary",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "report_type",
+   "type": "VARCHAR(30)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "insights_json",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "medical_history": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "patient_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "patients.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "doctor_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "doctors.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "entry_date",
+   "type": "DATE",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "entry_type",
+   "type": "VARCHAR(40)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "description",
+   "type": "TEXT",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "created_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "doctor_notes": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "patient_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "patients.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "doctor_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "doctors.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "report_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "health_reports.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "note",
+   "type": "TEXT",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "priority",
+   "type": "VARCHAR(25)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "created_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "doctor_recommendations": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "patient_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "patients.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "doctor_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "doctors.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "report_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "health_reports.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "title",
+   "type": "VARCHAR(200)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "recommendation",
+   "type": "TEXT",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "follow_up_date",
+   "type": "DATE",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "priority",
+   "type": "VARCHAR(25)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "created_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "health_parameters": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "report_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "health_reports.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "test_name",
+   "type": "VARCHAR(200)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "normalized_name",
+   "type": "VARCHAR(100)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "value",
+   "type": "FLOAT",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "unit",
+   "type": "VARCHAR(50)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "reference_text",
+   "type": "VARCHAR(120)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "reference_low",
+   "type": "FLOAT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "reference_high",
+   "type": "FLOAT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "status",
+   "type": "VARCHAR(20)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "ai_explanation",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "created_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "prescriptions": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "patient_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "patients.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "doctor_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "doctors.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "report_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": true,
+   "fk": [
+    "health_reports.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "prescription_date",
+   "type": "DATE",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "clinical_indication",
+   "type": "VARCHAR(300)",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "status",
+   "type": "VARCHAR(25)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "notes",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "created_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "report_comparisons": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "patient_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "patients.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "previous_report_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "health_reports.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "latest_report_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "health_reports.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "result_json",
+   "type": "TEXT",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "created_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "prescription_items": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "prescription_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "prescriptions.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "medicine_name",
+   "type": "VARCHAR(200)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "dosage",
+   "type": "VARCHAR(100)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "frequency",
+   "type": "VARCHAR(100)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "duration",
+   "type": "VARCHAR(100)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "quantity",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "instructions",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "dispense_status",
+   "type": "VARCHAR(25)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  }
+ ],
+ "medicine_dispensing": [
+  {
+   "name": "id",
+   "type": "INTEGER",
+   "pk": true,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "prescription_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "prescriptions.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "prescription_item_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "prescription_items.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "pharmacy_staff_id",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [
+    "pharmacy_staff.id"
+   ],
+   "unique": false
+  },
+  {
+   "name": "quantity_prescribed",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "quantity_dispensed",
+   "type": "INTEGER",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "dispensed_at",
+   "type": "DATETIME",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "status",
+   "type": "VARCHAR(25)",
+   "pk": false,
+   "null": false,
+   "fk": [],
+   "unique": false
+  },
+  {
+   "name": "notes",
+   "type": "TEXT",
+   "pk": false,
+   "null": true,
+   "fk": [],
+   "unique": false
+  }
+ ]
+}

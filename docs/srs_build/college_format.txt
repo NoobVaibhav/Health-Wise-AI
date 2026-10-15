@@ -1,0 +1,332 @@
+
+=====PAGE 1=====
+SRS DOCUMENT (Format/Content)
+1. Cover Page
+Include:
+ College/University name 
+ Department 
+ Project title 
+ “Software Requirements Specification” 
+ Student names and roll numbers 
+ Guide name 
+ Academic year 
+ Date
+2. Certificate / Declaration
+If required by college, include the standard project certificate/declaration.
+3. Table of Contents - Automatically generated using Word heading styles.
+1. Introduction
+ 1.1 Project Overview
+ 1.2 Purpose
+ 1.3 Scope
+ 1.4 Objectives
+ 1.5 Intended Users
+ 1.6 Definitions and Acronyms
+ 1.7 References
+2. Overall Description
+ 2.1 Product Perspective
+ 2.2 Product Functions
+ 2.3 User Classes
+ 2.4 Operating Environment
+ 2.5 Constraints
+ 2.6 Assumptions and Dependencies
+3. Functional Requirements
+ 3.1 Authentication
+ 3.2 User Management
+ 3.3 Main Module
+ 3.4 Reports
+ 3.5 Notifications
+ etc.
+4. Non-Functional Requirements
+ 4.1 Performance
+ 4.2 Security
+ 4.3 Usability
+ 4.4 Reliability
+ 4.5 Availability
+ 4.6 Maintainability
+ 4.7 Scalability
+5. External Interface Requirements
+ 5.1 User Interface
+ 5.2 Hardware Interface
+ 5.3 Software Interface
+ 5.4 Communication Interface
+6. Use Case Requirements
+ 6.1 Actors
+ 6.2 Use Case Diagram
+ 6.3 Use Case Descriptions
+7. System Models
+ 7.1 Context Diagram
+ 7.2 DFD
+ 7.3 Activity Diagram
+ 7.4 Sequence Diagram
+ 7.5 Class Diagram
+ 7.6 ER Diagram
+8. Data Requirements
+ 8.1 Database Tables
+ 8.2 Data Dictionary
+9. System Constraints
+10. Acceptance Criteria 11. Requirements Traceability Matrix 12. Appendices
+=====PAGE 2=====
+Chapter 1 — Introduction
+1.1 Project Overview
+Briefly explain the project.
+Example:
+The proposed Online College Attendance Management System is designed to automate 
+attendance recording, monitoring, and reporting. The system allows faculty members to 
+record attendance and enables students to view their attendance percentage.
+1.2 Purpose of the System
+Explain why the software is being developed.
+1.3 Scope of the Project
+Clearly state what the system will and will not cover.
+Example:
+Included:
+ Student registration 
+ Faculty login 
+ Attendance recording 
+ Attendance reports 
+ Notifications 
+Not included:
+ Payroll management 
+ Examination evaluation 
+ Hostel management 
+1.4 Objectives
+List measurable objectives.
+Example:
+1. To automate attendance recording. 
+2. To reduce manual errors. 
+3. To provide real-time attendance information. 
+4. To generate attendance reports. 
+5. To provide role-based access. 
+1.5 Intended Users
+Identify users such as:
+ Administrator 
+ Faculty 
+ Student
+1.6 Definitions, Acronyms and Abbreviations
+Term Meaning
+SRS Software Requirements Specification
+Admin System Administrator
+UI User Interface
+=====PAGE 3=====
+DB Database
+API Application Programming Interface
+1.7 References
+Mention books, standards, websites, research papers, etc.
+Chapter 2 — Overall Description
+This chapter gives a high-level view of the complete system.
+2.1 Product Perspective
+Explain whether the project is:
+ New system 
+ Replacement for an existing manual system 
+ Extension of an existing system 
+2.2 Product Functions
+Give a summary of major functions.
+Example:
+2.3 User Classes
+User Responsibilities
+Admin Manage users, subjects and system
+Faculty Record and update attendance
+Student View attendance and notifications
+2.4 Operating Environment
+Specify:
+Hardware
+ Processor 
+ RAM 
+ Storage 
+ Internet connection 
+=====PAGE 4=====
+Software
+ Operating System 
+ Browser 
+ Programming language 
+ Database 
+ Framework 
+For example:
+Component Technology
+Frontend HTML, CSS, JavaScript/React
+Backend Python/Java/Node.js
+Database MySQL
+Browser Chrome/Edge
+OS Windows/Linux
+2.5 Design and Implementation Constraints
+Examples:
+ System must use a relational database. 
+ Only authenticated users can access the dashboard. 
+ Passwords must not be stored as plain text. 
+ The application must work on modern browsers.
+2.6 Assumptions and Dependencies
+Examples:
+ Users have internet access. 
+ Faculty members have valid login credentials. 
+ The database server is available. 
+ Student information is entered correctly.
+Chapter 3 — Functional Requirements
+Divide requirements according to modules.
+For example:
+3.1 User Authentication
+FR-01: The system shall allow registered users to log in using username/email and password.
+FR-02: The system shall validate the entered credentials.
+FR-03: The system shall display an appropriate error message for invalid credentials.
+FR-04: The system shall allow users to log out securely.
+3.2 Student Management
+FR-05: The administrator shall be able to add a student.
+FR-06: The administrator shall be able to update student information.
+FR-07: The administrator shall be able to delete/deactivate a student.
+FR-08: The system shall allow searching students using roll number or name.
+3.3 Attendance Management
+FR-09: Faculty shall be able to select a class and subject.
+=====PAGE 5=====
+FR-10: Faculty shall be able to mark students as Present or Absent.
+FR-11: The system shall store attendance with date, subject and faculty information.
+FR-12: The system shall calculate attendance percentage automatically.
+3.4 Reports
+FR-13: The system shall generate student-wise attendance reports.
+FR-14: The system shall generate subject-wise attendance reports.
+FR-15: The system shall allow authorized users to download reports.
+Chapter 4 — Non-Functional Requirements
+These describe how well the system should work, rather than what functions it performs.
+4.1 Performance
+Example:
+The system should respond to normal user requests within 3 seconds under expected load.
+4.2 Security
+ Passwords shall be securely stored. 
+ Unauthorized users shall not access administrative functions. 
+ User sessions shall be protected. 
+ Access shall be role-based. 
+4.3 Usability
+ Interface should be simple and user-friendly. 
+ Important operations should require minimal steps. 
+ Error messages should be understandable. 
+4.4 Reliability
+ System should maintain data consistency. 
+ Database backup should be supported. 
+ System should handle unexpected errors gracefully. 
+4.5 Availability
+Specify expected availability if relevant.
+Example:
+The system should be available during college working hours with minimum downtime.
+4.6 Maintainability
+ Code should be modular. 
+ Proper documentation should be maintained. 
+ Changes to one module should have minimal impact on other modules. 
+4.7 Scalability
+Example:
+The system should support an increasing number of students, faculty members and 
+attendance records without major architectural changes.
+=====PAGE 6=====
+4.8 Portability
+Example:
+The web application should operate on commonly used modern browsers.
+Chapter 5 — External Interface Requirements
+5.1 User Interface
+Describe screens such as:
+1. Login page 
+2. Admin dashboard 
+3. Faculty dashboard 
+4. Student dashboard 
+5. Attendance page 
+6. Report page
+Screenshots can be added later.
+5.2 Hardware Interface
+If applicable, describe interaction with:
+ Fingerprint scanner 
+ RFID reader 
+ Camera 
+ IoT device 
+ GPS device 
+5.3 Software Interface
+Mention external software/services:
+ MySQL 
+ Payment gateway 
+ Email API 
+ SMS API 
+ Google Maps API 
+ Authentication service 
+5.4 Communication Interface
+Explain:
+ HTTP/HTTPS 
+ REST API 
+ TCP/IP 
+ Email/SMS communication 
+Chapter 6 — Use Case Requirements
+This is especially important for a Software Testing & Quality Assurance.
+=====PAGE 7=====
+6.1 Actors
+Example:
+6.2 Use Case Table
+Use Case ID UC-01
+Use Case Login
+Actor Admin/Faculty/Student
+Precondition User must be registered
+Main Flow Enter username → Enter password → Validate → Open dashboard
+Alternative Flow Invalid credentials → Display error
+Postcondition User is successfully logged in
+Chapter 7 — System Models
+Include appropriate diagrams.
+Recommended diagrams for a project:
+1. Use Case Diagram 
+2. Context Diagram 
+3. DFD Level 0 
+4. DFD Level 1 
+5. Activity Diagram 
+6. Sequence Diagram 
+7. Class Diagram 
+8. ER Diagram 
+Chapter 8 — Data Requirements
+Describe the data handled by the system.
+For example:
+Student Table
+Field Data Type Description
+Student_ID INT Unique student ID
+Name VARCHAR Student name
+Roll_No VARCHAR College roll number
+Email VARCHAR Student email
+=====PAGE 8=====
+Department VARCHAR Department
+Semester INT Current semester
+Attendance Table
+Field Data Type Description
+Attendance_ID INT Unique ID
+Student_ID INT Student reference
+Subject_ID INT Subject reference
+Date DATE Attendance date
+Status VARCHAR Present/Absent
+Chapter 9 — System Constraints
+Mention limitations imposed on the project.
+Examples:
+ Only registered users can access the system. 
+ Internet connection is required for cloud-based deployment. 
+ The system depends on database availability. 
+ Only authorized faculty can modify attendance. 
+ The system supports predefined user roles. 
+Chapter 10 — Acceptance Criteria
+This section is very useful for testing.
+Example:
+Requirement Acceptance Criteria
+Login Valid credentials successfully open dashboard
+Login Invalid credentials display error
+Attendance Faculty can mark attendance
+Attendance Attendance is saved in database
+Report Correct attendance percentage is displayed
+Security Student cannot access admin functions
+Chapter 11 — Traceability Matrix
+For a final-year project, I strongly recommend including an RTM (Requirements Traceability 
+Matrix).
+Example:
+Req. ID Requirement Use Case Test Case
+FR-01 User Login UC-01 TC-01
+FR-02 Validate Login UC-01 TC-02
+FR-05 Add Student UC-02 TC-03
+FR-10 Mark Attendance UC-03 TC-04
+FR-13 Generate Report UC-04 TC-05
+=====PAGE 9=====
+This creates a direct chain:
+SRS → Use Case → Design → Test Case
+Chapter 12 — Appendices
+Include supporting information such as:
+ Glossary 
+ Sample forms 
+ Sample reports 
+ Additional diagrams 
+ Database schema 
+ Questionnaire 
+ References
