@@ -3,7 +3,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 
 export const inputClass =
-  "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-100";
+  "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-100";
 
 export function Modal({ title, onClose, children, wide }) {
   return (
@@ -35,12 +35,12 @@ export const Select = ({ children, ...props }) => <select className={inputClass}
 
 export function Button({ variant = "primary", className = "", ...props }) {
   const styles = {
-    primary: "bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-sm hover:from-brand-700 hover:to-brand-800",
-    secondary: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
-    danger: "bg-red-600 text-white hover:bg-red-700",
-    soft: "bg-brand-50 text-brand-700 hover:bg-brand-100",
+    primary: "border-2 border-brand-800 bg-brand-700 text-white shadow-md hover:bg-brand-800",
+    secondary: "border-2 border-brand-700 bg-white text-brand-800 shadow-sm hover:bg-brand-50",
+    danger: "border-2 border-red-800 bg-red-600 text-white shadow-md hover:bg-red-700",
+    soft: "border-2 border-brand-300 bg-brand-100 text-brand-900 hover:bg-brand-200",
   };
-  return <button className={`rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${styles[variant]} ${className}`} {...props} />;
+  return <button className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-base font-bold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-50 ${styles[variant]} ${className}`} {...props} />;
 }
 
 export function Tabs({ tabs, initial }) {
@@ -48,10 +48,10 @@ export function Tabs({ tabs, initial }) {
   const current = tabs.find(([key]) => key === active) || tabs[0];
   return (
     <div>
-      <div className="mb-4 flex flex-wrap gap-2 rounded-2xl bg-slate-100 p-1.5">
+      <div className="mb-4 flex flex-wrap gap-2 rounded-2xl bg-slate-200 p-1.5">
         {tabs.map(([key, label]) => (
           <button key={key} onClick={() => setActive(key)}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${active === key ? "bg-white text-brand-700 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}>
+            className={`min-h-11 rounded-xl px-4 py-2 text-base font-bold transition ${active === key ? "bg-brand-700 text-white shadow" : "text-slate-700 hover:bg-white"}`}>
             {label}
           </button>
         ))}

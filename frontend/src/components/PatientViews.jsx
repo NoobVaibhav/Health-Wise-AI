@@ -20,19 +20,19 @@ function ChangeCard({ r }) {
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
           <p className="text-lg font-extrabold text-slate-900">{r.parameter}</p>
-          {r.reference_text && <p className="text-xs text-slate-400">Normal range: {humanRange(r.reference_text)} {r.unit || ""}</p>}
+          {r.reference_text && <p className="text-sm text-slate-500">Normal range: {humanRange(r.reference_text)} {r.unit || ""}</p>}
         </div>
         <TrendBadge trend={r.trend} />
       </div>
 
       <div className="flex items-center gap-3">
         <div className="flex-1 rounded-2xl bg-slate-50 p-3 text-center">
-          <p className="text-xs font-semibold text-slate-400">BEFORE</p>
+          <p className="text-sm font-bold text-slate-500">BEFORE</p>
           <p className="text-2xl font-extrabold text-slate-700">{r.previous}</p>
         </div>
         <ArrowRight className="shrink-0 text-slate-300" size={22} />
         <div className="flex-1 rounded-2xl bg-brand-50 p-3 text-center">
-          <p className="text-xs font-semibold text-brand-700">NOW</p>
+          <p className="text-sm font-bold text-brand-700">NOW</p>
           <p className="text-2xl font-extrabold text-slate-900">{r.latest}</p>
         </div>
       </div>
@@ -70,11 +70,11 @@ export function ComparisonView({ patientId }) {
   const label = (r) => `${r.filename} (${fmtDate(r.report_date || r.uploaded_at)})`;
   return (
     <div className="space-y-4">
-      <Hint title="How to read this">Each card compares the same test in two reports. "Before" is the older report and "Now" is the newer one. A number that changed is not always good or bad, so please talk to your doctor about what it means.</Hint>
+      <Hint title="How to read this">Each box shows the same test from two different dates. "BEFORE" is the older report and "NOW" is the newer one. A number that changed is not always good or bad. Please ask the doctor what it means for you.</Hint>
       <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-600">
-        <label>Older report <select className="ml-1 rounded-xl border border-slate-300 bg-white px-3 py-2" value={previousId} onChange={(e) => setPreviousId(e.target.value)}>
+        <label>Older report: <select className="ml-1 rounded-xl border border-slate-300 bg-white px-3 py-2" value={previousId} onChange={(e) => setPreviousId(e.target.value)}>
           {result.reports.map((r) => <option key={r.id} value={r.id}>{label(r)}</option>)}</select></label>
-        <label>Newer report <select className="ml-1 rounded-xl border border-slate-300 bg-white px-3 py-2" value={latestId} onChange={(e) => setLatestId(e.target.value)}>
+        <label>Newer report: <select className="ml-1 rounded-xl border border-slate-300 bg-white px-3 py-2" value={latestId} onChange={(e) => setLatestId(e.target.value)}>
           {result.reports.map((r) => <option key={r.id} value={r.id}>{label(r)}</option>)}</select></label>
       </div>
       {result.rows.length === 0 ? <p className="text-slate-500">These two reports have no tests in common.</p> : (

@@ -30,14 +30,14 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">{report.filename}</h1>
-          <p className="text-slate-500">
-            Patient: <b className="text-slate-700">{report.patient_name}</b> ({report.patient_code}) - Report date: {fmtDate(report.report_date)} -
-            Uploaded {fmtUtcDate(report.uploaded_at)} by {report.uploaded_by_name}
+          <p className="text-base text-slate-600">
+            Patient: <b className="text-slate-700">{report.patient_name}</b> ({report.patient_code}) - Test date: {fmtDate(report.report_date)} -
+            Added on {fmtUtcDate(report.uploaded_at)} by {report.uploaded_by_name}
           </p>
           <p className="mt-1"><span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-800">{report.report_type_label}</span></p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canOpenFile && <Button variant="secondary" onClick={open}><FileDown size={16} className="mr-1.5 inline" /> Open original file</Button>}
+          {canOpenFile && <Button variant="secondary" onClick={open}><FileDown size={18} /> View the original report</Button>}
           <DeleteReportButton report={report} onDeleted={() => navigate(-1)} />
         </div>
       </div>
@@ -63,15 +63,15 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
 
       {report.analysis_visible ? (
         <>
-          <Section title="Summary">
-            <p className="mb-2 inline-flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800"><Bot size={13} /> Written by the computer, not by a doctor</p>
-            <p className="text-slate-700">{report.ai_summary}</p>
+          <Section title="In short">
+            <p className="mb-2 inline-flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800"><Bot size={13} /> Written by the computer, not by a doctor. A doctor will check it.</p>
+            <p className="text-lg leading-relaxed text-slate-800">{report.ai_summary}</p>
             {!report.is_narrative && (
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Count n={c.WITHIN_RANGE} label="In normal range" color="text-emerald-600" />
-                <Count n={c.ABOVE_RANGE} label="Higher than normal" color="text-amber-600" />
-                <Count n={c.BELOW_RANGE} label="Lower than normal" color="text-sky-600" />
-                <Count n={c.UNKNOWN} label="No range printed" color="text-slate-500" />
+                <Count n={c.WITHIN_RANGE} label="Normal" color="text-emerald-600" />
+                <Count n={c.ABOVE_RANGE} label="Too high" color="text-amber-600" />
+                <Count n={c.BELOW_RANGE} label="Too low" color="text-sky-600" />
+                <Count n={c.UNKNOWN} label="No normal range" color="text-slate-500" />
               </div>
             )}
             {outside > 0 && isPatient && <div className="mt-4"><Hint title="Is a result outside the range a problem?">A result outside the normal range is not a diagnosis. Many things can change a result. Please talk to your doctor about it.</Hint></div>}
@@ -83,7 +83,7 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
 
           {report.is_narrative
             ? <KeyFindings findings={report.insights?.key_findings} />
-            : <Section title="Test results"><ParameterTable parameters={report.parameters} /></Section>}
+            : <Section title="All test results"><ParameterTable parameters={report.parameters} /></Section>}
 
           {isPatient && <PatientTips insights={report.insights} />}
         </>
@@ -109,6 +109,6 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
 const Count = ({ n, label, color }) => (
   <div className="rounded-2xl bg-slate-50 p-3 text-center">
     <p className={`text-3xl font-extrabold ${color}`}>{n}</p>
-    <p className="text-xs font-semibold text-slate-500">{label}</p>
+    <p className="text-sm font-semibold text-slate-600">{label}</p>
   </div>
 );

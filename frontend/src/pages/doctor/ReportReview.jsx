@@ -38,18 +38,18 @@ export default function ReportReview() {
           ? <p className="text-slate-600">This report has been reviewed. You can still add notes, recommendations or a prescription below.</p>
           : <ReviewPanel report={r} onReviewed={refresh} />}
         <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
-          <Button variant="secondary" onClick={() => setModal("note")}><StickyNote size={15} className="mr-1 inline" /> Add note</Button>
-          <Button variant="secondary" onClick={() => setModal("rec")}><Stethoscope size={15} className="mr-1 inline" /> Add recommendation</Button>
-          <Button variant="secondary" onClick={() => setModal("rx")}><Pill size={15} className="mr-1 inline" /> Create prescription</Button>
-          <Link to={`/doctor/patients/${r.patient_id}`} className="ml-auto self-center text-sm font-medium text-brand-700">Open full patient record →</Link>
+          <Button variant="secondary" onClick={() => setModal("note")}><StickyNote size={18} /> Write a note</Button>
+          <Button variant="secondary" onClick={() => setModal("rec")}><Stethoscope size={18} /> Write advice for the patient</Button>
+          <Button variant="secondary" onClick={() => setModal("rx")}><Pill size={18} /> Prescribe medicine</Button>
+          <Link to={`/doctor/patients/${r.patient_id}`} className="ml-auto inline-flex min-h-11 items-center rounded-xl border-2 border-brand-700 bg-white px-5 text-base font-bold text-brand-800 hover:bg-brand-50">Open the patient's full record →</Link>
         </div>
       </Section>
 
       <Tabs tabs={[
-        ["compare", "Compare with previous reports", <Section><ComparisonView patientId={r.patient_id} /></Section>],
-        ["trends", "Trends", <Section><TrendsView patientId={r.patient_id} /></Section>],
-        ["history", "Patient history", <Section>{h ? <Timeline events={h.timeline} /> : <Loading />}</Section>],
-        ["notes", "Previous notes", (
+        ["compare", "Compare with older reports", <Section><ComparisonView patientId={r.patient_id} /></Section>],
+        ["trends", "Changes over time", <Section><TrendsView patientId={r.patient_id} /></Section>],
+        ["history", "Patient's history", <Section>{h ? <Timeline events={h.timeline} /> : <Loading />}</Section>],
+        ["notes", "Earlier notes", (
           <div className="space-y-3">
             {h && h.notes.length === 0 && h.recommendations.length === 0 && <p className="text-slate-500">No previous notes.</p>}
             {h?.notes.map((n) => <DoctorNoteCard key={`n${n.id}`} note={n} />)}

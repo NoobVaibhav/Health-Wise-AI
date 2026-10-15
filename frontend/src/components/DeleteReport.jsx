@@ -41,7 +41,7 @@ export default function DeleteReportButton({ report, onDeleted, compact = false 
     <>
       {compact
         ? <button onClick={open} title="Delete this report" aria-label={`Delete ${report.filename}`} className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={18} /></button>
-        : <Button variant="secondary" onClick={open} className="!border-red-200 !text-red-700 hover:!bg-red-50"><Trash2 size={16} className="mr-1.5 inline" />Delete report</Button>}
+        : <Button variant="secondary" onClick={open} className="!border-red-600 !text-red-700 hover:!bg-red-50"><Trash2 size={18} />Delete this report</Button>}
       {asking && createPortal(
         // drawn on the page itself, not inside the clickable row, and clicks do not reach the row behind it
         <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
@@ -53,7 +53,7 @@ export default function DeleteReportButton({ report, onDeleted, compact = false 
               <li>The deletion is written to the activity log.</li>
             </ul>
             <div className="mt-5 flex justify-end gap-3">
-              <Button variant="secondary" disabled={busy} onClick={() => setAsking(false)}>Keep the report</Button>
+              <Button variant="secondary" disabled={busy} onClick={() => setAsking(false)}>No, keep it</Button>
               <Button variant="danger" disabled={busy} onClick={confirm}>{busy ? "Deleting..." : "Yes, delete it"}</Button>
             </div>
           </Modal>

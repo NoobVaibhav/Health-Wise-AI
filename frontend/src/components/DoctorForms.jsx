@@ -141,18 +141,19 @@ export function ReviewPanel({ report, onReviewed }) {
   if (report.doctor_review_status === "REVIEWED") return null;
   return (
     <form onSubmit={submit} className="space-y-3">
-      <p className="text-sm text-slate-600">Check the extracted values against the original report, then review the AI analysis.</p>
+      <p className="text-base text-slate-700"><b>Step 1.</b> Compare the numbers above with the original report. <b>Step 2.</b> Choose what you want to do. <b>Step 3.</b> Press the big button at the bottom.</p>
       <div className="flex flex-wrap gap-2">
-        {[["APPROVED", "Approve AI analysis"], ["MODIFIED", "Modify / add comments"], ["CLARIFIED", "Add clarification"]].map(([v, l]) => (
+        {[["APPROVED", "The computer is right (approve)"], ["MODIFIED", "I want to change something"], ["CLARIFIED", "I want to explain something"]].map(([v, l]) => (
           <button type="button" key={v} onClick={() => setDecision(v)}
-            className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${decision === v ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-300 text-slate-600"}`}>{l}</button>
+            aria-pressed={decision === v}
+            className={`min-h-11 rounded-xl border-2 px-4 py-2 text-base font-bold ${decision === v ? "border-brand-800 bg-brand-700 text-white shadow" : "border-slate-400 bg-white text-slate-800 hover:bg-slate-50"}`}>{decision === v ? "✓ " : ""}{l}</button>
         ))}
       </div>
-      <Field label={decision === "APPROVED" ? "Comment (optional)" : "Comment (required)"}>
+      <Field label={decision === "APPROVED" ? "Your comment (you may leave this empty)" : "Your comment (you must write something)"}>
         <Textarea value={comment} onChange={(e) => setComment(e.target.value)} required={decision !== "APPROVED"} />
       </Field>
       {error && <ErrorBox message={error} />}
-      <Button disabled={busy}>{busy ? "Saving..." : "Mark as Reviewed by Doctor"}</Button>
+      <Button disabled={busy} className="w-full sm:w-auto sm:min-w-72 !py-3.5 !text-lg">{busy ? "Saving..." : "✓ Save: I have checked this report"}</Button>
     </form>
   );
 }

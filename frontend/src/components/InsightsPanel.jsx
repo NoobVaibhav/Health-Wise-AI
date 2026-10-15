@@ -64,13 +64,13 @@ export function DoctorInsights({ report, onUseAsAdvice, onChanged }) {
     <div className="space-y-5">
       {ins.red_flags?.length > 0 && (
         <div className="rounded-3xl border-2 border-red-300 bg-red-50 p-5">
-          <p className="mb-2 flex items-center gap-2 text-lg font-extrabold text-red-800"><AlertTriangle size={22} /> Flagged for prompt attention</p>
+          <p className="mb-2 flex items-center gap-2 text-lg font-extrabold text-red-800"><AlertTriangle size={22} /> Please look at this first</p>
           <ul className="space-y-2 text-[15px] text-red-900">{ins.red_flags.map((r, i) => <li key={i}>{r}</li>)}</ul>
         </div>
       )}
 
-      <Section title="Suggestions for the doctor" action={<SourceNote source={ins.source} />}>
-        <p className="mb-3 flex items-center gap-2 text-sm text-slate-500"><Stethoscope size={16} /> Points to consider. They support your judgement and never replace it.</p>
+      <Section title="Points for the doctor to think about" action={<SourceNote source={ins.source} />}>
+        <p className="mb-3 flex items-center gap-2 text-base text-slate-600"><Stethoscope size={16} /> These are ideas from the computer. The doctor decides.</p>
         <ul className="space-y-2">
           {ins.doctor_suggestions.map((s, i) => (
             <li key={i} className="flex gap-3 rounded-2xl bg-violet-50 p-3 text-[15px] text-slate-800">
@@ -79,12 +79,12 @@ export function DoctorInsights({ report, onUseAsAdvice, onChanged }) {
           ))}
         </ul>
         <div className="mt-4 flex justify-end">
-          <Button variant="secondary" disabled={busy} onClick={regenerate}><RefreshCw size={15} className={`mr-1.5 inline ${busy ? "animate-spin" : ""}`} />Generate again</Button>
+          <Button variant="secondary" disabled={busy} onClick={regenerate}><RefreshCw size={15} className={busy ? "animate-spin" : ""} />Refresh these ideas</Button>
         </div>
       </Section>
 
-      <Section title="Draft tips for the patient">
-        <p className="mb-3 text-sm text-slate-500">The patient sees these general tips after you review the report. Turn any of them into your own advice with one click, or leave them as they are.</p>
+      <Section title="Tips for the patient (draft)">
+        <p className="mb-3 text-sm text-slate-500">The patient will see these simple tips after you check the report. Press the button next to a tip to turn it into your own advice.</p>
         <ul className="space-y-2">
           {ins.patient_recommendations.map((t, i) => (
             <li key={i} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-sky-50 p-3 text-[15px] text-slate-800">

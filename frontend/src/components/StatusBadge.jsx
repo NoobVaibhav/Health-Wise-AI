@@ -9,18 +9,18 @@ const RED = "bg-red-100 text-red-800";
 const INDIGO = "bg-indigo-100 text-indigo-800";
 
 const Pill = ({ icon: Icon, label, style }) => (
-  <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${style}`}>
-    {Icon && <Icon size={13} />}
+  <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-sm font-bold ${style}`}>
+    {Icon && <Icon size={15} />}
     {label}
   </span>
 );
 
 // Lab value status
 const PARAM = {
-  WITHIN_RANGE: ["In normal range", GREEN, CheckCircle2],
-  ABOVE_RANGE: ["Higher than normal", AMBER, ArrowUp],
-  BELOW_RANGE: ["Lower than normal", BLUE, ArrowDown],
-  UNKNOWN: ["No normal range given", GRAY, HelpCircle],
+  WITHIN_RANGE: ["Normal", GREEN, CheckCircle2],
+  ABOVE_RANGE: ["Too high", AMBER, ArrowUp],
+  BELOW_RANGE: ["Too low", BLUE, ArrowDown],
+  UNKNOWN: ["No normal range", GRAY, HelpCircle],
 };
 
 export default function StatusBadge({ status }) {
