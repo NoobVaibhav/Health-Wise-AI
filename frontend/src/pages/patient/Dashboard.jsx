@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { CalendarClock, ClipboardList, FileText, History, Pill } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import { getPatientDashboard } from "../../services/patientApi";
-import { getMyHistory } from "../../services/historyApi";
 import { Section } from "../../components/HealthCard";
 import { Hero, HeroButton, QuickActions } from "../../components/Hero";
 import { DoctorNoteCard, PrescriptionCard, RecommendationCard } from "../../components/Cards";
@@ -10,22 +9,6 @@ import { StatusPill } from "../../components/StatusBadge";
 import Timeline from "../../components/Timeline";
 import { fmtDate, fmtDateTime, fmtUtcDate, greeting } from "../../components/ui";
 import { EmptyState, ErrorBox, Loading } from "../../components/Feedback";
-
-// A gentle reminder to finish the health history (it is what a doctor in a new hospital reads first).
-function HistoryNudge() {
-  const { data } = useFetch(getMyHistory, []);
-  if (!data || data.completeness.percent >= 100) return null;
-  const left = data.completeness.parts.filter((p) => !p.done).map((p) => p.name.toLowerCase());
-  return (
-    <Link to="/patient/health-history" className="tile flex flex-wrap items-center justify-between gap-3 rounded-3xl border-2 border-amber-300 bg-amber-50 p-5">
-      <div>
-        <p className="text-lg font-extrabold text-amber-900">Your health history is {data.completeness.percent}% complete</p>
-        <p className="text-amber-800">Still to add: {left.join(", ")}. A doctor in any hospital can then see your medicines and allergies at once.</p>
-      </div>
-      <span className="rounded-xl bg-amber-500 px-4 py-2.5 font-bold text-white">Complete it now</span>
-    </Link>
-  );
-}
 
 export default function PatientDashboard() {
   const { data: d, loading, error, reload } = useFetch(getPatientDashboard);
@@ -47,8 +30,6 @@ export default function PatientDashboard() {
         {r && <HeroButton to={`/patient/reports/${r.id}`} primary>Open my latest report</HeroButton>}
         <HeroButton to="/patient/appointments">Book an appointment</HeroButton>
       </Hero>
-
-      <HistoryNudge />
 
       <QuickActions items={[
         { to: "/patient/reports", icon: FileText, label: "My Reports", hint: "Lab results explained" },

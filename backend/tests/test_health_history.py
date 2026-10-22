@@ -25,15 +25,15 @@ FORM = {
 def test_patient_saves_and_reads_own_history(client, world):
     empty = client.get("/api/health-history/me", headers=world.patient).json()
     assert empty["completeness"]["percent"] == 0 and empty["history"]["saved_before"] is False
-    saved = client.put("/api/health-history/me", headers=world.patient, json=FORM)
+    saved = client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json=FORM)
     assert saved.status_code == 200, saved.text
-    body = saved.json()
+    body = client.get("/api/health-history/me", headers=world.patient).json()      # the patient only reads it
     assert [m["name"] for m in body["card"]["medicines"]][:2] == ["Tab. Spironolactone", "Tab. Donepezil"]
     assert body["card"]["bmi"] == 25.2 and body["card"]["allergies"][0]["name"] == "Penicillin"
     assert body["completeness"]["percent"] > 70
     # saving again replaces the medicine list, it does not add to it
     FORM2 = {**FORM, "medications": FORM["medications"][:1]}
-    again = client.put("/api/health-history/me", headers=world.patient, json=FORM2).json()
+    again = client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json=FORM2).json()
     assert len(again["history"]["medications"]) == 1
     # the older one-line fields on the profile stay in step
     me = client.get("/api/patients/%d" % world.patient_id, headers=world.patient).json()
@@ -41,7 +41,7 @@ def test_patient_saves_and_reads_own_history(client, world):
 
 
 def test_only_the_patient_and_authorised_doctors_can_see_it(client, world):
-    client.put("/api/health-history/me", headers=world.patient, json=FORM)
+    client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json=FORM)
     pid = world.patient_id
     assert client.get(f"/api/health-history/patient/{pid}", headers=world.doctor).status_code == 200
     # a doctor who has nothing to do with this patient, and every other role, are refused
@@ -50,7 +50,8 @@ def test_only_the_patient_and_authorised_doctors_can_see_it(client, world):
         assert client.get(f"/api/health-history/patient/{pid}", headers=who).status_code == 403
     for who in (world.doctor, world.employee, world.admin, world.pharmacy):
         assert client.get("/api/health-history/me", headers=who).status_code == 403
-        assert client.put("/api/health-history/me", headers=who, json=FORM).status_code == 403
+    for who in (world.patient, world.doctor, world.employee, world.admin, world.pharmacy):
+        assert client.put("/api/health-history/me", headers=who, json=FORM).status_code == 403      # nobody writes through the patient door
     assert client.put(f"/api/health-history/patient/{pid}", headers=world.other_doctor, json=FORM).status_code == 403
     # opening the history is written to the audit log
     logs = client.get("/api/admin/audit-logs?action=HISTORY_VIEWED", headers=world.admin).json()
@@ -58,7 +59,7 @@ def test_only_the_patient_and_authorised_doctors_can_see_it(client, world):
 
 
 def test_points_to_check_for_the_doctor(client, world):
-    client.put("/api/health-history/me", headers=world.patient, json=FORM)
+    client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json=FORM)
     view = client.get(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor).json()
     points = view["points_to_check"]
     titles = " | ".join(p["title"] + " " + p["detail"] for p in points).lower()
@@ -78,7 +79,7 @@ def test_missing_information_is_pointed_out(client, world):
     titles = [p["title"] for p in view["points_to_check"]]
     assert "Medicines not recorded" in titles and "Allergies not recorded" in titles
     # "I checked: nothing" is different from "not filled in"
-    client.put("/api/health-history/me", headers=world.patient, json={"no_known_allergies": True, "no_regular_medicines": True})
+    client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json={"no_known_allergies": True, "no_regular_medicines": True})
     titles = [p["title"] for p in client.get(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor).json()["points_to_check"]]
     assert "Medicines not recorded" not in titles and "Allergies not recorded" not in titles
 
@@ -99,9 +100,9 @@ def test_doctor_assessment_and_vitals(client, world):
 
 
 def test_invalid_forms_are_refused(client, world):
-    assert client.put("/api/health-history/me", headers=world.patient, json={"height_cm": 5}).status_code == 422
-    assert client.put("/api/health-history/me", headers=world.patient, json={"medications": [{"name": "x"}]}).status_code == 422
-    assert client.put("/api/health-history/me", headers=world.patient, json={"habits": {"tobacco": "SOMETIMES"}}).status_code == 422
+    assert client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json={"height_cm": 5}).status_code == 422
+    assert client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json={"medications": [{"name": "x"}]}).status_code == 422
+    assert client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json={"habits": {"tobacco": "SOMETIMES"}}).status_code == 422
 
 
 def test_rule_texts_never_name_a_dose_or_prescribe():
@@ -131,7 +132,7 @@ def test_usual_values_and_latest_blood_tests(client, world):
     from tests.conftest import upload
     form = {**FORM, "baseline": {"pulse": 72, "bp_systolic": 130, "bp_diastolic": 80, "sugar_fasting": 98, "hba1c": 5.6,
                                  "others": [{"name": "Uric acid", "value": "5.1", "unit": "mg/dL"}], "noted_on": "March 2026"}}
-    saved = client.put("/api/health-history/me", headers=world.patient, json=form).json()
+    saved = client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json=form).json()
     assert saved["history"]["baseline"]["pulse"] == 72 and saved["card"]["usual_values"]["hba1c"] == 5.6
     assert any(p["name"] == "Usual values" and p["done"] for p in saved["completeness"]["parts"])
     # the newest value of every test in the reports is shown from the reports themselves
@@ -148,3 +149,15 @@ def test_usual_values_and_latest_blood_tests(client, world):
     titles = [p["title"] for p in prev["points_to_check"]]
     assert "Pulse 46 is much lower than the usual 72" in titles
     assert not any("Blood pressure" in t and "usual" in t for t in titles)                # 128 against 130 is no change
+
+
+def test_patient_can_read_but_never_change_the_permanent_history(client, world):
+    client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor, json=FORM)
+    mine = client.get("/api/health-history/me", headers=world.patient)
+    assert mine.status_code == 200 and mine.json()["card"]["allergies"][0]["name"] == "Penicillin"
+    refused = client.put("/api/health-history/me", headers=world.patient, json={**FORM, "allergies": []})
+    assert refused.status_code == 403 and "Only your doctor" in refused.json()["detail"]
+    assert client.put(f"/api/health-history/patient/{world.patient_id}", headers=world.patient, json=FORM).status_code == 403
+    assert client.post(f"/api/health-history/patient/{world.patient_id}/assessments", headers=world.patient, json={}).status_code == 403
+    # nothing changed
+    assert client.get("/api/health-history/me", headers=world.patient).json()["card"]["allergies"][0]["name"] == "Penicillin"

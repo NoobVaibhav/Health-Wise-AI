@@ -43,8 +43,10 @@ export function Button({ variant = "primary", className = "", ...props }) {
   return <button className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-base font-bold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-50 ${styles[variant]} ${className}`} {...props} />;
 }
 
-export function Tabs({ tabs, initial }) {
-  const [active, setActive] = useState(initial || tabs[0][0]);
+export function Tabs({ tabs, initial, value, onChange }) {
+  const [inner, setInner] = useState(initial || tabs[0][0]);
+  const active = value ?? inner;
+  const setActive = (key) => { setInner(key); onChange?.(key); };
   const current = tabs.find(([key]) => key === active) || tabs[0];
   return (
     <div>

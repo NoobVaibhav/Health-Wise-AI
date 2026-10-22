@@ -139,13 +139,17 @@ def report_detail(r: HealthReport, role: str, warnings: list[str] | None = None)
 
 
 # ------------------------------------------------------------------ appointments
-def appointment_out(a: Appointment) -> AppointmentOut:
+def appointment_out(a: Appointment, role: str | None = None) -> AppointmentOut:
+    """role DOCTOR or PATIENT also gets what the patient said is happening; the front desk and the administrator do not."""
+    problem = role in (DOCTOR, PATIENT)
     return AppointmentOut(
         id=a.id, patient_id=a.patient_id, patient_name=a.patient.user.full_name,
         patient_code=a.patient.patient_code, doctor_id=a.doctor_id, doctor_name=a.doctor.user.full_name,
         department_name=a.department.name if a.department else (
             a.doctor.department.name if a.doctor.department else None),
         scheduled_at=a.scheduled_at, reason=a.reason, status=a.status,
+        symptoms=json.loads(a.symptoms_json) if problem and a.symptoms_json else [],
+        duration=a.duration if problem else None, details=a.details if problem else None,
     )
 
 

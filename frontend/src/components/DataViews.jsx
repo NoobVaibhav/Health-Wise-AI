@@ -149,11 +149,13 @@ export function AppointmentCard({ a, showPatient = true, actions }) {
               {a.department_name && <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700">{a.department_name}</span>}
             </span>
           </div>
-          {/* 3. WHY */}
-          {a.reason && (
-            <p className="inline-flex items-start gap-1.5 rounded-xl bg-slate-50 px-2.5 py-1.5 text-sm text-slate-600">
-              <MessageSquareText size={15} className="mt-0.5 shrink-0 text-slate-400" />{a.reason}
-            </p>
+          {/* 3. WHY: the short reason, and what the patient said is happening (only the patient and the doctor receive these) */}
+          {(a.reason || a.symptoms?.length > 0 || a.details) && (
+            <div className="space-y-1.5 rounded-xl bg-slate-50 px-2.5 py-2 text-sm text-slate-700">
+              {a.reason && <p className="flex items-start gap-1.5"><MessageSquareText size={15} className="mt-0.5 shrink-0 text-slate-400" /><b>{a.reason}</b>{a.duration ? <span className="text-slate-500"> - since {a.duration.toLowerCase()}</span> : null}</p>}
+              {a.symptoms?.length > 0 && <p className="flex flex-wrap gap-1.5">{a.symptoms.map((s) => <span key={s} className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-900">{s}</span>)}</p>}
+              {a.details && <p className="text-slate-600">{a.details}</p>}
+            </div>
           )}
         </div>
       </div>

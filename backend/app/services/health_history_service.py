@@ -1,13 +1,13 @@
 """The health-history form: load it, save it, tell how complete it is, and build the one-page emergency card.
 Employees and administrators never reach this (the router only lets the patient and authorised doctors in)."""
 import json
-from datetime import date
+from datetime import date, datetime, time
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database.models import (
-    ClinicalAssessment, HealthParameter, HealthReport, Patient, PatientHistory, PatientMedication, User, utcnow,
+    Appointment, ClinicalAssessment, HealthParameter, HealthReport, Patient, PatientHistory, PatientMedication, User, utcnow,
 )
 from app.schemas.health_history import AssessmentIn, HistoryIn
 from app.services.history_insights import points_to_check, suggested_tests
@@ -163,6 +163,18 @@ def list_assessments(db: Session, patient: Patient) -> list[dict]:
     return [_assessment_out(r) for r in rows]
 
 
+def appointment_problem(db: Session, patient: Patient) -> dict | None:
+    """What the patient wrote when booking the nearest open appointment: the doctor can start from it."""
+    today = datetime.combine(date.today(), time.min)                 # an appointment that has already passed is not "the next one"
+    rows = db.scalars(select(Appointment).where(Appointment.patient_id == patient.id, Appointment.status.in_(["SCHEDULED", "CONFIRMED"]),
+                                                Appointment.scheduled_at >= today).order_by(Appointment.scheduled_at)).all()
+    for a in rows:
+        if a.reason or a.symptoms_json or a.details:
+            return {"appointment_id": a.id, "scheduled_at": a.scheduled_at.isoformat(), "reason": a.reason, "duration": a.duration,
+                    "symptoms": json.loads(a.symptoms_json) if a.symptoms_json else [], "details": a.details}
+    return None
+
+
 def doctor_view(db: Session, patient: Patient) -> dict:
     """Everything the doctor sees: the form, the emergency card, the 'points to check' and earlier assessments."""
     history = load_history(db, patient)
@@ -171,4 +183,4 @@ def doctor_view(db: Session, patient: Patient) -> dict:
     points = points_to_check(history, age_of(patient), latest_vitals)
     return {"history": history, "completeness": completeness(history), "card": emergency_card(db, patient, history),
             "points_to_check": points, "suggested_tests": suggested_tests(points), "assessments": assessments,
-            "latest_labs": latest_labs(db, patient, reviewed_only=False)}
+            "latest_labs": latest_labs(db, patient, reviewed_only=False), "appointment_problem": appointment_problem(db, patient)}

@@ -52,3 +52,15 @@ body {
   body { background: white !important; }
   main { max-width: none !important; padding: 0 !important; }
 }
+
+/* A4 pages with sensible margins; backgrounds and borders print as they look on screen */
+@page { size: A4; margin: 12mm; }
+@media print {
+  .print-area, .print-area * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+@media print {
+  /* the screen layout stays out of the way: it is hidden, and it must not add empty pages after the printed sheet */
+  #root { height: 0 !important; overflow: hidden !important; }
+  .print-compact { zoom: 0.82; }
+}

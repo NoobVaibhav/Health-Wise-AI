@@ -1,4 +1,5 @@
 """Appointments: employees/admins manage all, doctors see their own, patients book/cancel their own."""
+import json
 from datetime import date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -42,12 +43,13 @@ def create_appointment(data: AppointmentCreate, request: Request, user: User = D
         raise HTTPException(status.HTTP_409_CONFLICT, "This doctor already has an appointment at that time.")
     appointment = Appointment(patient_id=patient.id, doctor_id=doctor.id, department_id=data.department_id,
                               scheduled_at=data.scheduled_at, reason=data.reason, status="SCHEDULED",
-                              created_by=user.id)
+                              symptoms_json=json.dumps([s.strip() for s in data.symptoms if s.strip()]) if data.symptoms else None,
+                              duration=data.duration, details=data.details, created_by=user.id)
     db.add(appointment)
     db.commit()
     db.refresh(appointment)
     audit_service.log_action(db, user, audit_service.APPOINTMENT_CREATED, "appointment", appointment.id, request)
-    return appointment_out(appointment)
+    return appointment_out(appointment, user.role)
 
 
 @router.get("", response_model=list[AppointmentOut])
@@ -68,7 +70,7 @@ def list_appointments(day: date | None = None, status_filter: str | None = None,
         query = query.where(Appointment.scheduled_at >= start, Appointment.scheduled_at < start + timedelta(days=1))
     if status_filter:
         query = query.where(Appointment.status == status_filter.upper())
-    return [appointment_out(a) for a in db.scalars(query.order_by(Appointment.scheduled_at.desc()))]
+    return [appointment_out(a, user.role) for a in db.scalars(query.order_by(Appointment.scheduled_at.desc()))]
 
 
 @router.put("/{appointment_id}", response_model=AppointmentOut)
@@ -104,4 +106,4 @@ def update_appointment(appointment_id: int, data: AppointmentUpdate, request: Re
     db.commit()
     audit_service.log_action(db, user, audit_service.APPOINTMENT_UPDATED, "appointment", appointment.id, request,
                              new_status)
-    return appointment_out(appointment)
+    return appointment_out(appointment, user.role)

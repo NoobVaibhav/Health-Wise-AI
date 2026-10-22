@@ -9,6 +9,7 @@ import Register from "./pages/auth/Register";
 import ChangePassword from "./pages/auth/ChangePassword";
 import Profile from "./pages/shared/Profile";
 import MyHealthHistory from "./pages/patient/MyHealthHistory";
+import PatientAssistant from "./pages/patient/Assistant";
 import TakeHistory from "./pages/doctor/TakeHistory";
 import EmergencyCardPage from "./pages/patient/EmergencyCardPage";
 
@@ -121,6 +122,7 @@ export default function App() {
             <Route path="reports" element={<MyReports />} />
             <Route path="reports/:id" element={<ReportDetails />} />
             <Route path="history" element={<HealthHistory />} />
+            <Route path="assistant" element={<PatientAssistant />} />
             <Route path="health-history" element={<MyHealthHistory />} />
             <Route path="notes" element={<PatientNotes />} />
             <Route path="recommendations" element={<PatientRecommendations />} />

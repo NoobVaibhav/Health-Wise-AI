@@ -98,7 +98,7 @@ def doctor_dashboard(db: Session, user: User) -> dict:
         "attention_queue": queue[:6],
         "waiting_urgent_count": sum(1 for i in queue if i["red_flags"]),
         "waiting_outside_values": sum(i["outside_count"] for i in queue),
-        "todays_appointments": [appointment_out(a).model_dump(mode="json") for a in todays],
+        "todays_appointments": [appointment_out(a, "DOCTOR").model_dump(mode="json") for a in todays],
         "my_patients_count": len(patient_ids),
         "reports_waiting_count": len(waiting),
         "reports_waiting": [report_list_item(r).model_dump(mode="json") for r in waiting[:10]],
@@ -145,7 +145,7 @@ def patient_dashboard(db: Session, user: User) -> dict:
     return {
         "patient_name": user.full_name,
         "patient_code": patient.patient_code,
-        "next_appointment": appointment_out(upcoming).model_dump(mode="json") if upcoming else None,
+        "next_appointment": appointment_out(upcoming, "PATIENT").model_dump(mode="json") if upcoming else None,
         "latest_report": report_list_item(reports[0]).model_dump(mode="json") if reports else None,
         "doctor_notes": [note_out(n).model_dump(mode="json") for n in notes],
         "recommendations": [recommendation_out(r).model_dump(mode="json") for r in recs],

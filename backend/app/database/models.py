@@ -126,6 +126,10 @@ class Appointment(Base):
     department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
     scheduled_at: Mapped[datetime] = mapped_column(DateTime, index=True)
     reason: Mapped[str | None] = mapped_column(String(300))
+    # what is happening, told by the patient when booking (the doctor reads it before the visit)
+    symptoms_json: Mapped[str | None] = mapped_column(Text)
+    duration: Mapped[str | None] = mapped_column(String(60))
+    details: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="SCHEDULED")  # SCHEDULED/CONFIRMED/COMPLETED/CANCELLED
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -411,6 +415,153 @@ class ClinicalAssessment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     doctor: Mapped[Doctor] = relationship()
+
+
+# ------------------------------------------------------------------ clinical intelligence (emergency events, follow-ups, reviews)
+class EmergencyEvent(Base):
+    """One emergency visit, as written by a doctor from the hospital's own records. Every field is optional: a record can be
+    incomplete, and the review says so. The system never fills a gap or names a cause that the clinician did not write."""
+    __tablename__ = "emergency_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    recorded_by: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    event_at: Mapped[datetime | None] = mapped_column(DateTime)             # when it happened (None = date not recorded)
+    arrival_method: Mapped[str | None] = mapped_column(String(40))
+    chief_complaint: Mapped[str | None] = mapped_column(Text)
+    symptoms_json: Mapped[str | None] = mapped_column(Text)
+    onset_text: Mapped[str | None] = mapped_column(String(120))
+    duration_text: Mapped[str | None] = mapped_column(String(120))
+    vitals_json: Mapped[str | None] = mapped_column(Text)
+    recent_medication_changes: Mapped[str | None] = mapped_column(Text)
+    exam_findings: Mapped[str | None] = mapped_column(Text)
+    investigations_ordered: Mapped[str | None] = mapped_column(Text)
+    investigation_results: Mapped[str | None] = mapped_column(Text)
+    clinician_assessment: Mapped[str | None] = mapped_column(Text)          # the treating clinician's own assessment
+    documented_cause: Mapped[str | None] = mapped_column(Text)              # a cause only if the clinician wrote one
+    contributing_json: Mapped[str | None] = mapped_column(Text)             # factors the clinician recorded as relevant
+    treatment_given: Mapped[str | None] = mapped_column(Text)
+    response_to_treatment: Mapped[str | None] = mapped_column(Text)
+    disposition: Mapped[str | None] = mapped_column(String(20))             # ADMITTED / DISCHARGED / TRANSFERRED / OTHER
+    discharge_instructions: Mapped[str | None] = mapped_column(Text)
+    follow_up_recommendations: Mapped[str | None] = mapped_column(Text)
+    treating_clinician: Mapped[str | None] = mapped_column(String(150))
+    source_report_ids_json: Mapped[str | None] = mapped_column(Text)        # reports that belong to this event
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    recorder: Mapped[Doctor] = relationship()
+    timeline: Mapped[list["EmergencyTimelineEntry"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan", order_by="EmergencyTimelineEntry.occurred_at")
+
+
+class EmergencyTimelineEntry(Base):
+    """One timestamped step of an emergency visit (arrival, vitals, tests ordered, results, assessment, treatment ...)."""
+    __tablename__ = "emergency_timeline_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("emergency_events.id"), index=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime)
+    kind: Mapped[str] = mapped_column(String(30))        # ARRIVAL / VITALS / INVESTIGATION / RESULT / ASSESSMENT / TREATMENT / REASSESSMENT / DISPOSITION / OTHER
+    text: Mapped[str] = mapped_column(Text)
+    recorded_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    event: Mapped[EmergencyEvent] = relationship(back_populates="timeline")
+
+
+class FollowUpTask(Base):
+    """Something that must still happen: a visit, a test, a check. A doctor creates it, and a doctor closes it with an outcome."""
+    __tablename__ = "follow_up_tasks"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    title: Mapped[str] = mapped_column(String(200))
+    details: Mapped[str | None] = mapped_column(Text)
+    due_date: Mapped[date | None] = mapped_column(Date)
+    source_type: Mapped[str | None] = mapped_column(String(30))   # where it came from: recommendation / emergency / assessment ...
+    source_id: Mapped[int | None] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default="PENDING")   # PENDING / DONE / CANCELLED
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    outcome: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    creator: Mapped[Doctor] = relationship()
+
+
+class SummaryReview(Base):
+    """A doctor's own words about one item of the clinical summary: reviewed, an interpretation, a correction of an extraction
+    error, or a flag that something is missing. The original records and the computer's text are never overwritten."""
+    __tablename__ = "summary_reviews"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    item_key: Mapped[str] = mapped_column(String(80), index=True)     # e.g. "report:12", "statement:S3", "section:missing"
+    action: Mapped[str] = mapped_column(String(20))                   # REVIEWED / INTERPRETATION / CORRECTION / MISSING_FLAG
+    text: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    doctor: Mapped[Doctor] = relationship()
+
+
+class ClinicalSummarySnapshot(Base):
+    """A narrative written by the optional AI model from the verified evidence, kept apart from every clinician's text."""
+    __tablename__ = "clinical_summary_snapshots"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    generated_by: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    kind: Mapped[str] = mapped_column(String(10))                     # AI
+    model: Mapped[str | None] = mapped_column(String(80))
+    content_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    doctor: Mapped[Doctor] = relationship()
+
+
+# ------------------------------------------------------------------ patient assistant (chat + voice)
+class PatientAssistantConversation(Base):
+    """One chat of a patient with the assistant. Only the signed-in patient can read or delete it."""
+    __tablename__ = "patient_assistant_conversations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    title: Mapped[str] = mapped_column(String(120), default="New chat")
+    language: Mapped[str] = mapped_column(String(5), default="en")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+    messages: Mapped[list["PatientAssistantMessage"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan", order_by="PatientAssistantMessage.id")
+
+
+class PatientAssistantMessage(Base):
+    """What the patient typed or said (as text, never audio) and the answer they saw. No hidden reasoning is stored."""
+    __tablename__ = "patient_assistant_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(ForeignKey("patient_assistant_conversations.id"), index=True)
+    role: Mapped[str] = mapped_column(String(10))                      # PATIENT / ASSISTANT
+    text: Mapped[str] = mapped_column(Text)
+    meta_json: Mapped[str | None] = mapped_column(Text)                # intent, topic (for follow-up questions), safety kind, ai_used
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    conversation: Mapped[PatientAssistantConversation] = relationship(back_populates="messages")
+    evidence: Mapped[list["PatientAssistantEvidence"]] = relationship(cascade="all, delete-orphan", order_by="PatientAssistantEvidence.id")
+
+
+class PatientAssistantEvidence(Base):
+    """The record an answer was based on (a pointer and the date, not a copy of the record)."""
+    __tablename__ = "patient_assistant_evidence"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("patient_assistant_messages.id"), index=True)
+    source_type: Mapped[str] = mapped_column(String(20))               # report / prescription / appointment / note / recommendation / history
+    source_id: Mapped[int | None] = mapped_column(Integer)
+    label: Mapped[str] = mapped_column(String(200))
+    record_date: Mapped[str | None] = mapped_column(String(20))
 
 
 # ------------------------------------------------------------------ audit

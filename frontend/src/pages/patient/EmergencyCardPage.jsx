@@ -16,8 +16,10 @@ export default function EmergencyCardPage() {
         <Link to="/patient/health-history" className="text-sm font-semibold text-brand-700 hover:underline">Back to my health history</Link>
         <button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 font-bold text-white"><Printer size={16} /> Print this card</button>
       </div>
-      <p className="mb-2 text-center text-sm font-extrabold uppercase tracking-widest text-slate-400">Medical emergency card</p>
-      <EmergencyCard card={data.card} />
+      <div className="print-area print-compact">
+        <p className="mb-2 text-center text-sm font-extrabold uppercase tracking-widest text-slate-500">Medical emergency card</p>
+        <EmergencyCard card={data.card} />
+      </div>
     </div>
   );
 }

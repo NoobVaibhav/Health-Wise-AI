@@ -6,6 +6,7 @@ import useFetch from "../hooks/useFetch";
 import { getPatientHistoryForm } from "../services/historyApi";
 import { Section } from "./HealthCard";
 import EmergencyCard from "./EmergencyCard";
+import HistoryPrintSheet from "./HistoryPrintSheet";
 import PointsToCheck from "./PointsToCheck";
 import { Button, fmtDate, fmtUtc } from "./ui";
 import { ErrorBox, Loading } from "./Feedback";
@@ -121,6 +122,7 @@ export default function DoctorHistoryView({ patient }) {
         {data.assessments.length === 0 ? <p className="text-slate-500">No assessment has been written yet.</p> : <div className="space-y-3">{data.assessments.map((a) => <AssessmentCard key={a.id} a={a} />)}</div>}
       </Section>
 
+      <HistoryPrintSheet data={data} />
     </div>
   );
 }

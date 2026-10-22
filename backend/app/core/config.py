@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     llm_api_url: str = "https://api.anthropic.com/v1/messages"
     llm_model: str = "claude-haiku-4-5-20251001"
 
+    # Patient assistant (chat + voice)
+    emergency_number: str = "112"               # shown in emergency guidance
+    assistant_retention_days: int = 90          # chats older than this are deleted
+    assistant_rate_per_minute: int = 20         # messages per patient per minute
+
     # Optional path to tesseract.exe if it is not on PATH.
     tesseract_cmd: str = ""
 

@@ -1,7 +1,7 @@
-import { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
+import { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
 
 // Icon lookup (only the icons used in menus are bundled).
-export const ICONS = { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
+export const ICONS = { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, History, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
 
 // Sidebar menu for each role: [path, label, icon name]. The backend enforces the same permissions.
 export const NAV = {
@@ -40,6 +40,7 @@ export const NAV = {
   ],
   PATIENT: [
     ["/patient", "Dashboard", "LayoutDashboard"],
+    ["/patient/assistant", "Ask HealthWise", "MessageCircle"],
     ["/patient/health-history", "My Health History", "ClipboardList"],
     ["/patient/reports", "My Reports", "FileText"],
     ["/patient/history", "My Timeline", "History"],

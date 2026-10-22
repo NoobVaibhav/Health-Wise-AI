@@ -7,6 +7,7 @@ import { getPatientHistory } from "../../services/doctorApi";
 import { Section } from "../../components/HealthCard";
 import Timeline from "../../components/Timeline";
 import DoctorHistoryView from "../../components/DoctorHistoryView";
+import ClinicalIntel from "../../components/clinical/ClinicalIntel";
 import { DoctorNoteCard, PrescriptionCard, RecommendationCard, ReportsTable } from "../../components/Cards";
 import { ComparisonView, TrendsView } from "../../components/PatientViews";
 import { HistoryEntryModal, NoteModal, PrescriptionModal, RecommendationModal } from "../../components/DoctorForms";
@@ -18,6 +19,7 @@ export default function PatientDetails() {
   const [q, setQ] = useState("");
   const { data, loading, error, reload } = useFetch(() => getPatientHistory(id, q), [id, q]);
   const [modal, setModal] = useState(null);
+  const [mainTab, setMainTab] = useState("medical");
   if (loading && !data) return <Loading />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   const p = data.patient;
@@ -43,8 +45,9 @@ export default function PatientDetails() {
         </div>
       </Section>
 
-      <Tabs tabs={[
+      <Tabs value={mainTab} onChange={setMainTab} tabs={[
         ["medical", "Medical history", <DoctorHistoryView patient={p} />],
+        ["clinical", "Clinical summary", <ClinicalIntel patient={p} reports={data.reports} onJump={setMainTab} />],
         ["timeline", "Timeline", (
           <Section>
             <input className={`${inputClass} mb-4`} placeholder="Search the history (e.g. report, prescription, HbA1c)" value={q} onChange={(e) => setQ(e.target.value)} />

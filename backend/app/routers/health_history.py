@@ -1,7 +1,7 @@
-"""Health-history form. The patient fills in and keeps their own history; the doctors who are authorised for the patient
-can read it (and add to it) so that a doctor who has never met the patient knows the medicines, allergies and illnesses.
+"""Health history. It is the patient's PERMANENT medical record, and only doctors write to it: the doctors who are authorised for
+the patient can read and change it. The patient can read it and print the emergency card, but cannot change it.
 Employees and administrators have no access."""
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.permissions import DOCTOR, PATIENT, get_accessible_patient, get_current_user, get_doctor_profile, get_patient_profile, require_roles
@@ -27,11 +27,9 @@ def my_history(user: User = Depends(require_roles(PATIENT)), db: Session = Depen
 
 
 @router.put("/me")
-def save_my_history(data: HistoryIn, request: Request, user: User = Depends(require_roles(PATIENT)), db: Session = Depends(get_db)):
-    patient = get_patient_profile(db, user)
-    service.save_history(db, patient, data, user)
-    audit_service.log_action(db, user, audit_service.HISTORY_UPDATED, "patient", patient.id, request)
-    return _patient_view(db, patient)
+def patient_cannot_change_history(_: User = Depends(get_current_user)):
+    """The permanent history is the doctors' record. A patient who wants something changed tells the doctor."""
+    raise HTTPException(status.HTTP_403_FORBIDDEN, "Only your doctor can change your medical history. Please tell your doctor what has changed.")
 
 
 class PreviewIn(BaseModel):

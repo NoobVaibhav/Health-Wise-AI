@@ -302,3 +302,25 @@ def test_tests_advised_reach_lab_and_employee_but_never_the_pharmacy(client, wor
     assert client.get("/api/prescriptions", headers=lab).status_code == 403
     # the doctor still sees the tests
     assert client.get(f"/api/prescriptions/{rx_id}", headers=world.doctor).json()["tests"] == ["2D Echo", "Lipid profile"]
+
+
+def test_patient_says_what_is_happening_when_booking(client, world):
+    told = {"patient_id": world.patient_id, "doctor_id": world.doctor_id, "scheduled_at": future(24), "reason": "Giddiness and fainting",
+            "symptoms": ["Giddiness", "Sweating"], "duration": "1 day", "details": "Two episodes last night, each lasted about ten minutes."}
+    made = client.post("/api/appointments", headers=world.patient, json=told)
+    assert made.status_code == 201, made.text
+    seen_by_patient = made.json()
+    assert seen_by_patient["symptoms"] == ["Giddiness", "Sweating"] and seen_by_patient["duration"] == "1 day" and "ten minutes" in seen_by_patient["details"]
+    # the doctor reads it; the front desk and the administrator see only the short reason
+    doctor_view = client.get("/api/appointments", headers=world.doctor).json()[0]
+    assert doctor_view["symptoms"] == ["Giddiness", "Sweating"] and doctor_view["details"]
+    for who in (world.employee, world.admin):
+        row = client.get("/api/appointments", headers=who).json()[0]
+        assert row["reason"] == "Giddiness and fainting" and row["symptoms"] == [] and row["details"] is None and row["duration"] is None
+    # the dashboards follow the same rule
+    assert client.get("/api/patient/dashboard", headers=world.patient).json()["next_appointment"]["details"]
+    # the doctor starts the history from it
+    view = client.get(f"/api/health-history/patient/{world.patient_id}", headers=world.doctor).json()
+    assert view["appointment_problem"]["symptoms"] == ["Giddiness", "Sweating"] and view["appointment_problem"]["duration"] == "1 day"
+    # too long or too many symptoms are refused
+    assert client.post("/api/appointments", headers=world.patient, json={**told, "scheduled_at": future(30), "details": "x" * 1001}).status_code == 422
