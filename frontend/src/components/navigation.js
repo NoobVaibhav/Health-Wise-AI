@@ -40,6 +40,7 @@ export const NAV = {
   ],
   PATIENT: [
     ["/patient", "Dashboard", "LayoutDashboard"],
+    ["/patient/health-history", "My Health History", "ClipboardList"],
     ["/patient/reports", "My Reports", "FileText"],
     ["/patient/history", "My Timeline", "History"],
     ["/patient/notes", "Doctor's Notes", "NotebookPen"],

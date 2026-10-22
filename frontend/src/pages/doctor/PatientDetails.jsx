@@ -6,6 +6,7 @@ import useFetch from "../../hooks/useFetch";
 import { getPatientHistory } from "../../services/doctorApi";
 import { Section } from "../../components/HealthCard";
 import Timeline from "../../components/Timeline";
+import DoctorHistoryView from "../../components/DoctorHistoryView";
 import { DoctorNoteCard, PrescriptionCard, RecommendationCard, ReportsTable } from "../../components/Cards";
 import { ComparisonView, TrendsView } from "../../components/PatientViews";
 import { HistoryEntryModal, NoteModal, PrescriptionModal, RecommendationModal } from "../../components/DoctorForms";
@@ -43,7 +44,8 @@ export default function PatientDetails() {
       </Section>
 
       <Tabs tabs={[
-        ["timeline", "Health history", (
+        ["medical", "Medical history", <DoctorHistoryView patient={p} />],
+        ["timeline", "Timeline", (
           <Section>
             <input className={`${inputClass} mb-4`} placeholder="Search the history (e.g. report, prescription, HbA1c)" value={q} onChange={(e) => setQ(e.target.value)} />
             <Timeline events={data.timeline} />

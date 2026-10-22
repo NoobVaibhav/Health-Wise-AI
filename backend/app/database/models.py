@@ -358,6 +358,61 @@ class MedicineDispensing(Base):
     pharmacy_staff: Mapped[PharmacyStaff] = relationship()
 
 
+# ------------------------------------------------------------------ health history form (patient + doctor)
+class PatientHistory(Base):
+    """The standing medical history of one patient: conditions, allergies, surgeries, family history, habits ...
+    One row per patient. The lists live in `data_json`; the medicines have their own table (PatientMedication)."""
+    __tablename__ = "patient_history"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), unique=True, index=True)
+    height_cm: Mapped[float | None] = mapped_column(Float)
+    weight_kg: Mapped[float | None] = mapped_column(Float)
+    data_json: Mapped[str | None] = mapped_column(Text)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    patient: Mapped[Patient] = relationship()
+    editor: Mapped["User | None"] = relationship(foreign_keys=[updated_by])
+
+
+class PatientMedication(Base):
+    """A medicine the patient takes (or took). Kept as rows so a doctor can read it at once and so it can be searched."""
+    __tablename__ = "patient_medications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    dose: Mapped[str | None] = mapped_column(String(100))
+    frequency: Mapped[str | None] = mapped_column(String(100))
+    reason: Mapped[str | None] = mapped_column(String(200))      # what it is taken for
+    since: Mapped[str | None] = mapped_column(String(60))
+    notes: Mapped[str | None] = mapped_column(String(300))
+    is_current: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class ClinicalAssessment(Base):
+    """A doctor's assessment of the patient on one visit (like the hospital's initial assessment sheet)."""
+    __tablename__ = "clinical_assessments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    chief_complaint: Mapped[str | None] = mapped_column(Text)
+    history_of_present_illness: Mapped[str | None] = mapped_column(Text)
+    vitals_json: Mapped[str | None] = mapped_column(Text)
+    examination_json: Mapped[str | None] = mapped_column(Text)
+    provisional_diagnosis: Mapped[str | None] = mapped_column(Text)   # written by the doctor, never by the system
+    investigations_advised: Mapped[str | None] = mapped_column(Text)
+    plan_type: Mapped[str | None] = mapped_column(String(20))          # MEDICAL / SURGICAL / BOTH
+    plan_details: Mapped[str | None] = mapped_column(Text)
+    special_note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    doctor: Mapped[Doctor] = relationship()
+
+
 # ------------------------------------------------------------------ audit
 class AuditLog(Base):
     __tablename__ = "audit_logs"

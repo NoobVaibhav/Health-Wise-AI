@@ -8,6 +8,9 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ChangePassword from "./pages/auth/ChangePassword";
 import Profile from "./pages/shared/Profile";
+import MyHealthHistory from "./pages/patient/MyHealthHistory";
+import TakeHistory from "./pages/doctor/TakeHistory";
+import EmergencyCardPage from "./pages/patient/EmergencyCardPage";
 
 import Appointments from "./pages/shared/Appointments";
 import PatientsList from "./pages/shared/PatientsList";
@@ -60,6 +63,9 @@ export default function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/emergency-card" element={<RoleRoute roles={["PATIENT"]} />}>
+          <Route index element={<EmergencyCardPage />} />
+        </Route>
         <Route element={<Layout />}>
           <Route path="/" element={<HomeRedirect />} />
 
@@ -83,6 +89,7 @@ export default function App() {
             <Route index element={<DoctorDashboard />} />
             <Route path="patients" element={<PatientsList />} />
             <Route path="patients/:id" element={<PatientDetails />} />
+            <Route path="patients/:id/take-history" element={<TakeHistory />} />
             <Route path="appointments" element={<Appointments />} />
             <Route path="reports" element={<ReportsList base="/doctor/reports" pendingOnly title="Reports to Review" subtitle="Reports waiting for your review" />} />
             <Route path="reports/:id" element={<ReportReview />} />
@@ -114,6 +121,7 @@ export default function App() {
             <Route path="reports" element={<MyReports />} />
             <Route path="reports/:id" element={<ReportDetails />} />
             <Route path="history" element={<HealthHistory />} />
+            <Route path="health-history" element={<MyHealthHistory />} />
             <Route path="notes" element={<PatientNotes />} />
             <Route path="recommendations" element={<PatientRecommendations />} />
             <Route path="prescriptions" element={<PatientPrescriptions />} />

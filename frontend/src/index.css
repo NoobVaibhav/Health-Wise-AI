@@ -44,3 +44,11 @@ body {
   .print-area { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; border-color: #000 !important; }
   .no-print { display: none !important; }
 }
+
+/* printing (the emergency card, a doctor's summary): no menus, no coloured backgrounds that waste ink */
+@media print {
+  aside, header, nav, .print-hide { display: none !important; }
+  .md\:pl-64 { padding-left: 0 !important; }
+  body { background: white !important; }
+  main { max-width: none !important; padding: 0 !important; }
+}
