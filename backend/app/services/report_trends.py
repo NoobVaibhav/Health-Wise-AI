@@ -11,7 +11,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database.models import HealthReport, Patient
-from app.services.report_parser import parse_reference_text
 
 # value in the FIRST unit x factor = value in the SECOND unit. Only widely accepted factors are listed.
 CONVERSIONS = {

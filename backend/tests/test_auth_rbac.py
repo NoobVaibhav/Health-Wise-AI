@@ -44,6 +44,8 @@ def test_generated_password_is_returned_once_and_must_be_changed(client, world):
     changed = client.post("/api/auth/change-password", headers=auth,
                           json={"current_password": temp, "new_password": "BrandNewPass99"})
     assert changed.status_code == 200
+    assert client.get("/api/auth/me", headers=auth).status_code == 401              # the token from before the change no longer works
+    auth = headers(changed.json()["access_token"])
     assert client.get("/api/auth/me", headers=auth).json()["must_change_password"] is False
     assert client.post("/api/auth/login", json={"email": "new@hospital.example.com", "password": temp}).status_code == 401
 
@@ -113,3 +115,45 @@ def test_people_list_and_readable_audit_labels(client, world):
     assert uploaded["entity_label"] == "a.pdf (patient Rahul Patil)" and uploaded["user_name"] == "Priya Joshi"
     created = next(l for l in logs if l["action"] == "PATIENT_CREATED")
     assert created["entity_label"] == "Rahul Patil"
+
+
+# ------------------------------------------------------------------ hardening: lockout, temporary passwords, old tokens
+def test_repeated_wrong_passwords_lock_the_login_for_a_while(client, world):
+    for _ in range(5):
+        assert client.post("/api/auth/login", json={"email": "rahul@example.com", "password": "WrongPass123"}).status_code == 401
+    locked = client.post("/api/auth/login", json={"email": "rahul@example.com", "password": PASSWORD})
+    assert locked.status_code == 429 and "Too many failed attempts" in locked.json()["detail"]      # even the right password waits
+    assert client.post("/api/auth/login", json={"email": "priya@hospital.example.com", "password": PASSWORD}).status_code == 200   # other accounts unaffected
+
+
+def test_a_temporary_password_must_be_changed_before_anything_else(client, world):
+    created = client.post("/api/admin/employees", headers=world.admin, json={"email": "temp@hospital.example.com", "full_name": "Temp Staff", "designation": "Clerk"})
+    assert created.status_code == 201, created.text
+    temporary = created.json().get("temporary_password")
+    assert temporary
+    token = client.post("/api/auth/login", json={"email": "temp@hospital.example.com", "password": temporary}).json()["access_token"]
+    who = {"Authorization": f"Bearer {token}"}
+    assert client.get("/api/auth/me", headers=who).status_code == 200
+    blocked = client.get("/api/patients", headers=who)
+    assert blocked.status_code == 403 and "change your temporary password" in blocked.json()["detail"]
+    changed = client.post("/api/auth/change-password", headers=who, json={"current_password": temporary, "new_password": "BrandNew123"})
+    assert changed.status_code == 200
+    fresh = {"Authorization": f"Bearer {changed.json()['access_token']}"}
+    assert client.get("/api/patients", headers=fresh).status_code == 200
+
+
+def test_changing_the_password_ends_older_tokens_and_weak_passwords_are_refused(client, world):
+    old = world.patient
+    assert client.get("/api/auth/me", headers=old).status_code == 200
+    weak = client.post("/api/auth/change-password", headers=old, json={"current_password": PASSWORD, "new_password": "abcdefgh"})
+    assert weak.status_code == 422                                                       # no digit
+    assert client.post("/api/auth/change-password", headers=old, json={"current_password": PASSWORD, "new_password": PASSWORD}).status_code == 400   # same password
+    ok = client.post("/api/auth/change-password", headers=old, json={"current_password": PASSWORD, "new_password": "Another456"})
+    assert ok.status_code == 200
+    assert client.get("/api/auth/me", headers=old).status_code == 401                    # the old token is dead
+    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {ok.json()['access_token']}"}).status_code == 200
+
+
+def test_security_headers_and_no_caching_of_api_answers(client, world):
+    r = client.get("/api/auth/me", headers=world.patient)
+    assert r.headers["x-content-type-options"] == "nosniff" and r.headers["x-frame-options"] == "DENY" and r.headers["cache-control"] == "no-store"

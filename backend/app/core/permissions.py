@@ -5,12 +5,12 @@ Two layers:
 2. can_access_patient  : "may this specific user see THIS patient's data?"
    (a patient sees only themself; a doctor only patients who are theirs; staff as listed in the matrix)
 """
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.security import decode_access_token
+from app.core.security import decode_token, password_fingerprint
 from app.database.connection import get_db
 from app.database.models import Appointment, Doctor, HealthReport, Patient, User
 
@@ -31,20 +31,29 @@ def forbidden() -> HTTPException:
     return HTTPException(status.HTTP_403_FORBIDDEN, FORBIDDEN_MESSAGE)
 
 
+# A user who still has a temporary password may only look at their own account and change the password.
+TEMP_PASSWORD_PATHS = ("/api/auth/me", "/api/auth/change-password")
+MUST_CHANGE_MESSAGE = "Please change your temporary password first."
+
+
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    """Reads the JWT, loads the user from the database and rejects inactive accounts."""
+    """Reads the JWT, loads the user from the database and rejects inactive accounts, tokens issued before the last
+    password change, and (except for the password pages) accounts that still have a temporary password."""
     unauthorized = HTTPException(
         status.HTTP_401_UNAUTHORIZED, "Please log in to continue.", headers={"WWW-Authenticate": "Bearer"}
     )
     if credentials is None:
         raise unauthorized
-    user_id = decode_access_token(credentials.credentials)
-    user = db.get(User, user_id) if user_id else None
-    if user is None or not user.is_active:
+    decoded = decode_token(credentials.credentials)
+    user = db.get(User, decoded[0]) if decoded else None
+    if user is None or not user.is_active or decoded[1] != password_fingerprint(user.password_hash):
         raise unauthorized
+    if user.must_change_password and request.url.path not in TEMP_PASSWORD_PATHS:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, MUST_CHANGE_MESSAGE)
     return user
 
 

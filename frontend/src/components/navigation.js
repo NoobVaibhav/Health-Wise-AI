@@ -60,7 +60,8 @@ export const NAV = {
     ["/pharmacy/profile", "My Profile", "CircleUser"],
   ],
   LAB: [
-    ["/lab", "Tests to do", "FlaskConical"],
+    ["/lab", "Work list", "FlaskConical"],
+    ["/lab/advised", "Tests advised", "ClipboardList"],
     ["/lab/profile", "My Profile", "CircleUser"],
   ],
 };

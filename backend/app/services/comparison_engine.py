@@ -7,7 +7,6 @@ The trend is parameter-aware but never diagnostic:
 3. Otherwise we only say the value 'changed' (we do NOT assume increase = bad or decrease = good).
 """
 from app.database.models import HealthParameter
-from app.services.analysis_engine import ABOVE, BELOW, UNKNOWN
 from app.services.parameter_catalog import get_parameter_info
 from app.services.report_parser import ParsedReference, parse_reference_text
 

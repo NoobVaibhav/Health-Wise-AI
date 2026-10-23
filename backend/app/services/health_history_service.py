@@ -1,15 +1,17 @@
 """The health-history form: load it, save it, tell how complete it is, and build the one-page emergency card.
 Employees and administrators never reach this (the router only lets the patient and authorised doctors in)."""
 import json
+import re
 from datetime import date, datetime, time
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database.models import (
-    Appointment, ClinicalAssessment, HealthParameter, HealthReport, Patient, PatientHistory, PatientMedication, User, utcnow,
+    Appointment, ClinicalAssessment, DoctorNote, DoctorRecommendation, HealthParameter, HealthReport, Patient, PatientHistory, PatientMedication, Prescription, User, utcnow,
 )
 from app.schemas.health_history import AssessmentIn, HistoryIn
+from app.services import past_history_service as past
 from app.services.history_insights import points_to_check, suggested_tests
 
 LIST_KEYS = ("conditions", "surgeries", "family", "allergies")
@@ -35,6 +37,8 @@ def load_history(db: Session, patient: Patient) -> dict:
     row = db.scalar(select(PatientHistory).where(PatientHistory.patient_id == patient.id))
     stored = json.loads(row.data_json) if row and row.data_json else {}
     history = {key: stored.get(key, []) for key in LIST_KEYS}
+    history["conditions"] = past.legacy_conditions(db, patient)       # illnesses and operations live in their own records now
+    history["surgeries"] = past.legacy_surgeries(db, patient)
     history.update({key: bool(stored.get(key, False)) for key in FLAG_KEYS})
     history.update({key: stored.get(key) for key in TEXT_KEYS})
     history["habits"] = stored.get("habits", {})
@@ -42,8 +46,7 @@ def load_history(db: Session, patient: Patient) -> dict:
     history["current_problem"] = stored.get("current_problem", {"complaint": None, "duration": None, "symptoms": [], "denies": [], "details": None})
     history["height_cm"] = row.height_cm if row else None
     history["weight_kg"] = row.weight_kg if row else None
-    history["medications"] = [_medication_dict(m) for m in db.scalars(
-        select(PatientMedication).where(PatientMedication.patient_id == patient.id).order_by(PatientMedication.id))]
+    history["medications"] = [past.medication_dict(db, m) for m in past.active_medications(db, patient)]
     history["updated_at"] = row.updated_at.isoformat() if row else None
     history["updated_by_name"] = row.editor.full_name if row and row.editor else None
     history["saved_before"] = row is not None
@@ -56,14 +59,18 @@ def save_history(db: Session, patient: Patient, data: HistoryIn, user: User) -> 
         row = PatientHistory(patient_id=patient.id)
         db.add(row)
     payload = data.model_dump()
+    stored = json.loads(row.data_json) if row.data_json else {}
     row.height_cm, row.weight_kg = payload["height_cm"], payload["weight_kg"]
-    row.data_json = json.dumps({k: payload[k] for k in (*LIST_KEYS, *FLAG_KEYS, *TEXT_KEYS, "habits", "baseline", "current_problem")})
+    kept = {k: payload[k] for k in (*FLAG_KEYS, *TEXT_KEYS, "family", "allergies", "habits", "baseline", "current_problem")}
+    for old_key in ("conditions", "surgeries"):                       # the earlier lists stay exactly as they were (they are now managed as records)
+        if old_key in stored:
+            kept[old_key] = stored[old_key]
+    row.data_json = json.dumps(kept)
     row.updated_by, row.updated_at = user.id, utcnow()
-    # the medicine list is replaced as a whole: what the form shows is what is stored
-    for old in db.scalars(select(PatientMedication).where(PatientMedication.patient_id == patient.id)):
-        db.delete(old)
-    for item in payload["medications"]:
-        db.add(PatientMedication(patient_id=patient.id, updated_at=utcnow(), **item))
+    # illnesses, operations and medicines are matched to the existing records: changed, added or hidden (never deleted), with a change log
+    past.sync_conditions(db, patient, payload["conditions"], payload["no_known_conditions"], user)
+    past.sync_surgeries(db, patient, payload["surgeries"], payload["no_past_surgery"], user)
+    past.sync_medications(db, patient, payload["medications"], payload["no_regular_medicines"], user)
     # the older single-line fields on the patient profile stay in step, so other screens show the same facts
     patient.allergies = ", ".join(a["name"] for a in payload["allergies"]) or patient.allergies
     patient.current_medications = ", ".join(m["name"] for m in payload["medications"] if m["is_current"]) or patient.current_medications
@@ -175,12 +182,75 @@ def appointment_problem(db: Session, patient: Patient) -> dict | None:
     return None
 
 
+DIABETES_LAB = re.compile(r"glucose|hba1c|sugar", re.IGNORECASE)
+
+
+def _same_amount(a: str | None, b: str | None) -> bool:
+    norm = lambda x: re.sub(r"[^a-z0-9.]", "", (x or "").lower())
+    return norm(a) == norm(b)
+
+
+def reconciliation(db: Session, patient: Patient, history: dict) -> dict:
+    """Medicines in the history (what the patient says they take) against the open prescriptions of this hospital. Differences are
+    listed for the doctor to confirm with the patient. Nothing is merged or assumed."""
+    from app.services import medication_history                          # imported here: that module itself reads this one
+    meds = medication_history.build(db, patient)
+    prescribed = {}
+    for m in meds["medicines"]:
+        if m["status"] == "OPEN":
+            last = m["entries"][-1]
+            prescribed[medication_history.base_name(m["name"])] = {"name": m["name"], "dose": last["dose"], "frequency": last["frequency"], "prescribed_on": last["prescribed_on"],
+                                                                  "doctor": last["doctor"], "code": last["prescription_code"]}
+    rows, seen = [], set()
+    for h in history["medications"]:
+        if not h["is_current"]:
+            continue
+        key = medication_history.base_name(h["name"])
+        seen.add(key)
+        rx = prescribed.get(key)
+        if rx is None:
+            rows.append({"name": h["name"], "history": h, "prescribed": None, "verdict": "IN_HISTORY_ONLY",
+                         "note": "In the history but not on an open prescription here. Confirm that the patient still takes it."})
+        elif h.get("dose") and rx["dose"] and not _same_amount(h["dose"], rx["dose"]):
+            rows.append({"name": h["name"], "history": h, "prescribed": rx, "verdict": "DOSE_DIFFERS",
+                         "note": f"The history says {h['dose']}, the prescription says {rx['dose']}. Confirm with the patient which one is taken."})
+        else:
+            rows.append({"name": h["name"], "history": h, "prescribed": rx, "verdict": "MATCHES", "note": "Same medicine in the history and on an open prescription."})
+    for key, rx in prescribed.items():
+        if key not in seen:
+            rows.append({"name": rx["name"], "history": None, "prescribed": rx, "verdict": "PRESCRIBED_ONLY",
+                         "note": "On an open prescription but not in the history. Confirm that it is being taken and add it to the history."})
+    return {"rows": rows, "allergy_flags": meds["allergy_flags"], "duplicates": meds["duplicates"],
+            "needs_attention": sum(1 for r in rows if r["verdict"] != "MATCHES") + len(meds["allergy_flags"])}
+
+
+def follow_up_block(db: Session, patient: Patient) -> dict:
+    """What happens next, from the hospital's own records: advice with dates, upcoming appointments, recent doctor's notes, open prescriptions."""
+    recs = db.scalars(select(DoctorRecommendation).where(DoctorRecommendation.patient_id == patient.id).order_by(DoctorRecommendation.id.desc()).limit(5)).all()
+    notes = db.scalars(select(DoctorNote).where(DoctorNote.patient_id == patient.id).order_by(DoctorNote.id.desc()).limit(3)).all()
+    appts = db.scalars(select(Appointment).where(Appointment.patient_id == patient.id, Appointment.status.in_(["SCHEDULED", "CONFIRMED"]),
+                                                 Appointment.scheduled_at >= datetime.now()).order_by(Appointment.scheduled_at).limit(3)).all()
+    rxs = db.scalars(select(Prescription).where(Prescription.patient_id == patient.id, Prescription.status.in_(["ACTIVE", "PARTIALLY_DISPENSED"])).order_by(Prescription.id.desc()).limit(3)).all()
+    return {
+        "recommendations": [{"title": r.title, "text": r.recommendation, "follow_up_date": r.follow_up_date.isoformat() if r.follow_up_date else None,
+                             "created_at": r.created_at.isoformat(), "doctor": r.doctor.user.full_name} for r in recs],
+        "notes": [{"text": n.note, "priority": n.priority, "created_at": n.created_at.isoformat(), "doctor": n.doctor.user.full_name} for n in notes],
+        "appointments": [{"scheduled_at": a.scheduled_at.isoformat(), "doctor": a.doctor.user.full_name, "reason": a.reason} for a in appts],
+        "prescriptions": [{"code": f"RX-{x.id:05d}", "date": x.prescription_date.isoformat(), "doctor": x.doctor.user.full_name, "indication": x.clinical_indication,
+                           "items": [{"name": i.medicine_name, "dose": i.dosage, "frequency": i.frequency, "duration": i.duration, "instructions": i.instructions} for i in x.items],
+                           "tests": [t.strip() for t in (x.tests_advised or "").splitlines() if t.strip()]} for x in rxs],
+    }
+
+
 def doctor_view(db: Session, patient: Patient) -> dict:
     """Everything the doctor sees: the form, the emergency card, the 'points to check' and earlier assessments."""
     history = load_history(db, patient)
     assessments = list_assessments(db, patient)
     latest_vitals = assessments[0]["vitals"] if assessments else None
     points = points_to_check(history, age_of(patient), latest_vitals)
+    labs = latest_labs(db, patient, reviewed_only=False)
     return {"history": history, "completeness": completeness(history), "card": emergency_card(db, patient, history),
             "points_to_check": points, "suggested_tests": suggested_tests(points), "assessments": assessments,
-            "latest_labs": latest_labs(db, patient, reviewed_only=False), "appointment_problem": appointment_problem(db, patient)}
+            "latest_labs": labs, "appointment_problem": appointment_problem(db, patient),
+            "past": past.detailed(db, patient), "reconciliation": reconciliation(db, patient, history), "follow_up": follow_up_block(db, patient),
+            "diabetes_labs": [l for l in latest_labs(db, patient, reviewed_only=False, limit=200) if DIABETES_LAB.search(l["name"])]}

@@ -348,3 +348,26 @@ def test_suggestions_adapt_to_the_records_and_never_use_fixed_answers(client, wo
     assert any("ऀ" <= c <= "ॿ" for c in hindi[0]["text"])
     info = client.get(f"{API}/info", headers=world.patient).json()
     assert [l["code"] for l in info["languages"]] == ["en", "hi", "mr"] and info["emergency_number"] == "112"
+
+
+# ------------------------------------------------------------------ natural wording found during testing
+def test_misspellings_and_casual_wording_reach_the_right_answer(client, world):
+    add_report(client, world, "lipid.txt", report("03/07/2026", "Total Cholesterol 215 mg/dL < 200", "LDL Cholesterol 148 mg/dL < 100"))
+    completed_visit(world)
+    client.post("/api/doctor/notes", headers=world.doctor, json={"patient_id": world.patient_id, "priority": "NORMAL", "note": "Review in a week."})
+    client.post("/api/prescriptions", headers=world.doctor, json={"patient_id": world.patient_id, "clinical_indication": "Check", "items": [
+        {"medicine_name": "Tab. Metformin 500 mg", "dosage": "500 mg", "frequency": "Twice daily", "duration": "30 days", "quantity": 60}]})
+    assert "215" in reply(client, world.patient, "tell me about my cholestrol")["text"]                       # spelling mistake
+    assert "Review in a week." in reply(client, world.patient, "what did the doctor tell me")["text"]
+    assert "Review in a week." in reply(client, world.patient, "doctor ne kya bola")["text"]                  # Hinglish
+    assert "Tab. Metformin 500 mg" in reply(client, world.patient, "mere dawai kaun si hai")["text"]
+    asked = reply(client, world.patient, "what is metformin")
+    assert asked["intent"] == "MEDICINES" and "Tab. Metformin 500 mg" in asked["text"]                         # a prescribed medicine: show the prescription
+    advice = reply(client, world.patient, "can I take paracetamol")
+    assert advice["safety"] == "MED_CHANGE" and "cannot tell you to stop, start or change" in advice["text"]
+
+
+def test_a_huge_number_or_odd_text_in_the_message_is_handled(client, world):
+    for text in ("9" * 400, "\u0000\u0001", "%%%", "<script>alert(1)</script>", "😀" * 200):
+        r = client.post(f"{API}/chat", headers=world.patient, json={"message": text})
+        assert r.status_code == 200, (text[:10], r.status_code)

@@ -7,7 +7,7 @@ Built by ordinary code from the hospital's records. Every statement has
 - SOURCES: the original records it came from.
 It does not diagnose, does not say that a patient is healthy because of laboratory values, and does not name a cause."""
 import json
-from datetime import date, datetime
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.database.models import ClinicalAssessment, EmergencyEvent, HealthReport, Patient, SummaryReview, utcnow
 from app.services import clinical_timeline, emergency_review, follow_ups, health_history_service, medication_history, report_trends
 from app.services.clinical_timeline import source
-from app.services.history_insights import points_to_check, vitals_points
+from app.services.history_insights import vitals_points
 
 DISCLAIMER = ("HealthWise AI assists clinicians by organizing documented patient history and generating evidence-linked summaries. "
               "It does not independently diagnose diseases, establish emergency causation, or replace clinical judgment.")

@@ -5,7 +5,6 @@ Three kinds of item, each with its source:
 - RECOMMENDATIONS with a follow-up date that no task and no completed appointment covers: shown as "no documented completion"
   (that is not proof that it did not happen);
 - INVESTIGATIONS advised in a doctor's assessment, with no report uploaded since: shown the same careful way."""
-import json
 from datetime import date, datetime
 
 from sqlalchemy import select

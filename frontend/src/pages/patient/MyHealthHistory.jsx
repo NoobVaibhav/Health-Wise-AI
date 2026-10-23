@@ -8,6 +8,7 @@ import { Hero } from "../../components/Hero";
 import { Section } from "../../components/HealthCard";
 import { ErrorBox, Hint, Loading } from "../../components/Feedback";
 import EmergencyCard from "../../components/EmergencyCard";
+import PastHistory from "../../components/history/PastHistory";
 import { fmtUtc } from "../../components/ui";
 
 export default function MyHealthHistory() {
@@ -15,7 +16,9 @@ export default function MyHealthHistory() {
   if (loading && !data) return <Loading />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   const h = data.history;
-  const empty = !h.saved_before;
+  const c = data.past.counts;
+  const hasPast = c.conditions + c.medications + c.admissions + c.surgeries > 0;
+  const empty = !h.saved_before && !hasPast;
 
   const more = [];
   if (h.family?.length) more.push(["Family history", h.family.map((x) => `${x.condition}${x.relation && x.relation !== "Family member" ? ` (${x.relation.toLowerCase()})` : ""}`).join("; ")]);
@@ -41,6 +44,7 @@ export default function MyHealthHistory() {
       ) : (
         <>
           <EmergencyCard card={data.card} />
+          {hasPast && <PastHistory past={data.past} />}
           {more.length > 0 && <Section title="More in your history"><dl className="space-y-2">{more.map(([k, v]) => <div key={k} className="flex flex-col gap-0.5 sm:flex-row sm:gap-4"><dt className="w-44 shrink-0 text-sm font-bold text-slate-500">{k}</dt><dd className="text-slate-800">{v}</dd></div>)}</dl></Section>}
           <Hint title="Last updated">{h.updated_at ? `${fmtUtc(h.updated_at)} by ${h.updated_by_name || "your doctor"}.` : ""} Your latest blood tests appear here after your doctor has checked your reports.</Hint>
         </>

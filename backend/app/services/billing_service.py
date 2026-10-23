@@ -36,19 +36,20 @@ def _order(rows: list[MedicineInventory]) -> list[MedicineInventory]:
 
 
 def find_batches(db: Session, barcode: str | None = None, inventory_id: int | None = None) -> list[MedicineInventory]:
-    """All batches of one product: same barcode, or (no barcode) same medicine name."""
+    """All batches of one product: same barcode, or (no barcode) same medicine name. The rows are locked until the sale is committed
+    (on PostgreSQL), so two cashiers cannot sell the same last units."""
     if inventory_id is not None:
         row = db.get(MedicineInventory, inventory_id)
         if row is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Medicine not found in stock.")
         if row.barcode:
-            rows = db.scalars(select(MedicineInventory).where(MedicineInventory.barcode == row.barcode)).all()
+            rows = db.scalars(select(MedicineInventory).where(MedicineInventory.barcode == row.barcode).with_for_update()).all()
         else:
             rows = db.scalars(select(MedicineInventory).where(
-                func.lower(MedicineInventory.medicine_name) == row.medicine_name.lower())).all()
+                func.lower(MedicineInventory.medicine_name) == row.medicine_name.lower()).with_for_update()).all()
     else:
         code = (barcode or "").strip()
-        rows = db.scalars(select(MedicineInventory).where(MedicineInventory.barcode == code)).all() if code else []
+        rows = db.scalars(select(MedicineInventory).where(MedicineInventory.barcode == code).with_for_update()).all() if code else []
     if not rows:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No medicine with this barcode was found in stock.")
     return _order(list(rows))

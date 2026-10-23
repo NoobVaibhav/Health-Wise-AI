@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROLE_HOME, useAuth } from "../../context/AuthContext";
 import { changePassword } from "../../services/authApi";
-import { getErrorMessage } from "../../services/api";
+import { getErrorMessage, tokenStore } from "../../services/api";
 import { Button, Input } from "../../components/ui";
 import { AuthShell } from "./Login";
 
@@ -17,7 +17,8 @@ export default function ChangePassword() {
     e.preventDefault();
     setError("");
     try {
-      await changePassword(form);
+      const result = await changePassword(form);
+      if (result.access_token) tokenStore.set(result.access_token);      // the old token stops working after a password change
       await refresh();
       navigate(ROLE_HOME[user.role]);
     } catch (err) {

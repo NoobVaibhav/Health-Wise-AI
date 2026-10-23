@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Callable
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session

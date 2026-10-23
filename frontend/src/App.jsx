@@ -43,6 +43,7 @@ import PatientRecommendations from "./pages/patient/Recommendations";
 import PatientPrescriptions from "./pages/patient/Prescriptions";
 
 import TestOrders from "./pages/lab/TestOrders";
+import LabWorklist from "./pages/lab/Worklist";
 import PharmacyDashboard from "./pages/pharmacy/Dashboard";
 import Billing from "./pages/pharmacy/Billing";
 import Bills from "./pages/pharmacy/Bills";
@@ -113,7 +114,8 @@ export default function App() {
           </Route>
 
           <Route path="/lab" element={<RoleRoute roles={["LAB"]} />}>
-            <Route index element={<TestOrders />} />
+            <Route index element={<LabWorklist />} />
+            <Route path="advised" element={<TestOrders />} />
             <Route path="profile" element={<Profile />} />
           </Route>
 

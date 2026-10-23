@@ -10,9 +10,10 @@ How an answer is made
    An optional AI model may reword it more simply, but only if the patient agreed, and the wording is rejected if it changes a number,
    a date or a name, or contains a diagnosis or a medicine instruction.
 Record text (doctor's notes, report names) is data. It is never given to the model as an instruction and never executed."""
+import difflib
 import json
 import re
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -21,7 +22,7 @@ from app.core.config import get_settings
 from app.core.permissions import PATIENT
 from app.database.models import (
     Appointment, DoctorNote, DoctorRecommendation, HealthReport, Patient, PatientAssistantConversation,
-    PatientAssistantEvidence, PatientAssistantMessage, Prescription, utcnow,
+    PatientAssistantEvidence, PatientAssistantMessage, Prescription, PrescriptionItem, utcnow,
 )
 from app.services import assistant_safety, llm_service, medication_history, report_trends
 from app.services.assistant_text import GLOSSARY, LANGUAGES, fdate, has_devanagari, normalise_lang, t
@@ -36,19 +37,20 @@ MAX_LINES = 14
 # ------------------------------------------------------------------ intent keywords (English / Hindi / Marathi)
 KEYWORDS = {
     "ALLERGY": ["allerg", "एलर्जी", "एलर्जि", "ॲलर्जी", "अॅलर्जी", "अलर्जी", "reaction history"],
-    "MEDICINES": ["medicine", "medication", "prescri", "tablet", "drug", "pill", "दवा", "दवाई", "गोली", "पर्चा", "औषध", "गोळी", "प्रिस्क्रिप्शन"],
+    "MEDICINES": ["medicine", "medication", "prescri", "tablet", "drug", "pill", "दवा", "दवाई", "गोली", "पर्चा", "औषध", "गोळी", "प्रिस्क्रिप्शन", "dawai", "dawa", "davai", "dava", "goli", "dawaai"],
     "APPOINTMENTS": ["appointment", "next visit", "next checkup", "next check-up", "upcoming", "prepare", "अपॉइंटमेंट", "अगली मुलाकात", "अगला चेकअप", "तैयारी", "पुढची भेट", "पुढील तपासणी", "तयारी"],
     "INSTRUCTIONS": ["instruction", "advice", "advised", "follow up", "follow-up", "followup", "recommend", "lifestyle", "which tests", "tests did", "सलाह", "निर्देश", "फॉलो", "सुझा", "सल्ला", "सूचना", "सुचव"],
     "HISTORY": ["medical history", "past history", "surgery", "surgeries", "past illness", "conditions", "admission", "इतिहास", "सर्जरी", "ऑपरेशन", "आजार", "शस्त्रक्रिया"],
-    "LAST_CHECKUP": ["checkup", "check-up", "consultation", "visit", "doctor say", "doctor said", "doctor write", "doctor wrote", "notes", "जांच", "जाँच", "चेकअप", "डॉक्टर ने क्या", "नोट", "तपासणी", "डॉक्टर काय", "भेट"],
+    "LAST_CHECKUP": ["checkup", "check-up", "consultation", "visit", "doctor say", "doctor said", "doctor write", "doctor wrote", "doctor tell", "doctor told", "bola", "kaha", "doctor", "notes", "जांच", "जाँच", "चेकअप", "डॉक्टर ने", "डॉक्टर", "डॉक्टरांनी", "सांगितले", "बोला", "कहा", "नोट", "तपासणी", "डॉक्टर काय", "भेट"],
     "COMPARE": ["compare", "comparison", "changed", "change", "over time", "trend", "तुलना", "बदल"],
     "ABNORMAL": ["abnormal", "out of range", "outside the range", "flagged", "marked", "असामान्य", "रेंज से बाहर", "असाधारण", "श्रेणीबाहेर"],
     "REPORT": ["report", "blood", "test", "result", "lab", "रिपोर्ट", "ब्लड", "जांच", "जाँच", "रिजल्ट", "नतीजा", "नतीजे", "निकाल", "तपासणी"],
 }
-ORDER = ["ALLERGY", "MEDICINES", "APPOINTMENTS", "INSTRUCTIONS", "HISTORY", "LAST_CHECKUP", "ABNORMAL", "COMPARE", "REPORT"]
-MEANING = ["what is ", "what does", "meaning of", "mean?", "explain the term", "explain this", "medical term", "क्या होता है", "क्या है", "मतलब", "म्हणजे काय", "अर्थ"]
+ORDER = ["ALLERGY", "MEDICINES", "APPOINTMENTS", "INSTRUCTIONS", "HISTORY", "ABNORMAL", "COMPARE", "LAST_CHECKUP", "REPORT"]
+MEANING = ["what is ", "what does", "meaning of", "meaning", "means", "mean?", "explain the term", "explain this", "medical term", "क्या होता है", "क्या है", "मतलब", "म्हणजे काय", "अर्थ"]
 MINE = ["my ", "mine", "मेरा", "मेरी", "मेरे", "माझा", "माझी", "माझे", "level", "result", "report", "value", "स्तर", "रिपोर्ट", "पातळी", "निकाल"]
 BACK = ["previous", "earlier", "before", "last time", "old", "पिछला", "पिछली", "पहले", "आधी", "मागील", "what about", "और"]
+OFF_TOPIC = ["weather", "joke", "cricket", "movie", "news", "song", "recipe", "football", "stock", "price of"]
 LATEST_WORDS = ["last", "latest", "recent", "previous", "पिछली", "पिछले", "आखिरी", "शेवटच्या", "मागील", "ताज़ा", "अलीकडील"]
 
 # a word the patient may use for a group of tests -> a pattern for the test names in their reports
@@ -102,6 +104,19 @@ def reviewed_series(db: Session, patient: Patient) -> tuple[list[dict], int]:
 
 def _catalog_info(name: str):
     return next((p for p in PARAMETERS if p.name.lower() == name.lower()), None)
+
+
+def _fuzzy_words(text: str) -> str:
+    """Repairs small spelling mistakes in test words ("cholestrol" -> "cholesterol") before the test names are looked up."""
+    vocabulary = {w for words, _ in TEST_FAMILIES for w in words if w.isascii() and " " not in w and len(w) >= 5}
+    vocabulary |= {a.lower() for p in PARAMETERS for a in (p.name, *p.aliases) if a.isascii() and " " not in a and len(a) >= 5}
+    fixed = []
+    for word in re.findall(r"[a-z0-9]+|[^a-z0-9]+", text):
+        if word.isalpha() and word.isascii() and len(word) >= 5 and word not in vocabulary:
+            close = difflib.get_close_matches(word, vocabulary, n=1, cutoff=0.84)
+            word = close[0] if close else word
+        fixed.append(word)
+    return "".join(fixed)
 
 
 def find_tests(text: str, series: list[dict]) -> list[dict]:
@@ -445,13 +460,21 @@ def detect_intent(text: str, series: list[dict], topic: dict) -> tuple[str, list
     for intent in ORDER:
         if _has(text, KEYWORDS[intent]):
             return intent, [], ""
-    if asks_term or _has(text, MEANING):
+    if (asks_term or _has(text, MEANING)) and not _has(text, OFF_TOPIC):
         return "TERM_UNKNOWN", [], ""
     return "HELP", [], ""
 
 
+def _mentions_prescribed_medicine(db: Session, patient: Patient, text: str) -> bool:
+    for (name,) in db.execute(select(PrescriptionItem.medicine_name).join(Prescription).where(Prescription.patient_id == patient.id)):
+        base = medication_history.base_name(name)
+        if len(base) >= 4 and base in text:
+            return True
+    return False
+
+
 def compose(db: Session, patient: Patient, message: str, lang: str, topic: dict) -> dict:
-    text = _digits(re.sub(r"\s+", " ", message).strip().lower())
+    text = _fuzzy_words(_digits(re.sub(r"\s+", " ", message).strip().lower()))
     series, waiting = reviewed_series(db, patient)
     intent, tests, mode = detect_intent(text, series, topic)
     if intent == "TEST":
@@ -483,6 +506,8 @@ def compose(db: Session, patient: Patient, message: str, lang: str, topic: dict)
         out = {"text": t("term_unknown", lang, x=(m.group(1) if m else message)[:60]), "sources": [], "topic": {"intent": "TERM"}}
     else:
         out = {"text": t("help", lang), "sources": [], "topic": {"intent": "HELP"}}
+    if intent in ("HELP", "TERM_UNKNOWN") and _mentions_prescribed_medicine(db, patient, text):
+        out, intent = answer_medicines(db, patient, lang), "MEDICINES"        # "what is metformin?" -> what the prescription says about it
     return {**out, "intent": intent}
 
 

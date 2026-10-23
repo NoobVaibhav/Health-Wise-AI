@@ -212,6 +212,7 @@ def login_patient(client, email):
     with SessionLocal() as db:
         user = db.query(User).filter_by(email=email).one()
         user.password_hash = hash_password("StrongPass123")
+        user.must_change_password = False
         db.commit()
     return login(client, email)
 

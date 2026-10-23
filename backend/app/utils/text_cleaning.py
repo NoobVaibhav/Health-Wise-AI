@@ -14,6 +14,8 @@ def clean_text(raw: str, is_csv: bool = False) -> str:
     if is_csv:
         text = text.replace(",", "  ").replace(";", "  ").replace("\t", "  ")
     text = text.replace("|", " ")                       # table borders from OCR
+    if not is_csv:
+        text = re.sub(r"(?<=\d),(?=\d{1,2}(?![\d,]))", ".", text)   # decimal comma "5,6" -> "5.6" ("1,200" and Indian "1,50,000" are thousands separators, so they are left alone)
     text = re.sub(r"(?<=[A-Za-z]),[ 	]*(?=[A-Za-z(])", " ", text)  # "BILIRUBIN, TOTAL" -> "BILIRUBIN TOTAL" (not 1,000)
     lines = [re.sub(r"[ \t]+", " ", line).strip() for line in text.split("\n")]
     return "\n".join(line for line in lines if line)

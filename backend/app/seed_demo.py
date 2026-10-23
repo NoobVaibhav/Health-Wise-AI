@@ -8,9 +8,9 @@ from datetime import date, timedelta
 
 from sqlalchemy import select
 
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PHARMACY
+from app.core.permissions import DOCTOR, EMPLOYEE, LAB, PHARMACY
 from app.database.connection import SessionLocal, init_db
-from app.database.models import Department, Doctor, MedicineInventory, Patient, User
+from app.database.models import Department, Doctor, MedicineInventory, User
 from app.schemas.auth import StaffCreate
 from app.schemas.patient import PatientCreate
 from app.services import user_service

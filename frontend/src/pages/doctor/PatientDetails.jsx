@@ -11,6 +11,7 @@ import ClinicalIntel from "../../components/clinical/ClinicalIntel";
 import { DoctorNoteCard, PrescriptionCard, RecommendationCard, ReportsTable } from "../../components/Cards";
 import { ComparisonView, TrendsView } from "../../components/PatientViews";
 import { HistoryEntryModal, NoteModal, PrescriptionModal, RecommendationModal } from "../../components/DoctorForms";
+import LabTestProgress from "../../components/LabTestProgress";
 import { Button, Tabs, fmtDate, inputClass } from "../../components/ui";
 import { ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 
@@ -53,7 +54,7 @@ export default function PatientDetails() {
             <input className={`${inputClass} mb-4`} placeholder="Search the history (e.g. report, prescription, HbA1c)" value={q} onChange={(e) => setQ(e.target.value)} />
             <Timeline events={data.timeline} />
           </Section>)],
-        ["reports", `Reports (${data.reports.length})`, <Section><ReportsTable reports={data.reports} base="/doctor/reports" showPatient={false} /></Section>],
+        ["reports", `Reports (${data.reports.length})`, <div className="space-y-4"><LabTestProgress patientId={p.id} base="/doctor/reports" /><Section><ReportsTable reports={data.reports} base="/doctor/reports" showPatient={false} /></Section></div>],
         ["notes", "Notes and recommendations", (
           <div className="space-y-3">
             {data.notes.length === 0 && data.recommendations.length === 0 && <p className="text-slate-500">No notes or recommendations yet.</p>}

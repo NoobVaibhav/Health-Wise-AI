@@ -13,8 +13,8 @@ from datetime import date
 
 from app.services.normalization_service import match_parameter_name
 
-# A number, with optional thousands separators: 4000, 4,000, 11,000.5, 5.6
-NUMBER = r"(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)"
+# A number, with optional thousands separators (also Indian grouping): 4000, 4,000, 1,50,000, 11,000.5, 5.6
+NUMBER = r"(?:\d{1,2}(?:,\d{2})+,\d{3}(?:\.\d+)?|\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)"
 VALUE_RE = re.compile(rf"([<>]?)\s*({NUMBER})")
 RANGE_RE = re.compile(rf"({NUMBER})\s*(?:-|to)\s*({NUMBER})", re.IGNORECASE)
 LESS_RE = re.compile(rf"(<=|<|≤|upto|up to|less than|below)\s*({NUMBER})", re.IGNORECASE)
@@ -71,6 +71,10 @@ def _to_float(text: str) -> float:
     return float(text.replace(",", ""))
 
 
+SEX_MALE = re.compile(r"\b(?:male|men|man)\b", re.IGNORECASE)
+SEX_FEMALE = re.compile(r"\b(?:female|women|woman)\b", re.IGNORECASE)
+
+
 def parse_reference_text(text: str) -> ParsedReference | None:
     """Read a reference range from text such as '4.0 - 5.6', '< 100', '> 40', '30 - 100 ng/mL'.
     If several patterns are present, the one that appears FIRST is used."""
@@ -93,6 +97,10 @@ def parse_reference_text(text: str) -> ParsedReference | None:
         candidates.append((m.start(), ParsedReference(f"> {m.group(2)}", _to_float(m.group(2)), None, inclusive, True)))
     if not candidates:
         return None
+    if len(candidates) >= 2 and SEX_MALE.search(text) and SEX_FEMALE.search(text):
+        # separate ranges for men and women: the patient's sex is unknown here, so no range is guessed.
+        # The printed text is kept for the doctor and the value is left "Reference range unavailable".
+        return ParsedReference(re.sub(r"\s+", " ", text).strip()[:120], None, None)
     return min(candidates, key=lambda c: c[0])[1]
 
 

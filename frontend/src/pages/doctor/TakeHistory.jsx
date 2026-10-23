@@ -10,6 +10,7 @@ import { addAssessment, getPatientHistoryForm, previewPoints, savePatientHistory
 import { getMedicineOptions, getTestOptions } from "../../services/catalogApi";
 import { getErrorMessage } from "../../services/api";
 import Autocomplete from "../../components/Autocomplete";
+import PastHistory from "../../components/history/PastHistory";
 import { AskTips, Block, Chips, Fold, MoreChips, NoneCheck, addPhrase } from "../../components/historyKit";
 import { RowList, UsualValues, toForm, toPayload } from "../../components/historyFormData";
 import { Button, Input, Select, Textarea, fmtDate, inputClass } from "../../components/ui";
@@ -49,6 +50,13 @@ const FLAG = { pulse: (x) => (x < 50 ? "Slow" : x > 120 ? "Fast" : ""), sys: (x)
 const num = (x) => (x === "" || x === undefined || x === null ? null : Number(x));
 const emptyVisit = () => ({ complaint: "", duration: "", story: "", vitals: {}, present: [], allClear: false, exam: {}, dx: "", tests: [], plan: "", planDetails: "", note: "" });
 
+// the detailed records in the shape the "points to check" preview expects (nothing is saved from this)
+const fromPast = (p) => (p ? {
+  conditions: [p.diabetes, p.hypertension, ...p.other_conditions].filter(Boolean).map((c) => ({ name: c.name, since: c.diagnosis_year ? String(c.diagnosis_year) : c.duration_text || null, on_treatment: !!c.on_treatment, notes: c.notes })),
+  medications: p.medications.map((m) => ({ name: m.name, dose: m.dose, frequency: m.frequency, reason: m.reason, since: m.since, notes: m.notes, is_current: m.is_current })),
+  surgeries: [...p.standalone_surgeries, ...p.admissions.flatMap((a) => a.surgeries)].map((x) => ({ what: x.procedure_name, year: x.operation_date ? x.operation_date.slice(0, 4) : x.operation_year ? String(x.operation_year) : null, hospital: x.hospital })),
+} : {});
+
 function composeGeneral(v) {
   const clear = v.allClear ? SIGNS.filter((s) => !v.present.includes(s)).map((s) => s.split(" (")[0].toLowerCase()) : [];
   return [clear.length ? `No ${clear.join(", ")}` : "", v.present.length ? `Present: ${v.present.map((s) => s.split(" (")[0].toLowerCase()).join(", ")}` : ""].filter(Boolean).join(". ") || null;
@@ -64,6 +72,7 @@ export default function TakeHistory() {
   const [f, setF] = useState(null);                // permanent history, same shape as the patient's own form
   const [v, setV] = useState(emptyVisit());        // this visit
   const [step, setStep] = useState(0);
+  const [pastState, setPastState] = useState(null);   // the detailed past history; it saves itself, so the form never sends it again
   const [live, setLive] = useState({ points_to_check: [], suggested_tests: [] });
   const [saving, setSaving] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -81,6 +90,7 @@ export default function TakeHistory() {
   useEffect(() => {
     if (!data || ready.current) return;
     ready.current = true;
+    setPastState(data.past);
     try {
       const draft = JSON.parse(localStorage.getItem(draftKey) || "null");
       if (draft?.f && draft?.v) { setF(draft.f); setV({ ...emptyVisit(), ...draft.v }); setRestored(true); return; }
@@ -106,30 +116,30 @@ export default function TakeHistory() {
 
   // the server works out the points to check as the form is filled in (nothing is saved)
   useEffect(() => {
-    if (!f) return undefined;
+    if (!f || !pastState) return undefined;
     const t = setTimeout(() => {
       const x = v.vitals;
-      const body = toPayload(f);
+      const body = { ...toPayload(f), ...fromPast(pastState) };
       previewPoints(id, {
         history: { ...body, current_problem: { ...body.current_problem, complaint: v.complaint || null, details: v.story || null } },
         vitals: { pulse: num(x.pulse), bp_systolic: num(x.sys), bp_diastolic: num(x.dia), spo2: num(x.spo2), temperature_f: num(x.temp), resp_rate: num(x.rr) },
       }).then(setLive).catch(() => {});
     }, 800);
     return () => clearTimeout(t);
-  }, [f, v, id]);
+  }, [f, v, id, pastState]);
 
   const done = useMemo(() => {
-    if (!f) return [false, false, false, false];
+    if (!f || !pastState) return [false, false, false, false];
     const b = f.baseline;
     return [
-      (f.conditions.length > 0 || f.no_known_conditions) && (f.allergies.length > 0 || f.no_known_allergies),
-      (f.medications.length > 0 || f.no_regular_medicines) && !!(b.pulse || b.bp_systolic || b.sugar_fasting || b.hba1c),
+      (pastState.counts.conditions > 0 || f.no_known_conditions) && (f.allergies.length > 0 || f.no_known_allergies),
+      (pastState.counts.medications > 0 || f.no_regular_medicines) && !!(b.pulse || b.bp_systolic || b.sugar_fasting || b.hba1c),
       !!(v.complaint || f.current_problem.symptoms.length), !!(v.vitals.pulse || v.dx || v.tests.length)];
-  }, [f, v]);
+  }, [f, v, pastState]);
 
   if (loading && !data) return <Loading />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (!f) return <Loading />;
+  if (!f || !pastState) return <Loading />;
 
   const card = data.card;
   const up = (patch) => setF((o) => ({ ...o, ...patch }));
@@ -146,6 +156,10 @@ export default function TakeHistory() {
     try {
       const body = toPayload(f);
       body.current_problem = { ...body.current_problem, complaint: v.complaint || null, duration: v.duration || null, details: v.story || null };
+      body.conditions = []; body.surgeries = []; body.medications = [];
+      body.no_known_conditions = !!f.no_known_conditions && pastState.counts.conditions === 0;
+      body.no_regular_medicines = !!f.no_regular_medicines && pastState.counts.medications === 0;
+      body.no_past_surgery = !!f.no_past_surgery && pastState.counts.surgeries + pastState.counts.admissions === 0;
       await savePatientHistoryForm(id, body);
       const x = v.vitals;
       const filled = v.complaint || v.story || Object.values(x).some(Boolean) || v.dx || v.tests.length || Object.values(v.exam).some((t) => t && t.trim()) || v.present.length || v.allClear || v.note;
@@ -172,18 +186,14 @@ export default function TakeHistory() {
   const pages = [
     // 1 -------------------------------------------------------------- past history
     <div key="1" className="space-y-4">
-      <Block title="Illnesses" done={f.conditions.length > 0 || f.no_known_conditions} hint="Tap the illnesses the patient has.">
-        <MoreChips items={CONDITIONS} selected={f.conditions.map((c) => c.name)} onToggle={(c) => up({ no_known_conditions: false, conditions: f.conditions.some((x) => x.name === c) ? f.conditions.filter((x) => x.name !== c) : [...f.conditions, { name: c, on_treatment: true }] })} />
-        {f.conditions.length > 0 && <div className="mt-4 space-y-2">{f.conditions.map((c, i) => (
-          <div key={c.name} className="flex flex-wrap items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2">
-            <b className="min-w-36 flex-1 text-slate-800">{c.name}</b>
-            <Select className={`${inputClass} !w-44 !py-1.5`} value={SINCE.includes(c.since) ? c.since : c.since ? "other" : ""} onChange={(e) => up({ conditions: f.conditions.map((x, k) => (k === i ? { ...x, since: e.target.value === "other" ? x.since : e.target.value } : x)) })}>
-              <option value="">Since when?</option>{SINCE.map((s) => <option key={s}>{s}</option>)}{c.since && !SINCE.includes(c.since) && <option value="other">{c.since}</option>}
-            </Select>
-            <label className="flex items-center gap-1.5 text-sm font-semibold text-slate-700"><input type="checkbox" checked={!!c.on_treatment} onChange={(e) => up({ conditions: f.conditions.map((x, k) => (k === i ? { ...x, on_treatment: e.target.checked } : x)) })} />On treatment</label>
-          </div>))}</div>}
-        <OtherItem label="Another illness" onAdd={(name) => up({ no_known_conditions: false, conditions: [...f.conditions, { name, on_treatment: true }] })} />
-        <NoneCheck checked={f.no_known_conditions} disabled={f.conditions.length > 0} onChange={(x) => up({ no_known_conditions: x })}>No known illnesses</NoneCheck>
+      <Block title="Past medical history" done={pastState.counts.conditions > 0 || f.no_known_conditions} hint="Long-term illnesses, the medicines taken for them, earlier hospital stays and operations. Every entry is saved as soon as you add it.">
+        <PastHistory patientId={id} past={pastState} labs={data.diabetes_labs} editable onChange={setPastState} />
+        <div className="mt-4 space-y-0.5 border-t border-slate-200 pt-3">
+          <p className="text-sm font-bold text-slate-600">If you asked and there is nothing to record:</p>
+          <NoneCheck checked={f.no_known_conditions} disabled={pastState.counts.conditions > 0} onChange={(x) => up({ no_known_conditions: x })}>No known long-term illnesses</NoneCheck>
+          <NoneCheck checked={f.no_regular_medicines} disabled={pastState.counts.medications > 0} onChange={(x) => up({ no_regular_medicines: x })}>No regular medicines</NoneCheck>
+          <NoneCheck checked={f.no_past_surgery} disabled={pastState.counts.surgeries + pastState.counts.admissions > 0} onChange={(x) => up({ no_past_surgery: x })}>No operations or hospital stays</NoneCheck>
+        </div>
       </Block>
 
       <Block title="Allergies" done={f.allergies.length > 0 || f.no_known_allergies} hint="Medicines, food or anything that caused a reaction.">
@@ -194,11 +204,6 @@ export default function TakeHistory() {
         <OtherItem label="Another allergy" onAdd={(name) => up({ no_known_allergies: false, allergies: [...f.allergies, { name, kind: "DRUG" }] })} />
         <NoneCheck checked={f.no_known_allergies} disabled={f.allergies.length > 0} onChange={(x) => up({ no_known_allergies: x })}>No known allergies</NoneCheck>
       </Block>
-
-      <Fold title="Operations and hospital stays" badge={f.surgeries.length || (f.no_past_surgery ? "none" : "")}>
-        <RowList rows={f.surgeries} setRows={(surgeries) => up({ surgeries, no_past_surgery: false })} addLabel="Add an operation or hospital stay" fields={[{ key: "what", label: "What was done", placeholder: "e.g. angioplasty", flex: 2 }, { key: "year", label: "Year", placeholder: "e.g. 2018" }]} />
-        <NoneCheck checked={f.no_past_surgery} disabled={f.surgeries.length > 0} onChange={(x) => up({ no_past_surgery: x })}>No operations or hospital stays</NoneCheck>
-      </Fold>
 
       <Fold title="Habits, family and daily life" badge={f.habits.tobacco || f.habits.alcohol ? "filled" : ""}>
         <div className="space-y-4">
@@ -218,20 +223,7 @@ export default function TakeHistory() {
 
     // 2 -------------------------------------------------------------- medicines and usual values
     <div key="2" className="space-y-4">
-      <Block title="Medicines taken regularly" done={f.medications.length > 0 || f.no_regular_medicines} hint="Type a few letters and pick the medicine. Choose how often.">
-        <div className="space-y-3">{f.medications.map((m, i) => {
-          const set = (patch) => up({ no_regular_medicines: false, medications: f.medications.map((x, k) => (k === i ? { ...x, ...patch } : x)) });
-          return (
-            <div key={i} className="grid gap-2 rounded-2xl bg-slate-50 p-3 sm:grid-cols-[minmax(0,1fr)_9.5rem_9.5rem_auto]">
-              <Autocomplete options={medicines} value={m.name || ""} onChange={(name) => set({ name })} placeholder="Medicine, e.g. aspirin" />
-              <Select className={`${inputClass} !py-2.5`} value={m.frequency ?? ""} onChange={(e) => set({ frequency: e.target.value })}><option value="">How often?</option>{FREQUENCIES.map((x) => <option key={x}>{x}</option>)}</Select>
-              <Input value={m.reason ?? ""} placeholder="For what?" onChange={(e) => set({ reason: e.target.value })} />
-              <button type="button" onClick={() => up({ medications: f.medications.filter((_, k) => k !== i) })} className="rounded-xl px-3 text-sm font-bold text-slate-400 hover:bg-red-50 hover:text-red-600">Remove</button>
-            </div>);
-        })}</div>
-        <Button type="button" variant="soft" className="mt-3" onClick={() => up({ no_regular_medicines: false, medications: [...f.medications, { name: "", is_current: true }] })}>+ Add a medicine</Button>
-        <NoneCheck checked={f.no_regular_medicines} disabled={f.medications.length > 0} onChange={(x) => up({ no_regular_medicines: x })}>No regular medicines</NoneCheck>
-      </Block>
+      <p className="rounded-2xl bg-brand-50 p-3 text-sm text-brand-900">Medicines taken regularly are recorded in step 1, under "Past medical history", linked to the illness they are for.</p>
 
       <Block title="Usual values when well" done={!!(usual.pulse || usual.bp_systolic || usual.sugar_fasting || usual.hba1c)} hint="Today's pulse and BP are compared with these. Leave empty what you do not know.">
         <UsualValues baseline={f.baseline} onChange={(baseline) => up({ baseline })} />

@@ -11,7 +11,7 @@ from app.core.permissions import (
     get_current_user, require_roles,
 )
 from app.database.connection import get_db
-from app.database.models import Doctor, HealthParameter, HealthReport, Patient, ReportComparison, User
+from app.database.models import Doctor, HealthReport, Patient, ReportComparison, User
 from app.schemas.patient import PatientBasic, PatientCreate, PatientCreated, PatientFull, PatientUpdate
 from app.services import audit_service, report_service, user_service
 from app.services.comparison_engine import compare_reports

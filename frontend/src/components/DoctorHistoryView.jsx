@@ -8,6 +8,7 @@ import { Section } from "./HealthCard";
 import EmergencyCard from "./EmergencyCard";
 import HistoryPrintSheet from "./HistoryPrintSheet";
 import PointsToCheck from "./PointsToCheck";
+import PastHistory from "./history/PastHistory";
 import { Button, fmtDate, fmtUtc } from "./ui";
 import { ErrorBox, Loading } from "./Feedback";
 
@@ -93,7 +94,7 @@ function MoreHistory({ h }) {
 }
 
 export default function DoctorHistoryView({ patient }) {
-  const { data, loading, error, reload } = useFetch(() => getPatientHistoryForm(patient.id), [patient.id]);
+  const { data, loading, error, reload, setData } = useFetch(() => getPatientHistoryForm(patient.id), [patient.id]);
   if (loading && !data) return <Loading />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
 
@@ -114,6 +115,7 @@ export default function DoctorHistoryView({ patient }) {
       </Section>
 
       <EmergencyCard card={data.card} />
+      <PastHistory patientId={patient.id} past={data.past} labs={data.diabetes_labs} editable onChange={(past) => { setData((d) => ({ ...d, past })); reload(); }} />
       <PointsToCheck points={data.points_to_check} />
       <UsualAndLabs history={data.history} labs={data.latest_labs} assessments={data.assessments} />
       <MoreHistory h={data.history} />

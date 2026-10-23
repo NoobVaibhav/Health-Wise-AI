@@ -3,6 +3,7 @@ import { listReports } from "../../services/reportApi";
 import { Section } from "../../components/HealthCard";
 import { ReportsTable } from "../../components/Cards";
 import { ErrorBox, Loading, PageTitle } from "../../components/Feedback";
+import LabTestProgress from "../../components/LabTestProgress";
 
 export default function MyReports() {
   const { data, loading, error, reload } = useFetch(() => listReports(), []);
@@ -11,6 +12,7 @@ export default function MyReports() {
   return (
     <div className="space-y-5">
       <PageTitle title="My Reports" subtitle="Your lab reports. Results appear here after your doctor has checked them." />
+      <LabTestProgress base="/patient/reports" />
       <Section><ReportsTable reports={data} base="/patient/reports" showPatient={false} /></Section>
     </div>
   );

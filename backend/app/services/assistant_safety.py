@@ -26,7 +26,11 @@ EMERGENCY_RE = re.compile("|".join(EMERGENCY_PATTERNS), re.IGNORECASE)
 RECORD_QUESTION = re.compile(r"\b(?:last|previous|earlier|report|history|notes?|prescri\w*|result|did my|was my|were my)\b|पिछल|पहले|रिपोर्ट|मागील|आधी|शेवटच्या", re.IGNORECASE)
 HAPPENING_NOW = re.compile(r"\b(?:now|right now|currently|at the moment|i am having|i'm having|i have|i feel|suddenly|since (?:morning|today|last night)|help)\b|अभी|इस समय|आत्ता|सध्या|होत आहे|हो रहा|हो रही", re.IGNORECASE)
 
+# "What is the meaning of stroke?" is a vocabulary question, not a person having one.
+EDUCATIONAL = re.compile(r"\b(?:what (?:is|are|does)|meaning of|define|explain|definition of)\b.{0,25}\b(?:stroke|seizure|heart attack|chest pain|anaphyla\w*|overdose)\b", re.IGNORECASE)
+
 MED_CHANGE_RE = re.compile("|".join([
+    r"\b(?:can|should|may|could|shall) i (?:take|have|use|try|start|eat|drink)\b|\bis it (?:safe|okay|ok) to (?:take|use|have)\b",
     r"\b(?:should|can|may|could|shall|do) i (?:just )?(?:stop|skip|quit|reduce|increase|double|halve|change|start|miss|take more|take less|take extra)\b.{0,40}\b(?:medicine|medicines|medication|tablet|tablets|pill|pills|dose|dosage|insulin|capsule|syrup)\b",
     r"\b(?:stop|stopping|skip|skipping|quit|double|increase|reduce)\b.{0,15}\b(?:my )?(?:medicine|medicines|medication|tablets?|pills?|insulin|dose)\b",
     r"दवा(?:ई|इयाँ|इयां)? (?:बंद|छोड़|बढ़ा|कम|रोक)", r"(?:दवा|गोली).{0,15}(?:बंद|छोड़|रोक|बढ़ा|कम) (?:कर|दूँ|दूं|सकता|दे)",
@@ -55,7 +59,8 @@ def check(message: str) -> str | None:
     """EMERGENCY, MED_CHANGE, DIAGNOSIS, REACTION or None. Emergency is checked first and wins."""
     text = _clean(message)
     if EMERGENCY_RE.search(text):
-        if not (RECORD_QUESTION.search(text) and not HAPPENING_NOW.search(text)):
+        about_records = RECORD_QUESTION.search(text) or EDUCATIONAL.search(text)
+        if not (about_records and not HAPPENING_NOW.search(text)):
             return "EMERGENCY"
     if MED_CHANGE_RE.search(text):
         return "MED_CHANGE"

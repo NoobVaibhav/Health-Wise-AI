@@ -190,3 +190,25 @@ def test_report_date_prefers_collected_date_with_slash_month():
     text = ("Collected : 04/Jun/2026 09:22AM\nReceived : 05/Jun/2026 12:36PM\n"
             "Reported : 06/Jun/2026 02:54PM\n")
     assert extract_report_date(text) == date(2026, 6, 4)
+
+
+def test_decimal_commas_are_read_as_decimals_not_cut_off():
+    """A laboratory that prints 5,6 for 5.6 must not become 5 with no unit (a silently wrong value)."""
+    from app.services.report_processor import process_report
+    text = "Report Date: 05/10/2026\nTest Result Unit Reference\nGlucose Fasting 5,6 mmol/L 3,9 - 5,6\nCreatinine 1,1 mg/dL 0,7 - 1,3\nTotal Cholesterol 1,200 mg/dL < 200\n"
+    found = {p.extracted.normalized_name: p.extracted for p in process_report("eu.txt", text.encode()).parameters}
+    assert found["Fasting Glucose"].value == 5.6 and found["Fasting Glucose"].unit == "mmol/L" and found["Fasting Glucose"].reference_text == "3.9 - 5.6"
+    assert found["Creatinine"].value == 1.1 and found["Creatinine"].reference_text == "0.7 - 1.3"
+    assert found["Total Cholesterol"].value == 1200            # a thousands separator is not a decimal comma
+    indian = "Report Date: 05/10/2026\nTest Result Unit Reference\nPlatelets 1,50,000 /cumm 150000 - 410000\nHemoglobin 13.1 g/dL 13.0 - 17.0\n"
+    assert {p.extracted.normalized_name: p.extracted.value for p in process_report("in.txt", indian.encode()).parameters}["Platelets"] == 150000     # Indian grouping 1,50,000
+
+
+def test_separate_male_and_female_ranges_are_never_guessed():
+    """With two printed ranges and an unknown sex, the value is left 'reference range unavailable' and the printed text is kept."""
+    from app.services.report_processor import process_report
+    text = "Report Date: 05/10/2026" + chr(10) + "Test Result Unit Reference" + chr(10) + "Hemoglobin 12.5 g/dL Male: 13.0 - 17.0 Female: 12.0 - 15.5" + chr(10) + "Vitamin D 25 ng/mL 30 - 100" + chr(10)
+    found = {p.extracted.normalized_name: p for p in process_report("sex.txt", text.encode()).parameters}
+    hb = found["Hemoglobin"]
+    assert hb.status == "UNKNOWN" and "Male" in hb.extracted.reference_text and "Female" in hb.extracted.reference_text
+    assert found["Vitamin D"].status == "BELOW_RANGE"           # an ordinary single range still works

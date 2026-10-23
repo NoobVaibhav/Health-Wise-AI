@@ -7,7 +7,7 @@ Design notes (useful for the viva):
 """
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import UniqueConstraint, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.connection import Base
@@ -394,6 +394,15 @@ class PatientMedication(Base):
     notes: Mapped[str | None] = mapped_column(String(300))
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # detailed medication history (all optional)
+    route: Mapped[str | None] = mapped_column(String(40))              # oral, injection, inhaled ...
+    prescriber: Mapped[str | None] = mapped_column(String(150))
+    adherence: Mapped[str | None] = mapped_column(String(20))          # REGULAR / SOMETIMES_MISSED / OFTEN_MISSED / UNKNOWN
+    condition_id: Mapped[int | None] = mapped_column(ForeignKey("chronic_conditions.id"))   # the illness it is taken for
+    source: Mapped[str | None] = mapped_column(String(20))
+    verified_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)   # removed from the list but kept (and recoverable)
 
 
 class ClinicalAssessment(Base):
@@ -519,6 +528,172 @@ class ClinicalSummarySnapshot(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     doctor: Mapped[Doctor] = relationship()
+
+
+# ------------------------------------------------------------------ laboratory work (one row per test a doctor advised)
+class LabTestOrder(Base):
+    """One advised test, followed from order to result: waiting for the sample -> sample taken -> being tested -> done (result report
+    attached), or rejected (for example a bad sample). Rows are made from the tests written on prescriptions; the lab only changes their
+    progress. The result itself is an ordinary report that the doctor reviews before the patient sees it."""
+    __tablename__ = "lab_test_orders"
+    __table_args__ = (UniqueConstraint("prescription_id", "test_name", name="uq_lab_order_test"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    prescription_id: Mapped[int] = mapped_column(ForeignKey("prescriptions.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    test_name: Mapped[str] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(20), default="ORDERED", index=True)   # ORDERED / SAMPLE_COLLECTED / IN_PROGRESS / COMPLETED / REJECTED / CANCELLED
+    urgent: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    sample_type: Mapped[str | None] = mapped_column(String(40))
+    sample_code: Mapped[str | None] = mapped_column(String(30), unique=True)          # the label put on the sample, e.g. LAB-20261023-0007
+    collected_at: Mapped[datetime | None] = mapped_column(DateTime)
+    collected_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    completed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    report_id: Mapped[int | None] = mapped_column(ForeignKey("health_reports.id"))   # the result
+    note: Mapped[str | None] = mapped_column(Text)
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+    prescription: Mapped[Prescription] = relationship()
+    patient: Mapped[Patient] = relationship()
+    doctor: Mapped[Doctor] = relationship()
+
+
+# ------------------------------------------------------------------ detailed past medical history
+class ChronicCondition(Base):
+    """A long-term illness (diabetes, hypertension or any other) with its own details. `source` says who the information came from
+    and `verified_by` is set only when a doctor has checked it. Records are never hard-deleted (`is_deleted`), and every change is kept
+    in HistoryRevision."""
+    __tablename__ = "chronic_conditions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(15))                      # DIABETES / HYPERTENSION / OTHER
+    name: Mapped[str] = mapped_column(String(150))
+    diagnosis_type: Mapped[str | None] = mapped_column(String(60))     # e.g. Type 2, Gestational, Unknown
+    duration_text: Mapped[str | None] = mapped_column(String(60))
+    diagnosis_year: Mapped[int | None] = mapped_column(Integer)
+    control_status: Mapped[str | None] = mapped_column(String(20))     # GOOD / FAIR / POOR / UNKNOWN
+    details_json: Mapped[str | None] = mapped_column(Text)             # complications, control readings, hospitalisation
+    notes: Mapped[str | None] = mapped_column(Text)
+    on_treatment: Mapped[bool | None] = mapped_column(Boolean)
+    source: Mapped[str] = mapped_column(String(20), default="PATIENT_REPORTED")   # PATIENT_REPORTED / DOCTOR_VERIFIED / HOSPITAL_RECORD / EARLIER_ENTRY
+    verified_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
+
+
+class HospitalAdmission(Base):
+    """One earlier stay in a hospital (acute illness, accident, injury, operation ...). Nested lists (vital signs, medicines given,
+    discharge medicines) are kept as JSON; the operation itself is a SurgeryRecord linked to the admission."""
+    __tablename__ = "hospital_admissions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    hospital_name: Mapped[str | None] = mapped_column(String(200))
+    admitted_at: Mapped[datetime | None] = mapped_column(DateTime)
+    admitted_date_text: Mapped[str | None] = mapped_column(String(40))     # when only a month or year is known
+    discharged_at: Mapped[datetime | None] = mapped_column(DateTime)
+    admission_type: Mapped[str | None] = mapped_column(String(15))         # EMERGENCY / PLANNED / REFERRAL / OTHER
+    main_complaint: Mapped[str | None] = mapped_column(Text)
+    secondary_complaints: Mapped[str | None] = mapped_column(Text)
+    provisional_diagnosis: Mapped[str | None] = mapped_column(Text)
+    final_diagnosis: Mapped[str | None] = mapped_column(Text)
+    reason: Mapped[str | None] = mapped_column(Text)                       # reason for hospitalisation
+    referred_by: Mapped[str | None] = mapped_column(String(200))
+    symptoms: Mapped[str | None] = mapped_column(Text)
+    history_of_present_illness: Mapped[str | None] = mapped_column(Text)
+    preexisting_conditions: Mapped[str | None] = mapped_column(Text)
+    vitals_json: Mapped[str | None] = mapped_column(Text)                  # measured AT ADMISSION, never copied from today
+    exam_findings: Mapped[str | None] = mapped_column(Text)
+    investigations: Mapped[str | None] = mapped_column(Text)               # laboratory and imaging results
+    complications: Mapped[str | None] = mapped_column(Text)                # associated with the diagnosis
+    treatment_given: Mapped[str | None] = mapped_column(Text)
+    medications_json: Mapped[str | None] = mapped_column(Text)             # list: name, dose, frequency, route, duration, category
+    iv_fluids_oxygen: Mapped[str | None] = mapped_column(Text)
+    procedures_supportive: Mapped[str | None] = mapped_column(Text)
+    medication_changes: Mapped[str | None] = mapped_column(Text)
+    response_to_treatment: Mapped[str | None] = mapped_column(Text)
+    stay_complications: Mapped[str | None] = mapped_column(Text)           # complications during the stay
+    discharge_condition: Mapped[str | None] = mapped_column(Text)
+    treatment_completed: Mapped[str | None] = mapped_column(Text)
+    discharge_medications_json: Mapped[str | None] = mapped_column(Text)
+    discharge_instructions: Mapped[str | None] = mapped_column(Text)
+    wound_rehab_instructions: Mapped[str | None] = mapped_column(Text)
+    followup_date: Mapped[date | None] = mapped_column(Date)
+    specialist_review: Mapped[str | None] = mapped_column(String(200))
+    recovery_status: Mapped[str | None] = mapped_column(Text)
+    remaining_symptoms: Mapped[str | None] = mapped_column(Text)
+    readmission_notes: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(20), default="PATIENT_REPORTED")
+    verified_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
+
+    surgeries: Mapped[list["SurgeryRecord"]] = relationship(back_populates="admission", order_by="SurgeryRecord.id")
+
+
+class SurgeryRecord(Base):
+    """An operation or procedure. It may belong to an admission or stand alone (for example an older operation with only a year)."""
+    __tablename__ = "surgery_records"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    admission_id: Mapped[int | None] = mapped_column(ForeignKey("hospital_admissions.id"), index=True)
+    procedure_name: Mapped[str] = mapped_column(String(200))
+    reason: Mapped[str | None] = mapped_column(Text)
+    body_site: Mapped[str | None] = mapped_column(String(150))             # e.g. right femur (fracture location)
+    operation_date: Mapped[date | None] = mapped_column(Date)
+    operation_year: Mapped[int | None] = mapped_column(Integer)
+    surgeon: Mapped[str | None] = mapped_column(String(150))
+    hospital: Mapped[str | None] = mapped_column(String(200))
+    anesthesia: Mapped[str | None] = mapped_column(String(100))
+    findings: Mapped[str | None] = mapped_column(Text)
+    implant_used: Mapped[bool | None] = mapped_column(Boolean)              # None = not documented (never assumed)
+    implant_type: Mapped[str | None] = mapped_column(String(100))           # plate, screws, rod/nail, prosthesis, other
+    implant_material: Mapped[str | None] = mapped_column(String(150))
+    implant_serial: Mapped[str | None] = mapped_column(String(100))
+    postop_xray: Mapped[str | None] = mapped_column(Text)
+    postop_treatment: Mapped[str | None] = mapped_column(Text)
+    postop_complications: Mapped[str | None] = mapped_column(Text)
+    recovery_progress: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(20), default="PATIENT_REPORTED")
+    verified_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
+
+    admission: Mapped["HospitalAdmission | None"] = relationship(back_populates="surgeries")
+
+
+class HistoryRevision(Base):
+    """Append-only log of every change to the detailed history: who changed what and what it looked like before."""
+    __tablename__ = "history_revisions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    entity_type: Mapped[str] = mapped_column(String(20), index=True)       # condition / admission / surgery / medication
+    entity_id: Mapped[int] = mapped_column(Integer, index=True)
+    action: Mapped[str] = mapped_column(String(12))                        # CREATE / UPDATE / DELETE / VERIFY / MIGRATE
+    before_json: Mapped[str | None] = mapped_column(Text)
+    changed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    changed_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
 # ------------------------------------------------------------------ patient assistant (chat + voice)
