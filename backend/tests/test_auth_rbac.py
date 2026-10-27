@@ -157,3 +157,30 @@ def test_changing_the_password_ends_older_tokens_and_weak_passwords_are_refused(
 def test_security_headers_and_no_caching_of_api_answers(client, world):
     r = client.get("/api/auth/me", headers=world.patient)
     assert r.headers["x-content-type-options"] == "nosniff" and r.headers["x-frame-options"] == "DENY" and r.headers["cache-control"] == "no-store"
+
+
+# ------------------------------------------------------------------ one starting password for every new account
+def test_every_new_account_starts_with_the_same_default_password_and_must_change_it(client, world):
+    from app.core.config import get_settings
+    default = get_settings().default_password
+    made = [client.post("/api/patients", headers=world.employee, json={"email": f"new{i}@example.com", "full_name": f"New Patient {i}"}).json() for i in (1, 2)]
+    assert [m["temporary_password"] for m in made] == [default, default]                  # the same for everyone
+    staff = client.post("/api/admin/employees", headers=world.admin, json={"email": "clerk@hospital.example.com", "full_name": "New Clerk"}).json()
+    assert staff["temporary_password"] == default and staff["user"]["must_change_password"] is True
+    chosen = client.post("/api/admin/employees", headers=world.admin, json={"email": "clerk2@hospital.example.com", "full_name": "Chosen Pw", "password": "MyOwnPass99"}).json()
+    assert chosen["temporary_password"] is None and chosen["user"]["must_change_password"] is False    # a password chosen by the creator is used as given
+
+    first = client.post("/api/auth/login", json={"email": "new1@example.com", "password": default})
+    assert first.status_code == 200 and first.json()["user"]["must_change_password"] is True           # the app then opens the change-password page
+    me = {"Authorization": f"Bearer {first.json()['access_token']}"}
+    assert client.get("/api/patient/dashboard", headers=me).status_code == 403                         # nothing else works until the password is changed
+    assert client.post("/api/auth/change-password", headers=me, json={"current_password": default, "new_password": default}).status_code == 400
+    assert client.post("/api/auth/change-password", headers=me, json={"current_password": default, "new_password": "short1"}).status_code == 422
+    done = client.post("/api/auth/change-password", headers=me, json={"current_password": default, "new_password": "PatientOwn456"})
+    assert done.status_code == 200
+    assert client.post("/api/auth/login", json={"email": "new1@example.com", "password": default}).status_code == 401                # the starting password no longer works
+    assert client.post("/api/auth/login", json={"email": "new1@example.com", "password": "PatientOwn456"}).json()["user"]["must_change_password"] is False
+    assert client.post("/api/auth/login", json={"email": "new2@example.com", "password": default}).status_code == 200                # the other patient is unaffected
+    # a patient who already changed the password cannot go back to the starting password
+    own = {"Authorization": f"Bearer {done.json()['access_token']}"}
+    assert client.post("/api/auth/change-password", headers=own, json={"current_password": "PatientOwn456", "new_password": default}).status_code == 400

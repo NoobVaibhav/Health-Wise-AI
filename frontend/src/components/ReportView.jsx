@@ -1,7 +1,10 @@
 // Shows one report of ANY kind (lab table, scan, ECG, summary ...). Used by every role; the BACKEND decides what is
 // included (patients get no analysis until a doctor has reviewed it, employees never get clinical content).
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Bot, FileDown, Hourglass } from "lucide-react";
+import ReportPrintSheet from "./ReportPrintSheet";
+import { AtAGlance, CopySummary, DownloadMenu } from "./ReportActions";
 import { Section } from "./HealthCard";
 import ParameterTable from "./ParameterTable";
 import ReportJourney from "./ReportJourney";
@@ -20,6 +23,7 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
   const toast = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [sheetMode, setSheetMode] = useState("full");
   const open = () => openReportFile(report.id).catch((e) => toast(getErrorMessage(e), "error"));
   const c = report.counts;
   const outside = c.ABOVE_RANGE + c.BELOW_RANGE;
@@ -27,20 +31,24 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
   const isPatient = user.role === "PATIENT";
   return (
     <div className="space-y-5">
+      <ReportPrintSheet report={report} role={user.role} short={sheetMode === "short"} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">{report.filename}</h1>
           <p className="text-base text-slate-600">
-            Patient: <b className="text-slate-700">{report.patient_name}</b> ({report.patient_code}) - Test date: {fmtDate(report.report_date)} -
+            Patient: <b className="text-slate-700">{report.patient_name}</b> ({report.patient_code}) - Test date: {report.report_date ? fmtDate(report.report_date) : "not printed on the report"} -
             Added on {fmtUtcDate(report.uploaded_at)} by {report.uploaded_by_name}
           </p>
           <p className="mt-1"><span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-800">{report.report_type_label}</span></p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {(isDoctor || isPatient) && report.analysis_visible && <><CopySummary text={report.ai_summary} /><DownloadMenu report={report} setMode={setSheetMode} /></>}
           {canOpenFile && <Button variant="secondary" onClick={open}><FileDown size={18} /> View the original report</Button>}
           <DeleteReportButton report={report} onDeleted={() => navigate(-1)} />
         </div>
       </div>
+
+      {(isDoctor || isPatient) && <AtAGlance report={report} />}
 
       <ReportJourney report={report} />
 
@@ -77,6 +85,7 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
             {outside > 0 && isPatient && <div className="mt-4"><Hint title="Is a result outside the range a problem?">A result outside the normal range is not a diagnosis. Many things can change a result. Please talk to your doctor about it.</Hint></div>}
           </Section>
 
+          <div id="report-results" className="scroll-mt-4" />
           {(isDoctor || isPatient) && <KeyNumbers report={report} />}
 
           {isDoctor && <DoctorInsights report={report} onUseAsAdvice={onUseAsAdvice} onChanged={onChanged} />}

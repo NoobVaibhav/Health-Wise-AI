@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     llm_api_url: str = "https://api.anthropic.com/v1/messages"
     llm_model: str = "claude-haiku-4-5-20251001"
 
+    # The starting password of every new account. The person logs in with it once and must then choose their own
+    # (the server blocks everything else until they do). Change it here; it must have a letter and a number, 8+ characters.
+    default_password: str = "Welcome@123"
+
     # Patient assistant (chat + voice)
     emergency_number: str = "112"               # shown in emergency guidance
     assistant_retention_days: int = 90          # chats older than this are deleted

@@ -597,7 +597,9 @@ def chat(db: Session, patient: Patient, message: str, language: str | None, conv
     for s in out["sources"]:
         db.add(PatientAssistantEvidence(message_id=reply.id, source_type=s["type"], source_id=s["id"], label=s["label"][:200], record_date=s.get("date")))
     db.commit()
-    return {"conversation_id": conv.id, "title": conv.title, "message": message_out(patient_msg), "reply": message_out(reply, out["sources"], guard, out["intent"], ai_used)}
+    reply_out = message_out(reply, out["sources"], guard, out["intent"], ai_used)
+    reply_out["follow_ups"] = [] if guard == "EMERGENCY" else follow_ups(db, patient, lang, out["intent"])
+    return {"conversation_id": conv.id, "title": conv.title, "message": message_out(patient_msg), "reply": reply_out}
 
 
 def message_out(m: PatientAssistantMessage, sources=None, safety=None, intent=None, ai_used=None) -> dict:
@@ -628,3 +630,24 @@ def suggestions(db: Session, patient: Patient, lang: str) -> list[dict]:
         keys.append("instructions")
     keys.append("allergies")
     return [{"key": k, "text": SUGGESTIONS[k][lang]} for k in keys]
+
+
+# What a patient usually wants to know next, by the topic just answered (only questions their own records can answer are offered)
+INTENT_KEY = {"LAST_CHECKUP": "checkup", "REPORT": "report", "ABNORMAL": "abnormal", "COMPARE": "compare", "MEDICINES": "meds", "APPOINTMENTS": "appointments",
+              "INSTRUCTIONS": "instructions", "ALLERGY": "allergies"}
+NEXT_AFTER = {"checkup": ["instructions", "meds", "appointments"], "report": ["abnormal", "compare", "checkup"], "abnormal": ["compare", "instructions", "report"],
+              "compare": ["abnormal", "report", "checkup"], "meds": ["instructions", "allergies", "appointments"], "appointments": ["instructions", "meds", "checkup"],
+              "instructions": ["meds", "appointments", "checkup"], "allergies": ["meds", "checkup", "appointments"]}
+
+
+def follow_ups(db: Session, patient: Patient, lang: str, intent: str | None, limit: int = 3) -> list[dict]:
+    """Up to three next questions that suit the answer just given, e.g. after the medicines: the doctor's instructions and allergies."""
+    offered = {x["key"]: x for x in suggestions(db, patient, lang)}
+    current = INTENT_KEY.get(intent or "")
+    order = [k for k in NEXT_AFTER.get(current, []) if k in offered] + [k for k in offered if k != current]
+    seen, out = set(), []
+    for k in order:
+        if k not in seen and k != current:
+            seen.add(k)
+            out.append(offered[k])
+    return out[:limit]

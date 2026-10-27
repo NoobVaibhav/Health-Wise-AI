@@ -2,7 +2,7 @@
 // shows where every answer came from, and works by typing alone when voice is not available.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Loader2, Mic, Pause, Play, RotateCcw, Send, ShieldCheck, Square, Trash2, Volume2 } from "lucide-react";
+import { AlertTriangle, Check, Copy, Loader2, Mic, Pause, Play, RotateCcw, Send, ShieldCheck, Square, Trash2, Volume2 } from "lucide-react";
 import { deleteConversation, getAssistantInfo, getSuggestions, sendChat } from "../../services/assistantApi";
 import { getErrorMessage } from "../../services/api";
 import { LANG_NAMES, VOICE_NOTICE, createListener, createSpeaker, speechInputSupported, speechOutputSupported, voiceErrorMessage } from "../../utils/voice";
@@ -21,18 +21,52 @@ const store = {
 };
 const when = (iso) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "");
 
+/** The same label and date twice (two pieces of advice from one day) is shown once with a count. */
+function groupSources(sources) {
+  const groups = new Map();
+  for (const s of sources) {
+    const key = `${s.type}|${s.label}|${s.date || ""}`;
+    groups.has(key) ? groups.get(key).count++ : groups.set(key, { ...s, count: 1 });
+  }
+  return [...groups.values()];
+}
+
 function Sources({ sources }) {
   if (!sources?.length) return null;
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
       <span className="font-semibold text-slate-500">Source:</span>
-      {sources.map((s) => (
+      {groupSources(sources).map((s) => (
         <Link key={`${s.type}-${s.id}`} to={(SOURCE_ROUTE[s.type] || (() => "/patient"))(s)}
           className="rounded-full bg-brand-50 px-2.5 py-1 font-semibold text-brand-700 ring-1 ring-brand-100 hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-          {s.label}{s.date ? ` · ${when(s.date)}` : ""}
+          {s.label}{s.date ? ` · ${when(s.date)}` : ""}{s.count > 1 ? ` (${s.count})` : ""}
         </Link>
       ))}
     </div>
+  );
+}
+
+// "Medicine: Tab. X, 5 mg" -> the label in bold; each line is its own short paragraph, and the closing reminder is set apart in smaller print.
+const LABELLED = /^([^:.\n]{3,40}):\s+(.+)$/;
+const FOOTNOTE = /^(This is what your records say|Please talk to your doctor|Only what is written|यह आपके रिकॉर्ड|कृपया अपने डॉक्टर|हे तुमच्या नोंदी|कृपया तुमच्या डॉक्टर)/i;
+function AnswerText({ text }) {
+  const lines = String(text).split("\n").filter((l) => l.trim());
+  return lines.map((line, i) => {
+    const m = LABELLED.exec(line);
+    if (FOOTNOTE.test(line)) return <p key={i} className="mt-2 border-t border-slate-200 pt-2 text-sm text-slate-500">{line}</p>;
+    return <p key={i} className={i ? "mt-1.5" : "font-semibold text-slate-900"}>{m ? <><b>{m[1]}:</b> {m[2]}</> : line}</p>;
+  });
+}
+
+function CopyAnswer({ text }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 2000); } catch { /* the text can still be selected by hand */ }
+  };
+  return (
+    <button type="button" onClick={copy} aria-label="Copy this answer" className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+      {done ? <><Check size={16} className="text-emerald-600" /> Copied</> : <><Copy size={16} /> Copy</>}
+    </button>
   );
 }
 
@@ -54,6 +88,7 @@ export default function AssistantChat() {
   const [speakNote, setSpeakNote] = useState("");
   const listener = useRef(null);
   const bottom = useRef(null);
+  const lastAnswer = useRef(null);
   const inputRef = useRef(null);
   const speakingId = useRef(null);
 
@@ -66,7 +101,12 @@ export default function AssistantChat() {
 
   useEffect(() => { getAssistantInfo(language).then(setInfo).catch(() => {}); }, [language]);
   useEffect(() => { getSuggestions(language).then(setSuggestions).catch(() => setSuggestions([])); }, [language]);
-  useEffect(() => { bottom.current?.scrollIntoView?.({ behavior: "smooth", block: "end" }); }, [messages, busy, failed]);
+  // a new answer is shown from the question that led to it, so a long answer is read from its first line; the waiting note goes to the bottom
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    const answered = last?.role === "ASSISTANT" && !busy && !failed;
+    (answered ? lastAnswer.current : bottom.current)?.scrollIntoView?.({ behavior: "smooth", block: answered ? "start" : "end" });
+  }, [messages, busy, failed]);
   useEffect(() => () => { speaker.stop(); listener.current?.stop(); }, [speaker]);
 
   const changeLanguage = (code) => { setLanguage(code); store.set("hw_assistant_lang", code); speaker.stop(); };
@@ -135,7 +175,10 @@ export default function AssistantChat() {
   };
 
   const onKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } };
-  const showChips = !busy && suggestions.length > 0;
+  const lastMessage = messages[messages.length - 1];
+  const followUps = lastMessage?.role === "ASSISTANT" ? lastMessage.follow_ups || [] : [];
+  const chips = followUps.length ? followUps : suggestions;                   // after an answer: what people usually ask next about it
+  const showChips = !busy && chips.length > 0;
 
   return (
     <section className="flex h-[calc(100vh-19rem)] min-h-[30rem] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm" aria-label="Ask HealthWise assistant">
@@ -169,19 +212,20 @@ export default function AssistantChat() {
             <p className="mt-1">I can explain your last checkup, reports, medicines and appointments in simple words. You can type, or press the microphone and speak.</p>
           </div>
         )}
-        {messages.map((m) => {
+        {messages.map((m, index) => {
           const mine = m.role === "PATIENT";
           const emergency = m.safety === "EMERGENCY";
           return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+            <div key={m.id} ref={index === messages.length - (messages[messages.length - 1]?.role === "ASSISTANT" ? 2 : 1) ? lastAnswer : null} className={`flex scroll-mt-2 ${mine ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[92%] rounded-3xl px-4 py-3 text-base leading-relaxed sm:max-w-[80%] ${mine ? "rounded-br-lg bg-brand-600 text-white" : emergency ? "rounded-bl-lg border-2 border-red-400 bg-red-50 text-red-900" : "rounded-bl-lg bg-slate-100 text-slate-900"}`}>
                 {emergency && <p className="mb-1 flex items-center gap-1.5 font-extrabold"><AlertTriangle size={18} /> Urgent</p>}
-                <p className="whitespace-pre-line">{m.text}</p>
+                {mine ? <p className="whitespace-pre-line">{m.text}</p> : <AnswerText text={m.text} />}
                 {!mine && <Sources sources={m.sources} />}
                 {!mine && m.ai_used && <p className="mt-1 text-xs text-slate-500">Wording simplified by an AI service from the facts above.</p>}
-                {!mine && outputOk && (
-                  <div className="mt-2 flex items-center gap-1.5">
-                    {speaking.id === m.id && speaking.state !== "idle" ? (
+                {!mine && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <CopyAnswer text={m.text} />
+                    {outputOk && (speaking.id === m.id && speaking.state !== "idle" ? (
                       <>
                         {speaking.state === "speaking"
                           ? <button type="button" aria-label="Pause reading" onClick={() => speaker.pause()} className="rounded-full bg-white p-2 text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"><Pause size={16} /></button>
@@ -190,7 +234,7 @@ export default function AssistantChat() {
                       </>
                     ) : (
                       <button type="button" aria-label="Read this answer aloud" onClick={() => speak(m)} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"><Volume2 size={16} /> Listen</button>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
@@ -213,8 +257,9 @@ export default function AssistantChat() {
 
       <footer className="space-y-2 border-t border-slate-100 bg-white px-4 py-3">
         {showChips && (
-          <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Suggested questions">
-            {suggestions.map((s) => (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1" aria-label="Suggested questions">
+            {followUps.length > 0 && <span className="shrink-0 text-sm font-bold text-slate-500">Ask next:</span>}
+            {chips.map((s) => (
               <button key={s.key} type="button" onClick={() => send(s.text)} className="shrink-0 whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-1.5 text-sm font-semibold text-brand-700 ring-1 ring-brand-100 hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">{s.text}</button>
             ))}
           </div>

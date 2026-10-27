@@ -10,6 +10,7 @@ import { Button, Field, Input, Modal, Select, fmtDate, inputClass } from "../../
 import Autocomplete from "../../components/Autocomplete";
 import { getMedicineOptions } from "../../services/catalogApi";
 import { EmptyState, ErrorBox, Loading, PageTitle } from "../../components/Feedback";
+import { printAs } from "../../utils/printTitle";
 import { useToast } from "../../components/Toast";
 
 // Medicine stock as cards: the bar shows how much is left, and the expiry line is in plain words.
@@ -174,7 +175,7 @@ function LabelModal({ item, onClose }) {
         <label className="text-base font-semibold text-slate-700">How many stickers?
           <input type="number" min={1} max={48} value={copies} onChange={(e) => setCopies(e.target.value)} className="ml-2 h-11 w-24 rounded-xl border-2 border-slate-400 px-3 text-lg font-bold" />
         </label>
-        <Button onClick={() => window.print()}><Printer size={20} /> Print stickers</Button>
+        <Button onClick={() => printAs(item.medicine_name, "Barcode stickers")}><Printer size={20} /> Print stickers</Button>
         <Button variant="secondary" onClick={onClose}>Close</Button>
       </div>
       <div className="print-area grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">

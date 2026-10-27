@@ -6,6 +6,7 @@ import { registerPatient } from "../../services/patientApi";
 import { listDoctors } from "../../services/doctorApi";
 import { getErrorMessage } from "../../services/api";
 import { Section } from "../../components/HealthCard";
+import AccountCreatedDialog from "../../components/AccountCreatedDialog";
 import { Button, Field, Input, Select } from "../../components/ui";
 import { ErrorBox, PageTitle } from "../../components/Feedback";
 
@@ -40,15 +41,9 @@ export default function RegisterPatient() {
     <div className="mx-auto max-w-3xl space-y-5">
       <PageTitle title="Register Patient" subtitle="Creates the patient record and a login for the patient" />
       {result && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-          <p className="flex items-center gap-2 font-semibold text-emerald-800"><UserCheck size={18} /> {result.patient.full_name} registered ({result.patient.patient_code})</p>
-          <p className="mt-2 text-sm text-slate-700">Login email: <b>{result.patient.email}</b></p>
-          {result.temporary_password && (
-            <p className="text-sm text-slate-700">Temporary password: <b className="rounded bg-white px-2 py-0.5 font-mono">{result.temporary_password}</b>
-              <span className="ml-2 text-xs text-slate-500">Shown only once. Give it to the patient; they must change it at first login.</span></p>
-          )}
-          <Link to="/employee/upload" className="mt-3 inline-block text-sm font-medium text-brand-700">Upload a report for this patient →</Link>
-        </div>
+        <AccountCreatedDialog kind="patient" name={result.patient.full_name} code={result.patient.patient_code} email={result.patient.email} password={result.temporary_password}
+          onClose={() => setResult(null)}
+          actions={<Link to="/employee/upload" className="inline-flex min-h-11 items-center rounded-xl border-2 border-brand-700 bg-white px-5 py-2.5 text-base font-bold text-brand-800 hover:bg-brand-50">Upload a report for this patient</Link>} />
       )}
       <form onSubmit={submit} className="space-y-5">
         <Section title="Basic information">

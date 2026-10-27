@@ -371,3 +371,14 @@ def test_a_huge_number_or_odd_text_in_the_message_is_handled(client, world):
     for text in ("9" * 400, "\u0000\u0001", "%%%", "<script>alert(1)</script>", "😀" * 200):
         r = client.post(f"{API}/chat", headers=world.patient, json={"message": text})
         assert r.status_code == 200, (text[:10], r.status_code)
+
+
+def test_each_answer_offers_next_questions_that_fit_it_and_that_the_records_can_answer(client, world):
+    client.post("/api/prescriptions", headers=world.doctor, json={"patient_id": world.patient_id, "clinical_indication": "Cough", "items": [
+        {"medicine_name": "Syrup Cofsil", "dosage": "5 ml", "frequency": "Daily", "duration": "5 days", "quantity": 1}]})
+    client.post("/api/doctor/recommendations", headers=world.doctor, json={"patient_id": world.patient_id, "title": "Rest", "recommendation": "Drink fluids.", "follow_up_date": "2026-12-01"})
+    out = reply(client, world.patient, "What medicines am I taking?")
+    keys = [f["key"] for f in out["follow_ups"]]
+    assert 1 <= len(keys) <= 3 and "meds" not in keys and keys[0] == "instructions"        # not the question just answered; the doctor's instructions come first
+    assert all(f["text"] for f in out["follow_ups"])
+    assert reply(client, world.patient, "I have severe chest pain right now")["follow_ups"] == []     # an emergency answer offers nothing else

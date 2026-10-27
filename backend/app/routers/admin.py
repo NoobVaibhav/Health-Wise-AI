@@ -135,6 +135,27 @@ def update_user(user_id: int, data: UserUpdate, request: Request, admin: User = 
     return user_out(user)
 
 
+@router.get("/users/{user_id}/delete-check")
+def delete_check(user_id: int, admin: User = Depends(admin_only), db: Session = Depends(get_db)):
+    """Can this account be deleted, and if not, why. Used by the confirmation window."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found.")
+    return user_service.delete_check(db, user, admin)
+
+
+@router.delete("/users/{user_id}")
+def delete_user(user_id: int, request: Request, admin: User = Depends(admin_only), db: Session = Depends(get_db)):
+    """Permanently deletes an account that has nothing linked to it (for example one made by mistake). An account with any
+    medical, billing or other records cannot be deleted: deactivate it instead."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found.")
+    summary = user_service.delete_user(db, user, admin)
+    audit_service.log_action(db, admin, audit_service.USER_DELETED, "user", summary["id"], request, f"{summary['role']} {summary['email']} ({summary['full_name']})")
+    return {"deleted": True, **summary}
+
+
 @router.get("/departments")
 def list_departments(_: User = Depends(require_roles(ADMIN, EMPLOYEE, DOCTOR)), db: Session = Depends(get_db)):
     return [{"id": d.id, "name": d.name} for d in db.scalars(select(Department).order_by(Department.name))]

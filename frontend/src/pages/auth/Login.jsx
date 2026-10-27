@@ -77,7 +77,7 @@ export default function Login() {
     setError("");
     try {
       const u = await login(form.email, form.password);
-      navigate(u.must_change_password ? "/change-password" : ROLE_HOME[u.role]);
+      navigate(ROLE_HOME[u.role]);                                   // a starting password shows the change-password pop-up there
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

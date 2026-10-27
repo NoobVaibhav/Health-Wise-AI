@@ -30,7 +30,70 @@ function Tile({ label, value, tone, sub, icon: Icon }) {
 }
 
 // ---------------------------------------------------------------- laboratory report
+const SEVERITY = {
+  MARKED: ["Far outside the range", "bg-red-100 text-red-900", "border-red-300"],
+  MODERATE: ["Clearly outside the range", "bg-amber-100 text-amber-900", "border-amber-300"],
+  MILD: ["Slightly outside the range", "bg-sky-100 text-sky-900", "border-sky-300"],
+};
+
+/** Ranked results: the few that matter first, each with how far it is from the printed range and what the test measures. */
+function RankedLabKpis({ report }) {
+  const ins = report.insights;
+  const params = report.parameters || [];
+  const c = ins.counts;
+  const slight = ins.slightly_outside || [];
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Tile label="Tests read" value={params.length} tone="slate" icon={Hash} />
+        <Tile label="Normal" value={c.normal} tone="green" icon={CheckCircle2} />
+        <Tile label="Look at first" value={c.important} tone={c.important ? "rose" : "green"} icon={TriangleAlert} sub={c.important ? "Listed below, most important first" : "Nothing stands out"} />
+        <Tile label="Slightly outside" value={c.slight} tone={c.slight ? "amber" : "green"} icon={Gauge} sub={c.no_range ? `${c.no_range} more have no printed range` : undefined} />
+      </div>
+
+      {ins.priority.length === 0 ? (
+        <p className="mt-4 flex items-center gap-2 rounded-2xl bg-emerald-50 p-4 font-semibold text-emerald-800"><CheckCircle2 size={20} /> No result is far outside its printed range.</p>
+      ) : (
+        <div className="mt-5">
+          <p className="mb-3 text-sm font-bold text-slate-700">Look at these first (most important first)</p>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {ins.priority.map((e) => {
+              const p = params.find((x) => (x.normalized_name || x.test_name) === e.name);
+              const high = e.direction === "HIGH";
+              const Arrow = high ? ArrowUp : ArrowDown;
+              const [label, chip, border] = SEVERITY[e.severity];
+              return (
+                <div key={e.name} className={`rounded-2xl border-2 bg-white p-4 ${border}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-bold text-slate-800">{e.name}</p>
+                    <span className={`inline-flex items-center gap-0.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold ${chip}`}><Arrow size={13} />{high ? "High" : "Low"}</span>
+                  </div>
+                  <p className="mt-1 text-3xl font-extrabold text-slate-900">{num(e.value)} <span className="text-base font-semibold text-slate-500">{e.unit}</span></p>
+                  <p className="text-sm text-slate-600">Normal: {e.range} {e.unit}</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-700">{label}: {e.how_far}</p>
+                  {p && <RangeBar value={p.value} low={p.reference_low} high={p.reference_high} status={p.status} />}
+                  {e.meaning && <p className="mt-2 text-sm text-slate-500">{e.meaning}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {slight.length > 0 && (
+        <details className="mt-4 rounded-2xl bg-slate-50 p-4">
+          <summary className="cursor-pointer text-sm font-bold text-slate-700">{slight.length} other result{slight.length === 1 ? " is" : "s are"} only slightly outside the range, or minor tests</summary>
+          <ul className="mt-3 grid gap-x-6 gap-y-1.5 text-sm text-slate-700 sm:grid-cols-2">
+            {slight.map((e) => <li key={e.name} className="flex flex-wrap justify-between gap-2 border-b border-slate-200 py-1"><b>{e.name}</b><span>{num(e.value)} {e.unit} ({e.direction === "HIGH" ? "high" : "low"}, normal {e.range}) <span className="text-slate-400">{e.how_far}</span></span></li>)}
+          </ul>
+        </details>
+      )}
+    </>
+  );
+}
+
 function LabKpis({ report }) {
+  if (report.insights?.priority && report.insights?.counts) return <RankedLabKpis report={report} />;
   const params = report.parameters || [];
   const c = report.counts;
   const outside = params.filter((p) => p.status === "ABOVE_RANGE" || p.status === "BELOW_RANGE")
@@ -43,34 +106,6 @@ function LabKpis({ report }) {
         <Tile label="Not normal" value={outside.length} tone={outside.length ? "amber" : "green"} icon={TriangleAlert} sub={outside.length ? "See the list below" : "Nothing to worry about here"} />
         <Tile label="No normal range" value={c.UNKNOWN} tone="slate" icon={Gauge} sub={c.UNKNOWN ? "The lab gave no range. Ask the doctor." : undefined} />
       </div>
-
-      {outside.length === 0 ? (
-        <p className="mt-4 flex items-center gap-2 rounded-2xl bg-emerald-50 p-4 font-semibold text-emerald-800"><CheckCircle2 size={20} /> Every result that has a normal range is inside that range.</p>
-      ) : (
-        <div className="mt-5">
-          <p className="mb-3 text-sm font-bold text-slate-700">Results to talk about with the doctor (the biggest difference is first)</p>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {outside.slice(0, 6).map((p) => {
-              const high = p.status === "ABOVE_RANGE";
-              const Arrow = high ? ArrowUp : ArrowDown;
-              return (
-                <div key={p.id} className={`rounded-2xl border-2 bg-white p-4 ${high ? "border-amber-300" : "border-sky-300"}`}>
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-bold text-slate-800">{p.normalized_name || p.test_name}</p>
-                    <span className={`inline-flex items-center gap-0.5 whitespace-nowrap rounded-full px-2 py-0.5 text-sm font-bold ${high ? "bg-amber-100 text-amber-900" : "bg-sky-100 text-sky-900"}`}>
-                      <Arrow size={14} />{high ? "Too high" : "Too low"}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-3xl font-extrabold text-slate-900">{num(p.value)} <span className="text-base font-semibold text-slate-500">{p.unit}</span></p>
-                  <p className="text-sm text-slate-600">Normal: {humanRange(p.reference_text)} {p.unit} {spreadPct(p) > 0 && <b className={high ? "text-amber-700" : "text-sky-700"}>({spreadPct(p)}% {high ? "above the highest" : "below the lowest"} normal value)</b>}</p>
-                  <RangeBar value={p.value} low={p.reference_low} high={p.reference_high} status={p.status} />
-                </div>
-              );
-            })}
-          </div>
-          {outside.length > 6 && <p className="mt-3 text-sm text-slate-500">{outside.length - 6} more value(s) are outside the range. They are listed under "Test results" below.</p>}
-        </div>
-      )}
     </>
   );
 }
@@ -78,7 +113,7 @@ function LabKpis({ report }) {
 // ---------------------------------------------------------------- Holter, ECG, scans and other reports
 function plainWords(m) {
   // a count of events (episodes, ectopics, pauses ...) in everyday words
-  if (m.concern === "attention" && !m.range) return "Found in the report (needs a look)";
+  if (m.concern === "attention" && !m.range) return "Worth a look";
   if (m.concern === "attention") return "Outside the normal range";
   if (m.concern === "normal" && m.range) return "Inside the normal range";
   if (m.concern === "normal") return "None found";
@@ -93,6 +128,7 @@ function MetricTile({ m }) {
       <p className="text-sm font-semibold leading-snug text-slate-600">{m.label}</p>
       <p className="mt-1 text-3xl font-extrabold text-slate-900">{num(m.value)} {m.unit && <span className="text-base font-semibold text-slate-500">{m.unit}</span>}</p>
       {m.range && <p className="text-xs text-slate-500">Normal range: {m.range} {m.unit}</p>}
+      {m.detail && <p className="text-xs text-slate-500">{m.detail}</p>}
       <span className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${chip}`}>{plainWords(m)}</span>
     </div>
   );

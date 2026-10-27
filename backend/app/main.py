@@ -32,8 +32,16 @@ def check_secret() -> None:
         logger.warning("JWT_SECRET is the default or too short. Set a random value of 32+ characters in backend/.env before real use.")
 
 
+def check_default_password() -> None:
+    """Everyone starts with the same password until they change it, so the built-in one should not stay on a real database."""
+    settings = get_settings()
+    if settings.default_password == "Welcome@123" and not settings.database_url.startswith("sqlite"):
+        logger.warning("DEFAULT_PASSWORD is still the built-in value. Set your own in backend/.env before real use.")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    check_default_password()
     check_secret()
     init_db()  # create tables on first start
     yield

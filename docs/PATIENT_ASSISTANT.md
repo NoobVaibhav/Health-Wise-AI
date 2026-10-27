@@ -108,3 +108,6 @@ Tests: `backend/tests/test_patient_assistant.py` (33), `frontend/src/utils/voice
 * Records are only as complete as what was entered; a report without a printed date is ordered by upload date and flagged.
 * Rate limiting is per server process. Doctor-private assessments are intentionally not used.
 * The clinical wording and emergency keyword lists should be reviewed by qualified clinicians before real patient use.
+
+## Easier to read, and next questions (Ask HealthWise)
+Each answer shows its lines as short paragraphs with the label in bold, the closing reminder in smaller print, repeated sources once (with a count), and Copy and Listen buttons. After an answer the suggestion chips change to up to three next questions that fit it (ollow_ups in the chat reply, chosen by the topic just answered, only questions the patient's own records can answer, none after an emergency answer). A new answer scrolls into view together with the question that led to it.

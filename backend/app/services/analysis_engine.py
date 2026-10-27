@@ -87,7 +87,20 @@ def analyze_parameters(params: list[ExtractedParameter]) -> list[AnalyzedParamet
 
 
 def build_summary(analyzed: list[AnalyzedParameter]) -> str:
-    """Deterministic one-paragraph summary of the report, in plain language."""
+    """Deterministic one-paragraph summary of the report, in plain language: what to look at first, what is only slightly outside."""
+    from types import SimpleNamespace
+    from app.services.parameter_catalog import get_parameter_info
+    from app.services.result_priority import summary_text
+    items = []
+    for a in analyzed:
+        info = get_parameter_info(a.extracted.normalized_name)
+        items.append(SimpleNamespace(name=a.extracted.normalized_name, category=info.category if info else None, status=a.status, value=a.extracted.value,
+                                     unit=a.extracted.unit, low=a.extracted.reference_low, high=a.extracted.reference_high))
+    return summary_text(items)
+
+
+def build_summary_plain(analyzed: list[AnalyzedParameter]) -> str:
+    """The earlier flat summary (every value listed alike). Kept for reference and tests."""
     counts = {s: sum(1 for a in analyzed if a.status == s) for s in (WITHIN, ABOVE, BELOW, UNKNOWN)}
     outside = [a.extracted.normalized_name for a in analyzed if a.status in (ABOVE, BELOW)]
 

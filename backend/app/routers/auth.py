@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.permissions import get_current_user
 from app.core.security import create_access_token, hash_password, verify_password
 from app.database.connection import get_db
@@ -84,6 +85,8 @@ def change_password(data: ChangePasswordRequest, request: Request, user: User = 
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Current password is incorrect.")
     if verify_password(data.new_password, user.password_hash):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The new password must be different from the current one.")
+    if data.new_password == get_settings().default_password:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Please choose your own password, not the starting password.")
     user.password_hash = hash_password(data.new_password)
     user.must_change_password = False
     db.commit()

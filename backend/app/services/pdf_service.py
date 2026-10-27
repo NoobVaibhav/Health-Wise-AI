@@ -9,7 +9,8 @@ from app.core.errors import UnreadableReportError
 
 # If a PDF yields fewer non-space characters than this, we treat it as scanned.
 MIN_TEXT_CHARS = 40
-MAX_PAGES = 15
+MAX_PAGES = 15              # pages rendered for OCR (slow)
+MAX_TEXT_PAGES = 60        # pages whose text layer is read (fast)
 
 
 def extract_pdf_text(content: bytes) -> str:
@@ -18,12 +19,22 @@ def extract_pdf_text(content: bytes) -> str:
         reader = pypdf.PdfReader(io.BytesIO(content))
         if reader.is_encrypted:
             raise UnreadableReportError("This PDF is password protected. Please upload an unlocked copy.")
-        pages = [(page.extract_text() or "") for page in reader.pages[:MAX_PAGES]]
+        pages = [(page.extract_text() or "") for page in reader.pages[:MAX_TEXT_PAGES]]
     except UnreadableReportError:
         raise
     except Exception:
         raise UnreadableReportError() from None
     return "\n".join(pages)
+
+
+def extract_pdf_text_visual(content: bytes) -> str:
+    """The text layer read in the order a person sees it (pdfium). Laboratory tables often come out in a different column order than
+    with extract_pdf_text(), so the report is read both ways. Never raises: '' when it cannot be read."""
+    try:
+        pdf = pdfium.PdfDocument(content)
+        return "\n".join(pdf[i].get_textpage().get_text_range() for i in range(min(len(pdf), MAX_TEXT_PAGES)))
+    except Exception:
+        return ""
 
 
 def has_enough_text(text: str) -> bool:

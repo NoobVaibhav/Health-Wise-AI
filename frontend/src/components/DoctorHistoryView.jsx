@@ -5,6 +5,7 @@ import { ClipboardPen, Printer } from "lucide-react";
 import useFetch from "../hooks/useFetch";
 import { getPatientHistoryForm } from "../services/historyApi";
 import { Section } from "./HealthCard";
+import { printAs } from "../utils/printTitle";
 import EmergencyCard from "./EmergencyCard";
 import HistoryPrintSheet from "./HistoryPrintSheet";
 import PointsToCheck from "./PointsToCheck";
@@ -108,7 +109,7 @@ export default function DoctorHistoryView({ patient }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to={`/doctor/patients/${patient.id}/take-history`} className="inline-flex items-center rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm"><ClipboardPen size={15} className="mr-1.5" /> Take history / examine</Link>
-            <Button variant="secondary" onClick={() => window.print()}><Printer size={15} className="mr-1 inline" /> Print</Button>
+            <Button variant="secondary" onClick={() => printAs(patient.full_name, "Medical history")}><Printer size={15} className="mr-1 inline" /> Print</Button>
           </div>
         </div>
         <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${data.completeness.percent}%` }} /></div>

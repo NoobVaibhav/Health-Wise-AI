@@ -44,7 +44,7 @@ export default function ClinicalIntel({ patient, reports, onJump }) {
       <div className="flex flex-wrap gap-1.5 print:hidden">{tabs.map(([k, label]) => (
         <button key={k} type="button" onClick={() => setTab(k)} className={`rounded-full px-4 py-2 text-sm font-bold ${tab === k ? "bg-brand-700 text-white shadow" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"}`}>{label}</button>))}</div>
 
-      {tab === "summary" && <SummaryTab summary={data} patientId={patient.id} onOpen={onOpen} reload={reload} />}
+      {tab === "summary" && <SummaryTab summary={data} patientId={patient.id} patientName={patient.full_name} onOpen={onOpen} reload={reload} />}
       {tab === "timeline" && <TimelineTab patientId={patient.id} onOpen={onOpen} />}
       {tab === "trends" && <TrendsTab patientId={patient.id} onOpen={onOpen} />}
       {tab === "emergency" && <EmergencyTab patientId={patient.id} reports={reports} labels={data.labels} onOpen={onOpen} openId={openEvent} onClearOpen={() => setOpenEvent(null)} />}

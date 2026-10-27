@@ -1,6 +1,7 @@
 // The bill (invoice) a customer receives. The same view is used on screen and for printing.
 import { Printer } from "lucide-react";
 import Barcode from "./Barcode";
+import { printAs } from "../utils/printTitle";
 import { Button, fmtDate, fmtUtc } from "./ui";
 
 export const money = (n) => `₹${(Number(n) || 0).toFixed(2)}`;
@@ -58,7 +59,7 @@ export default function BillView({ bill, onClose, closeLabel = "Close" }) {
       </div>
 
       <div className="no-print flex flex-wrap gap-3">
-        <Button onClick={() => window.print()}><Printer size={20} /> Print this bill</Button>
+        <Button onClick={() => printAs(bill.customer_name || "Walk-in customer", bill.bill_number, "Bill")}><Printer size={20} /> Print this bill</Button>
         {onClose && <Button variant="secondary" onClick={onClose}>{closeLabel}</Button>}
       </div>
     </div>

@@ -56,6 +56,21 @@ def extract_text(filename: str, content: bytes) -> tuple[str, str]:
         return content.decode("latin-1"), "text"
 
 
+def merge_parameters(primary: list, other: list) -> list:
+    """The results found in a second reading of the same file are added when the first reading did not find that test (or found it
+    without a reference range). A value the first reading found is never replaced by a different one."""
+    merged = list(primary)
+    index = {p.normalized_name: i for i, p in enumerate(merged)}
+    for p in other:
+        i = index.get(p.normalized_name)
+        if i is None:
+            index[p.normalized_name] = len(merged)
+            merged.append(p)
+        elif merged[i].reference_text is None and p.reference_text is not None and merged[i].value == p.value:
+            merged[i] = p
+    return merged
+
+
 def lab_items(analyzed: list[AnalyzedParameter]) -> list[insight_service.LabItem]:
     """Adapter: fresh analysis results -> the small records the insight engine works with."""
     from app.services.parameter_catalog import get_parameter_info
@@ -79,6 +94,11 @@ def process_report(filename: str, content: bytes) -> ProcessedReport:
         raise InvalidHealthReportError()       # a project report, assignment, invoice or CV: wrong file
 
     parameters = extract_parameters(cleaned)
+    visual = ""
+    if method == "pdf_text":                                        # the same PDF read in visual column order: finds rows the first reading garbles
+        visual = clean_text(pdf_service.extract_pdf_text_visual(content))
+        if visual:
+            parameters = merge_parameters(parameters, extract_parameters(visual))
     # a single stray number is not enough: with fewer than two test results the file must still show signs of a report
     if parameters and (len(parameters) >= 2 or insight_service.has_report_signs(cleaned)):
         analyzed = analyze_parameters(parameters)
@@ -86,11 +106,9 @@ def process_report(filename: str, content: bytes) -> ProcessedReport:
         summary = llm_service.enhance_explanations(analyzed, summary)  # no-op when no LLM key
         report_type = "LAB"
         insights = insight_service.build_lab_insights(lab_items(analyzed))
-        narrative = insight_service.build_narrative_insights(cleaned, "LAB")   # e.g. an impression written under the table
-        if insight_service.split_sections(cleaned).keys() & set(insight_service.KEY_SECTIONS):
-            insights["key_findings"] = insights["key_findings"] + [
-                f for f in narrative["key_findings"] if f["concern"] != "neutral"][:6]
-            insights["red_flags"] = insights["red_flags"] + narrative["red_flags"]
+        comment_findings, comment_flags = insight_service.lab_comment_findings(cleaned)   # only what the lab wrote about this patient
+        insights["key_findings"] = insights["key_findings"] + comment_findings[:6]
+        insights["red_flags"] = insights["red_flags"] + comment_flags
         insights["summary"] = summary
     else:
         # Not a lab table. Accept it only if it really looks like a medical document.
@@ -107,5 +125,5 @@ def process_report(filename: str, content: bytes) -> ProcessedReport:
 
     return ProcessedReport(
         text=cleaned, method=method, report_date=extract_report_date(cleaned), parameters=analyzed, summary=summary,
-        patient_name=extract_patient_name(cleaned), report_type=report_type, insights=insights,
+        patient_name=extract_patient_name(cleaned) or (extract_patient_name(visual) if visual else None), report_type=report_type, insights=insights,
     )

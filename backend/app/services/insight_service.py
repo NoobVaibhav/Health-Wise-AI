@@ -18,6 +18,8 @@ import re
 from dataclasses import dataclass
 
 # ------------------------------------------------------------------ report types
+from app.services.result_priority import DERIVED, prioritise, summary_text
+
 REPORT_TYPE_LABELS = {
     "LAB": "Laboratory test report",
     "IMAGING": "Imaging report (X-ray, CT, MRI, ultrasound)",
@@ -54,6 +56,7 @@ MEDICAL_WORDS = [
 ]
 
 SECTION_NAMES = [
+    "comment", "comments", "remark", "remarks", "note", "notes",
     "findings", "finding", "impression", "conclusion", "diagnosis", "assessment", "plan", "advice", "recommendation",
     "recommendations", "summary", "clinical history", "history", "indication", "technique", "comparison", "medications",
     "treatment", "discharge advice", "interpretation", "opinion", "result", "results", "microscopy", "gross description",
@@ -152,18 +155,54 @@ def detect_report_type(text: str, has_lab_values: bool = False) -> str:
 
 
 def split_sections(text: str) -> dict[str, str]:
-    """{'impression': '...', 'findings': '...'}  Lines like 'IMPRESSION: ...' start a section."""
+    """{'impression': '...', 'findings': '...'}  Lines like 'IMPRESSION: ...' start a section. A heading with nothing after it (a blank
+    impression to be filled in by hand) ends at the next short heading-like line instead of taking everything that follows."""
     pattern = re.compile(rf"^\s*({'|'.join(re.escape(n) for n in SECTION_NAMES)})\s*[:\-]\s*(.*)$", re.IGNORECASE)
     sections: dict[str, str] = {}
-    current = None
+    current, since_heading = None, 0
     for line in text.split("\n"):
         match = pattern.match(line)
         if match:
-            current = match.group(1).lower()
+            current, since_heading = match.group(1).lower(), 0
             sections[current] = (sections.get(current, "") + " " + match.group(2)).strip()
         elif current:
+            since_heading += 1
+            if line.strip().startswith("*"):
+                continue                                 # a footnote such as "*Findings to be clinically correlated"
+            words = line.split()
+            heading_like = 0 < len(words) <= 4 and not re.search(r"[.;]$", line.strip())
+            if not sections[current] and heading_like:
+                current = None                           # the section was empty and a new heading starts
+                continue
             sections[current] = (sections[current] + " " + line.strip()).strip()
-    return sections
+    return {k: v for k, v in sections.items() if v}
+
+
+BOILERPLATE = [
+    r"page\s+\d+\s*(?:of|/)\s*\d+", r"©|\(c\)\s*\d{4}|copyright|all rights reserved", r"\bbiosensor\s+id\b", r"https?://|www\.", r"[\w.+-]+@[\w-]+\.[\w.]+",
+    r"^\s*(?:signature(?:\s+and\s+date)?|interpreting physician|reporting physician|name|date|sign|stamp|doctor'?s? (?:name|signature))\s*:?\s*$",
+    r"^\s*(?:patient|patient name|holter report of|report of)\b.{0,60}\[", r"^\s*(?:tel|phone|mobile|fax)\b", r"\bmrd#", r"printed on|approved on|registration on",
+]
+BOILERPLATE_RE = re.compile("|".join(BOILERPLATE), re.IGNORECASE)
+
+
+def clean_report_text(text: str) -> str:
+    """The report without its page headers and footers (page numbers, copyright and device lines, signature blocks, the patient banner)
+    and without lines that repeat on every page. Used for the summary and the key statements, so they are made of the report's content."""
+    lines = text.split("\n")
+    norm = lambda l: re.sub(r"\s+", " ", l.strip().lower())
+    counts: dict[str, int] = {}
+    for l in lines:
+        if len(l.strip()) >= 18 and len(l.split()) >= 2 and not re.search(r"\d", l):
+            counts[norm(l)] = counts.get(norm(l), 0) + 1
+    keep = []
+    for l in lines:
+        if BOILERPLATE_RE.search(l):
+            continue
+        if len(l.strip()) >= 18 and len(l.split()) >= 2 and not re.search(r"\d", l) and counts.get(norm(l), 0) >= 3:
+            continue                                    # a title or navigation line repeated on every page
+        keep.append(l)
+    return "\n".join(keep)
 
 
 ABBREVIATIONS = re.compile(r"\b(no|nos|dr|mr|mrs|ms|vs|approx|fig|st|ref|avg|max|min)\.", re.IGNORECASE)
@@ -202,8 +241,13 @@ SKIP_LABELS = ("age", "date", "phone", "mobile", "tel", "id", "uhid", "mrn", "pi
 EVENT_WORDS = ("episode", "ectopic", "pause", "run", "couplet", "pair", "vtac", "svt", "vpb", "event", "arrhythm", "block")
 
 
+SIGNIFICANT_EVENTS = ("pause", "vtac", "ventricular", "svt", "atrial fib", "asystole", "episode", "block")      # a count above zero is worth a look
+# (counts of single or paired ectopic beats are reported as numbers but are not marked on their own)
+
+
 def _tidy_label(label: str) -> str:
     label = re.sub(r"\s+", " ", label).strip(" -:/()")
+    label = re.sub(r"^(?:MRD#?\S*|NA|N/A)\s+", "", label, flags=re.IGNORECASE)          # "MRD#NA Height" -> "Height"
     label = re.sub(r"\bNo of\b", "No. of", label)
     return label[:1].upper() + label[1:] if label else label
 
@@ -256,7 +300,8 @@ def extract_metrics(text: str, limit: int = 16) -> list[dict]:
             if low is not None and high is not None:
                 concern = "attention" if (value < low or value > high) else "normal"
             elif any(w in label.lower() for w in EVENT_WORDS):
-                concern = "attention" if value > 0 else "normal"
+                if any(w in label.lower() for w in SIGNIFICANT_EVENTS) or re.search(r"\b(?:vpb|pvc|vt)\b", label, re.IGNORECASE):     # VPB = ventricular; SVPB (supraventricular) is not matched
+                    concern = "attention" if value > 0 else "normal"
             key = (label.lower(), value)
             if key in seen:
                 continue
@@ -264,9 +309,100 @@ def extract_metrics(text: str, limit: int = 16) -> list[dict]:
             unit = (m.group("unit") or "").replace("MMHG", "mmHg").replace("mmhg", "mmHg")
             found.append({"label": label, "value": int(value) if value == int(value) else value, "unit": unit or None,
                           "range": f"{m.group('low')} - {m.group('high')}" if low is not None else None, "concern": concern})
+    found = _group_repeated(found)
     order = {"attention": 0, "neutral": 1, "normal": 2}
     found.sort(key=lambda f: order[f["concern"]])
     return found[:limit]
+
+
+def _group_repeated(found: list[dict]) -> list[dict]:
+    """The same measurement printed on every day of a long report (for example a daily summary) becomes ONE card: its highest
+    reading, with the number of readings and their range as a note."""
+    groups: dict[str, list[dict]] = {}
+    for m in found:
+        groups.setdefault(m["label"].lower(), []).append(m)
+    out = []
+    for items in groups.values():
+        if len(items) == 1:
+            out.append(items[0])
+            continue
+        values = [i["value"] for i in items if isinstance(i["value"], (int, float))]
+        top = dict(max(items, key=lambda i: i["value"] if isinstance(i["value"], (int, float)) else -1))
+        if values:
+            top["detail"] = f"{len(items)} readings in the report, from {min(values):,.4g} to {max(values):,.4g}"
+        out.append(top)
+    return out
+
+
+def _after(lines: list[str], label: str, start: int = 0) -> tuple[int, str | None]:
+    for i in range(start, len(lines)):
+        if lines[i].strip().lower() == label.lower():
+            return i, (lines[i + 1].strip() if i + 1 < len(lines) else None)
+    return -1, None
+
+
+def extract_holter_facts(text: str) -> dict | None:
+    """The key values of a Holter / long-term ECG report, whose summary page prints a label on one line and its value on the next
+    (Min / 39 bpm Oct-05 02:30, Total beats ..., Supraventricular ectopics: Total / Isolated / Couplet ... then the values in the same order).
+    Returns {"facts": [metric tiles], "findings": text} or None when this is not such a report."""
+    if not re.search(r"\bholter\b", text, re.IGNORECASE):
+        return None
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    facts: list[dict] = []
+
+    def add(label, value, unit=None, detail=None, concern="neutral"):
+        facts.append({"label": label, "value": value, "unit": unit, "range": None, "concern": concern, "detail": detail})
+
+    hr_at, _ = _after(lines, "Heart Rate")
+    if hr_at >= 0:
+        for label, key, low_bad, high_bad in (("Lowest heart rate", "Min", 40, None), ("Highest heart rate", "Max", None, 130), ("Average heart rate", "Avg", None, None)):
+            at, value = _after(lines, key, hr_at)
+            m = re.match(r"(\d+)\s*bpm\s*(.*)", value or "", re.IGNORECASE)
+            if m:
+                n = int(m.group(1))
+                add(label, n, "bpm", m.group(2) or None, "attention" if (low_bad and n < low_bad) or (high_bad and n > high_bad) else "neutral")
+    _, rr = _after(lines, "Longest RR")
+    m = re.match(r"([\d.]+)\s*s\s*(.*)", rr or "", re.IGNORECASE)
+    if m:
+        add("Longest gap between beats (RR)", float(m.group(1)), "sec", m.group(2) or None, "attention" if float(m.group(1)) >= 2.0 else "neutral")
+    joined = " ".join(lines)
+    m = re.search(r"Total Beats\s+(\d+)\s+Brady Beats\s+(\d+)\s*\(([\d.]+)%\)\s+Tachy Beats\s+(\d+)\s*\(([\d.]+)%\)\s+Pauses\s*\(\s*>?\s*([\d.]+)\s*Sec\)\s+(\d+)", joined, re.IGNORECASE)
+    if m:
+        add("Total heartbeats recorded", int(m.group(1)))
+        add("Slow beats (bradycardia)", int(m.group(2)), None, f"{m.group(3)}% of all beats")
+        add("Fast beats (tachycardia)", int(m.group(4)), None, f"{m.group(5)}% of all beats")
+        add(f"Pauses longer than {m.group(6)} seconds", int(m.group(7)), None, None, "attention" if int(m.group(7)) > 0 else "normal")
+    ve_at, ve = _after(lines, "Ventricular Ectopics")
+    if ve and ve.lower() == "not present":
+        add("Ventricular ectopic beats", "None", None, "reported as not present", "normal")
+    sv_at, _ = _after(lines, "Supraventricular Ectopics")
+    if sv_at >= 0:
+        labels = []
+        for l in lines[sv_at + 1: sv_at + 9]:
+            if l.lower() in ("total", "isolated", "couplet", "run count", "beats in run", "fastest run", "longest run"):
+                labels.append(l.lower())
+            else:
+                break
+        values = lines[sv_at + 1 + len(labels): sv_at + 1 + 2 * len(labels)]
+        nice = {"total": "Supraventricular ectopic beats (total)", "isolated": "Single supraventricular ectopic beats", "couplet": "Pairs of supraventricular beats",
+                "run count": "Runs of supraventricular beats", "beats in run": "Beats inside runs", "fastest run": "Fastest run", "longest run": "Longest run"}
+        for label, value in zip(labels, values):
+            m = re.match(r"(\d[\d,]*)\s*(\([^)]*\)|bpm|beats)?\s*(.*)", value)
+            if m:
+                note = " ".join(x for x in (m.group(2), m.group(3)) if x and x not in ("bpm", "beats")) or None
+                add(nice[label], int(m.group(1).replace(",", "")), m.group(2) if m.group(2) in ("bpm", "beats") else None, note)
+    _, af = _after(lines, "Atrial Fibrillation")
+    if af:
+        add("Atrial fibrillation", "None" if af.lower() == "not present" else af, None, "reported as not present" if af.lower() == "not present" else None, "normal" if af.lower() == "not present" else "attention")
+    _, duration = _after(lines, "Analysis Duration")
+    if duration:
+        add("Recording analysed", duration)
+    findings = ""
+    start = next((i for i, l in enumerate(lines) if re.match(r"findings\s*:", l, re.IGNORECASE)), None)
+    if start is not None:
+        end = next((i for i in range(start + 1, len(lines)) if re.match(r"impression\s*:", lines[i], re.IGNORECASE)), min(len(lines), start + 12))
+        findings = " ".join(l for l in lines[start + 1: end] if not l.startswith("*"))
+    return {"facts": facts, "findings": findings} if facts or findings else None
 
 
 def _is_negated(sentence: str, start: int) -> bool:
@@ -398,51 +534,64 @@ def _far_from_range(item: LabItem) -> bool:
 
 # ------------------------------------------------------------------ builders
 def build_lab_insights(items: list[LabItem]) -> dict:
-    outside = [i for i in items if i.status in ("ABOVE_RANGE", "BELOW_RANGE")]
-    unknown = [i for i in items if i.status == "UNKNOWN"]
-    categories = sorted({i.category for i in outside if i.category})
+    """Insights for a laboratory report. The out-of-range values are ranked (see result_priority): a few "look at first" results, the rest
+    listed once as "slightly outside", calculated values not repeated, and only a handful of suggestions and tips."""
+    pri = prioritise(items)
+    important, slight, derived = pri["important"], pri["slight"], pri["derived"]
+    categories = []
+    for e in important:                                                  # the categories of the most important results first
+        if e["category"] and e["category"] not in categories:
+            categories.append(e["category"])
 
-    key_findings = [
-        {"text": f"{i.name}: {i.value:g}{(' ' + i.unit) if i.unit else ''} is "
-                 f"{'higher' if i.status == 'ABOVE_RANGE' else 'lower'} than the normal range printed on the report",
-         "concern": "attention"} for i in outside
-    ] or [{"text": "Every value that has a printed range is inside it.", "concern": "normal"}]
+    key_findings = [{"text": e["text"], "concern": "attention"} for e in important[:8]]
+    minor = slight + derived
+    if minor:
+        names = ", ".join(e["name"] for e in minor[:10]) + (f" and {len(minor) - 10} more" if len(minor) > 10 else "")
+        key_findings.append({"text": f"{len(minor)} other result{'s are' if len(minor) != 1 else ' is'} only slightly outside the printed range, or {'are minor tests' if len(minor) != 1 else 'is a minor test'}: {names}.",
+                             "concern": "neutral"})
+    if not key_findings:
+        key_findings = [{"text": "Every value that has a printed range is inside it.", "concern": "normal"}]
 
     doctor = []
-    if outside:
-        doctor.append(f"{len(outside)} of {len(items)} values are outside the range printed on the report. "
-                      "Compare with the patient's earlier reports (see the Compare tab) before drawing conclusions.")
+    if important:
+        doctor.append(f"{len(important)} result{'s need' if len(important) != 1 else ' needs'} attention first: {', '.join(e['name'] for e in important[:6])}. "
+                      f"{len(minor)} other{'s are' if len(minor) != 1 else ' is'} only slightly outside the printed range. Compare with the patient's earlier reports (Compare tab) before drawing conclusions."
+                      if minor else f"{len(important)} result{'s need' if len(important) != 1 else ' needs'} attention first: {', '.join(e['name'] for e in important[:6])}. "
+                                    "Compare with the patient's earlier reports (Compare tab) before drawing conclusions.")
+    elif minor:
+        doctor.append(f"No result is far outside its printed range. {len(minor)} {'are' if len(minor) != 1 else 'is'} slightly outside ({', '.join(e['name'] for e in minor[:6])}): "
+                      "consider whether this matters for this patient before repeating tests.")
     else:
         doctor.append("All values that have a printed range are inside it. Routine follow-up as you judge appropriate.")
-    if unknown:   # right after the count, so it is never lost when only the top points are shown
-        doctor.append(f"{len(unknown)} value(s) have no printed range ({', '.join(i.name for i in unknown[:5])}) "
-                      "and cannot be judged here. Check them against your local reference ranges.")
-    doctor += [LAB_DOCTOR_BY_CATEGORY[c] for c in categories if c in LAB_DOCTOR_BY_CATEGORY]
+    if pri["no_range"]:
+        doctor.append(f"{len(pri['no_range'])} value(s) have no printed range ({', '.join(pri['no_range'][:5])}) and cannot be judged here. Check them against your local reference ranges.")
+    doctor += [LAB_DOCTOR_BY_CATEGORY[c] for c in categories[:3] if c in LAB_DOCTOR_BY_CATEGORY]
 
     red_flags = [f"{i.name} is far from the printed range ({i.value:g}{(' ' + i.unit) if i.unit else ''} vs {i.low if i.low is not None else ''}"
                  f"{'-' if i.low is not None and i.high is not None else ''}{i.high if i.high is not None else ''}). "
                  "Check for a measurement or unit mistake, or whether it needs prompt attention."
-                 for i in outside if _far_from_range(i)]
+                 for i in items if i.status in ("ABOVE_RANGE", "BELOW_RANGE") and _far_from_range(i) and i.name not in DERIVED]
 
     patient = []
-    for c in categories:
-        patient += LAB_PATIENT_BY_CATEGORY.get(c, [])
+    for n, c in enumerate(categories[:3]):                               # tips only for the categories that matter most: two lines each, one for the third
+        patient += LAB_PATIENT_BY_CATEGORY.get(c, [])[:2 if n < 2 else 1]
     patient += PATIENT_GENERAL
 
     return {
-        "report_type": "LAB", "source": "rules",
-        "summary": (f"{len(items)} test results were read. "
-                    + (f"{len(outside)} are outside the normal range printed on the report." if outside else "All results with a printed range are in the normal range.")),
-        "key_findings": key_findings, "red_flags": red_flags,
-        "doctor_suggestions": doctor, "patient_recommendations": _dedupe(patient),
+        "report_type": "LAB", "source": "rules", "summary": summary_text(items),
+        "key_findings": key_findings, "red_flags": red_flags, "doctor_suggestions": _dedupe(doctor)[:6], "patient_recommendations": _dedupe(patient)[:8],
+        "engine": 2, "priority": important, "slightly_outside": [{k: e[k] for k in ("name", "value", "unit", "range", "direction", "how_far")} for e in minor],
+        "counts": pri["counts"],
     }
 
 
 def build_narrative_insights(text: str, report_type: str) -> dict:
-    sections = split_sections(text)
-    key_text = " ".join(sections[name] for name in KEY_SECTIONS if name in sections) or text
+    cleaned = clean_report_text(text)
+    sections = split_sections(cleaned)
+    holter = extract_holter_facts(text)
+    key_text = " ".join(sections[name] for name in KEY_SECTIONS if name in sections) or (holter["findings"] if holter and holter["findings"] else cleaned)
     statements = split_statements(key_text)[:14]
-    metrics = extract_metrics(text)
+    metrics = holter["facts"] if holter and holter["facts"] else extract_metrics(text)
 
     findings, red_flags = [], []
     for sentence in statements:
@@ -450,6 +599,9 @@ def build_narrative_insights(text: str, report_type: str) -> dict:
         findings.append({"text": sentence, "concern": concern})
         if urgent:
             red_flags.append(f'The report says: "{sentence}". This wording may need prompt attention by the doctor.')
+    for m in metrics:                                           # a pause, atrial fibrillation or a dangerously slow rate is raised even when the sentences do not say it
+        if holter and m["concern"] == "attention" and m["label"].startswith(("Pauses", "Atrial fib")):
+            red_flags.append(f"{m['label']}: {m['value']}{(' ' + m['unit']) if m['unit'] else ''}. Please check this against the original report.")
 
     attention = [f for f in findings if f["concern"] == "attention"]
     normal = [f for f in findings if f["concern"] == "normal"]
@@ -466,7 +618,7 @@ def build_narrative_insights(text: str, report_type: str) -> dict:
     if metrics:
         flagged = [m for m in metrics if m["concern"] == "attention"]
         doctor.append(f"{len(metrics)} measured values were read from the report (see 'Key numbers'). "
-                      + (f"{len(flagged)} of them are counts above zero or outside a printed range." if flagged else "None of them is outside a printed range or a count above zero."))
+                      + (f"{len(flagged)} of them need a look: {', '.join(m['label'] for m in flagged[:4])}." if flagged else "None of them is outside a printed range or a finding that needs a look."))
 
     patient = list(PATIENT_BY_TYPE.get(report_type, [])) + PATIENT_GENERAL
 
@@ -477,11 +629,14 @@ def build_narrative_insights(text: str, report_type: str) -> dict:
     if metrics:
         summary += f"{len(metrics)} key numbers were read. "
     if impression:
-        summary += f'The report\'s own summary says: "{impression[:240]}"'
+        summary += f'The report\'s impression: "{impression[:240]}"'
+    elif findings:
+        summary += f'The report\'s findings: "{" ".join(f["text"] for f in findings[:2])[:260]}"'
     return {
-        "report_type": report_type, "source": "rules", "summary": summary.strip(),
+        "report_type": report_type, "source": "rules", "engine": 2, "summary": summary.strip(),
         "key_findings": findings, "metrics": metrics, "red_flags": red_flags,
         "doctor_suggestions": _dedupe(doctor), "patient_recommendations": _dedupe(patient),
+        **({"holter": {"recording": next((m["value"] for m in metrics if m["label"] == "Recording analysed"), None)}} if holter else {}),
     }
 
 
@@ -492,3 +647,24 @@ def _dedupe(items: list[str]) -> list[str]:
             seen.add(item)
             out.append(item)
     return out
+
+
+LAB_COMMENT_SECTIONS = ("impression", "conclusion", "comment", "comments", "remark", "remarks", "advice", "note", "notes")
+EDUCATIONAL_START = re.compile(r"^\W*(?:increased|decreased|raised|reduced|elevated|interpretation|limitations?|summary and uses|reference|explanation|causes?|clinical significance|"
+                               r"note that|please note|in random|due to|because)\b", re.IGNORECASE)
+
+
+def lab_comment_findings(text: str) -> tuple[list[dict], list[str]]:
+    """Sentences the laboratory itself wrote about THIS patient (an impression, comment or remark under the table). Explanation pages
+    such as "Increased in: ..." or "Limitations" describe the test in general and are never findings."""
+    sections = split_sections(clean_report_text(text))
+    body = " ".join(sections[n] for n in LAB_COMMENT_SECTIONS if n in sections)
+    findings, red = [], []
+    for sentence in split_statements(body)[:8]:
+        if EDUCATIONAL_START.match(sentence):
+            continue
+        concern, urgent = classify_statement(sentence)
+        findings.append({"text": sentence, "concern": concern})                  # the lab's own words about this patient are shown, whatever their tone
+        if urgent:
+            red.append(f'The report says: "{sentence}". This wording may need prompt attention by the doctor.')
+    return findings[:4], red

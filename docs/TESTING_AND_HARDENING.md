@@ -72,3 +72,54 @@ Each main module was checked against answers worked out independently of the cod
 * **Scanned images and photos cannot be read on this computer**: Tesseract OCR is not installed (the app answers "OCR is not configured" instead of failing). Install Tesseract (or set `TESSERACT_CMD`) for scans; text-based PDFs, text and CSV files work now.
 * Qualitative results (`Negative`, `Trace`, `Positive`) are not stored, and values written with `<` (for example `<100`) are skipped.
 * A single sex-specific range cannot be applied because the sex is not passed to the extractor; the doctor sees the printed text instead.
+
+---
+
+# Real commercial laboratory report (27 Oct 2026)
+
+A real 19-page report (Sterling Accuris style, with its own patient name) was uploaded and **only one test was read, and the value was wrong**
+(Hematocrit shown as 40, the lower end of its range, instead of 43.3). After the fixes the same file reads **58 tests with the right values,
+the lab's own H/L flags agree with the computed status, and the patient name is detected.**
+
+| Problem | Fix |
+|---|---|
+| The app's PDF reader (pypdf) prints this layout as `Hemoglobin g/dL 13.0 - 16.5Colorimetric 14.5` (value last), and the first number after the unit was taken as the value | New "value-last" layout: `Test [flag] unit range(s) [method] value`, also when the result is on a line of its own several lines below a block of range tiers |
+| A **method column** between the name and the value (`Hemoglobin Colorimetric 14.5 g/dL ...`), flags such as `analysisH 10570` or `MPV Calculated H 14.00` | Method words and flag letters are accepted in the gap |
+| Several labelled ranges (`Desirable <200 / Borderline 200-239 / High >240`, HDL `Low <40 / High >60`) | Only a range labelled normal/desirable/optimal/sufficiency/non-diabetes/non-reactive is used. If none says normal (HDL, age groups), **no range is guessed** and the printed text is kept, so HDL 60 is never wrongly flagged |
+| Only 15 pages were read, the report has 19 | All pages (up to 60) are read for text; OCR still renders at most 15 |
+| Each PDF reader garbles different rows | A text PDF is read two ways (column order and visual order) and the results are merged: a test found by one is added, a value found by the first is never replaced |
+| 30 tests of the report were not in the catalog | Added RDW, MPV, ESR, the five differential counts, mean blood glucose, CHOL/HDL and LDL/HDL ratios, globulin, A/G ratio, indirect and delta bilirubin, calcium, sodium, potassium, chloride, iron, TIBC, transferrin saturation, homocysteine, PSA, microalbumin, total IgE, HbA / HbA2 / HbF, and the long printed forms of T3, T4 and TSH |
+| A count range `Pus Cells 1-2` was read as the value 1; a sentence ending "year 2023" under a test name was read as 2023 | Both are refused |
+| Patient name not found (header printed below the table) | The first 150 lines are searched and the name stops at the next label |
+
+Checked: the 402-value accuracy set is still 402/402 for text and PDF; new tests in `tests/test_extraction_layouts.py` use invented values only.
+Not read yet: qualitative results (Reactive / Non reactive, Present (+)), results printed as `< 148`, and nameless absolute-count lines.
+**A report uploaded before this fix stays as it was analysed: delete it and upload it again.**
+
+## Report analysis: what matters first, and no unwanted text
+
+Complaint: the analysis listed every out-of-range value as equally important, repeated explanation text, and for ECG / Holter reports quoted page headers and footers and showed 16 identical daily numbers as 16 problems.
+
+**Laboratory reports** (`services/result_priority.py`). Each out-of-range value is ordered by two things visible on the report: how far it is from the printed range, and how important the test usually is (key markers such as glucose, HbA1c, vitamin D count more than MPV or a ratio). Calculated values (VLDL, BUN, ratios) are never listed on their own. The screen shows four tiles (tests read, normal, look at first, slightly outside), the "look at first" cards with how far outside the range, and the rest in one collapsed list. Doctor suggestions and patient tips come only from the categories that matter. It only orders results; it does not diagnose. Lab comment sections are used as findings; educational text such as "Increased in..." is not.
+
+**Narrative reports (ECG, Holter, scans)**. Headers, footers, copyright and signature lines are removed, empty sections are dropped, repeated daily numbers become one card ("N readings, from a to b"), and Holter key numbers are read as labelled values (heart rate, longest gap, pauses, ectopic beats). The summary quotes the report's own findings. Only a ventricular ectopic count or pauses/AF are flagged; supraventricular counts stay neutral.
+
+**Old reports** are rebuilt on display from the stored data (`INSIGHTS_ENGINE = 2`); insights written by an AI model are kept. No re-upload needed for the analysis view.
+
+Tests: `tests/test_result_priority.py` (ranking, derived values excluded, Holter facts, header cleaning, old report upgrade). Invented data only.
+
+## Running the tests
+
+| Command (in `backend`) | What it runs | Time |
+|---|---|---|
+| `python -m pytest -q -m "not slow"` | everything except the two exhaustive hostile-input sweeps | about 6 minutes |
+| `python -m pytest -q` | all tests including the sweeps | about 10 minutes |
+
+Most of the time is the test hospital being built again for each test (about 1.3 s); the application itself answers a login in about 15 ms.
+Frontend: `npx vitest run` (about 10 seconds).
+
+## First-login password pop-up
+A person who logs in with the starting password sees a pop-up on top of the app (`ChangePasswordDialog`): it cannot be closed by Esc or by clicking outside, shows the three password rules as they are met, and the only other choice is "Log out instead". The server also blocks every other request until the password is changed. The "Change password" page (`/change-password`) is for people who already chose their own password. Both use `ChangePasswordForm`.
+
+## Download the analysis of a report (PDF)
+The report page has a **Download analysis (PDF)** button (doctor and patient, once the analysis is visible). It prints an A4 sheet named after the patient, for example `Hari_Lad_Laboratory_Test_Report_Analysis`: summary, doctor's review, the results to look at first, key numbers, all test results and the doctor's points or the patient's tips. It uses only what the screen already received, so a patient never gets anything before the doctor has checked the report. Sheet: `ReportPrintSheet.jsx`.

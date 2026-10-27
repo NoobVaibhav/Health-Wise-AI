@@ -1,40 +1,16 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROLE_HOME, useAuth } from "../../context/AuthContext";
-import { changePassword } from "../../services/authApi";
-import { getErrorMessage, tokenStore } from "../../services/api";
-import { Button, Input } from "../../components/ui";
+import ChangePasswordForm from "../../components/ChangePasswordForm";
 import { AuthShell } from "./Login";
 
-// Accounts created with a temporary password must set their own password at first login.
+// Someone who already has their own password changes it here (Account menu). The first-login case is the pop-up (ChangePasswordDialog).
 export default function ChangePassword() {
-  const { user, refresh } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ current_password: "", new_password: "" });
-  const [error, setError] = useState("");
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setError("");
-    try {
-      const result = await changePassword(form);
-      if (result.access_token) tokenStore.set(result.access_token);      // the old token stops working after a password change
-      await refresh();
-      navigate(ROLE_HOME[user.role]);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    }
-  };
-
   return (
-    <AuthShell title="Set a new password">
-      <p className="mb-3 text-sm text-slate-500">{user.must_change_password ? "You are using a temporary password. Please choose your own." : "Change your password."}</p>
-      <form onSubmit={submit} className="space-y-4">
-        <Input type="password" placeholder="Current (temporary) password" required value={form.current_password} onChange={(e) => setForm({ ...form, current_password: e.target.value })} />
-        <Input type="password" placeholder="New password (at least 8 characters)" required minLength={8} value={form.new_password} onChange={(e) => setForm({ ...form, new_password: e.target.value })} />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button className="w-full">Save password</Button>
-      </form>
+    <AuthShell title="Change your password">
+      <p className="mb-4 text-slate-600">Enter your current password and choose a new one.</p>
+      <ChangePasswordForm onDone={() => navigate(ROLE_HOME[user.role])} />
     </AuthShell>
   );
 }

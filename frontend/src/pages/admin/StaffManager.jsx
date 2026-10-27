@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import { createStaff, listDepartments } from "../../services/adminApi";
 import PeopleList from "../../components/PeopleList";
+import AccountCreatedDialog from "../../components/AccountCreatedDialog";
 import { useToast } from "../../components/Toast";
 import { getErrorMessage } from "../../services/api";
 import { Button, Field, Input, Modal, Select } from "../../components/ui";
@@ -29,12 +30,7 @@ export default function StaffManager({ kind }) {
         <PageTitle title={cfg.title} subtitle={`Add new ${cfg.title.toLowerCase()} and see when they last logged in`} />
         <Button onClick={() => { setCreating(true); setCreated(null); }}><Plus size={16} className="mr-1 inline" /> Add {cfg.single}</Button>
       </div>
-      {created && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
-          <p className="font-semibold text-emerald-800">{created.user.full_name} was created. Login: {created.user.email}</p>
-          {created.temporary_password && <p>Temporary password: <b className="rounded bg-white px-2 py-0.5 font-mono">{created.temporary_password}</b> <span className="text-xs text-slate-500">(shown only once; must be changed at first login)</span></p>}
-        </div>
-      )}
+      {created && <AccountCreatedDialog kind={cfg.single} name={created.user.full_name} email={created.user.email} password={created.temporary_password} onClose={() => setCreated(null)} />}
       <PeopleList role={cfg.role} reloadKey={refresh} emptyHint={`Use "Add ${cfg.single}" to create the first account.`} />
       {creating && <CreateModal kind={kind} cfg={cfg} onClose={() => setCreating(false)} onCreated={(r) => { setCreated(r); setRefresh((n) => n + 1); toast(`${r.user.full_name} was added`); }} />}
     </div>
@@ -61,7 +57,7 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
       <form onSubmit={submit} className="space-y-4">
         <Field label="Full name"><Input required value={form.full_name} onChange={set("full_name")} /></Field>
         <Field label="Email (used to log in)"><Input type="email" required value={form.email} onChange={set("email")} /></Field>
-        <Field label="Password" hint="Leave empty to generate a temporary password"><Input type="password" minLength={8} value={form.password} onChange={set("password")} /></Field>
+        <Field label="Password" hint="Leave empty to use the default starting password (the person must change it at first login)"><Input type="password" minLength={8} value={form.password} onChange={set("password")} /></Field>
         <Field label="Phone"><Input value={form.phone} onChange={set("phone")} /></Field>
         {kind === "doctors" && (<>
           <Field label="Department"><Select value={form.department_id} onChange={set("department_id")}><option value="">None</option>{(departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>

@@ -45,6 +45,7 @@ def tokens(client, world):
     return [world.admin, world.doctor, world.employee, world.pharmacy, world.patient, login(client, "lab@hospital.example.com")]
 
 
+@pytest.mark.slow
 def test_no_write_endpoint_crashes_on_bad_input(client, world, tokens):
     spec = app.openapi()
     quiet = TestClient(app, raise_server_exceptions=False)          # a crash shows up as a 500 instead of an exception
@@ -84,6 +85,7 @@ def test_uploads_with_hostile_files_never_crash(client, world):
         assert r.status_code < 500, (content[:10], r.status_code)
 
 
+@pytest.mark.slow
 def test_no_read_endpoint_crashes_on_bad_query_values(client, world, tokens):
     spec = app.openapi()
     quiet = TestClient(app, raise_server_exceptions=False)

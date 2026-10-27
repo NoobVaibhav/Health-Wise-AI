@@ -126,4 +126,20 @@ describe("AssistantChat", () => {
     await userEvent.type(screen.getByLabelText("Type your question"), "mera report{Enter}");
     expect(sendChat).toHaveBeenCalledWith(expect.objectContaining({ language: "hi" }));
   });
+  it("offers the next questions that fit the answer, shows repeated sources once and keeps the label of each line in bold", async () => {
+    sendChat.mockResolvedValue(reply({
+      text: "Advice and instructions your doctor has recorded:\nFollow-up date given: 27 Oct 2026\nThis is what your records say. I have not added anything of my own.",
+      sources: [{ type: "recommendation", id: 1, label: "Doctor's advice", date: "2026-10-27" }, { type: "recommendation", id: 2, label: "Doctor's advice", date: "2026-10-27" }],
+      follow_ups: [{ key: "meds", text: "My medicines" }, { key: "appointments", text: "My appointments" }],
+    }));
+    open();
+    await userEvent.click(await screen.findByRole("button", { name: "My last checkup" }));
+    expect(await screen.findByText(/Ask next/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "My medicines" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "My last checkup" })).toBeNull();                 // the follow-ups replace the first suggestions
+    expect(screen.getAllByText(/Doctor's advice/).length).toBe(1);                                 // two sources with the same label and day: one chip
+    expect(screen.getByText(/\(2\)/)).toBeTruthy();
+    expect(screen.getByText("Follow-up date given:").tagName).toBe("B");
+    expect(screen.getByRole("button", { name: "Copy this answer" })).toBeTruthy();
+  });
 });

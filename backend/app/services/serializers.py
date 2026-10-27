@@ -64,28 +64,31 @@ def report_list_item(r: HealthReport) -> ReportListItem:
     )
 
 
+INSIGHTS_ENGINE = 2          # bump when the way insights are worked out changes: stored rule-based insights of an older version are rebuilt when shown
+
+
 def stored_insights(r: HealthReport) -> dict | None:
-    """The insights saved with the report. Older lab reports have none, so they are built now from the stored values."""
-    if r.insights_json:
-        data = json.loads(r.insights_json)
+    """The insights saved with the report. Rule-based insights made by an older version of the engine (and older lab reports that have none)
+    are rebuilt now from the stored values or text, so every report benefits from improvements. Insights written by an AI model are kept."""
+    data = json.loads(r.insights_json) if r.insights_json else None
+    if data is not None and data.get("source") == "llm":
         if "metrics" not in data and not r.parameters and r.extracted_text:
-            # saved before 'key numbers' existed: read the numbers now (and re-read the sentences unless an AI model wrote them)
-            if data.get("source") == "llm":
-                data["metrics"] = extract_metrics(r.extracted_text)
-            else:
-                data = build_narrative_insights(r.extracted_text, data.get("report_type") or detect_report_type(r.extracted_text))
+            data["metrics"] = extract_metrics(r.extracted_text)
+        return data
+    if data is not None and data.get("engine") == INSIGHTS_ENGINE:
         return data
     if r.parameters:
         items = []
         for p in r.parameters:
             info = get_parameter_info(p.normalized_name)
-            items.append(LabItem(p.normalized_name, info.category if info else None, p.status, p.value, p.unit,
-                                 p.reference_low, p.reference_high))
+            items.append(LabItem(p.normalized_name, info.category if info else None, p.status, p.value, p.unit, p.reference_low, p.reference_high))
         return build_lab_insights(items)
-    return None
+    if r.extracted_text:
+        return build_narrative_insights(r.extracted_text, (data or {}).get("report_type") or detect_report_type(r.extracted_text))
+    return data
 
 
-PATIENT_INSIGHT_KEYS = ("report_type", "source", "summary", "key_findings", "metrics", "patient_recommendations")
+PATIENT_INSIGHT_KEYS = ("report_type", "source", "summary", "key_findings", "metrics", "patient_recommendations", "priority", "slightly_outside", "counts", "holter")
 
 
 def insights_for_role(r: HealthReport, role: str) -> dict | None:
@@ -117,6 +120,15 @@ def analysis_visible_to(role: str, report: HealthReport) -> bool:
     return role not in (ADMIN, EMPLOYEE)
 
 
+def _current_summary(r: HealthReport) -> str | None:
+    """The one-paragraph summary shown on the report. A summary saved by an older version of the rule-based engine is replaced by the rebuilt
+    one (see stored_insights); a summary written with an AI model is kept as it was saved."""
+    full = stored_insights(r)
+    if full and full.get("engine") == INSIGHTS_ENGINE and full.get("source") != "llm" and full.get("summary"):
+        return full["summary"]
+    return r.ai_summary
+
+
 def report_detail(r: HealthReport, role: str, warnings: list[str] | None = None) -> ReportDetail:
     visible = analysis_visible_to(role, r)
     counts = {"WITHIN_RANGE": 0, "ABOVE_RANGE": 0, "BELOW_RANGE": 0, "UNKNOWN": 0}
@@ -129,7 +141,7 @@ def report_detail(r: HealthReport, role: str, warnings: list[str] | None = None)
         analysis_visible=visible,
         is_narrative=effective_report_type(r) != "LAB" and not r.parameters,
         insights=insights_for_role(r, role),
-        ai_summary=r.ai_summary if visible else None,
+        ai_summary=_current_summary(r) if visible else None,
         counts=counts,
         parameters=[parameter_out(p) for p in r.parameters] if visible else [],
         review_decision=r.review_decision, review_comment=r.review_comment,

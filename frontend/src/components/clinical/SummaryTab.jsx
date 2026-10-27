@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { AlertTriangle, Bot, Printer } from "lucide-react";
 import { Section } from "../HealthCard";
+import { printAs } from "../../utils/printTitle";
 import { Button, fmtDate, fmtUtc } from "../ui";
 import { generateAiNarrative } from "../../services/clinicalApi";
 import { getErrorMessage } from "../../services/api";
@@ -20,7 +21,7 @@ function Card({ title, children, tone = "" }) {
   return <div className={`rounded-2xl border border-slate-200 bg-white p-3.5 ${tone}`}><p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-slate-400">{title}</p><div className="text-[15px] text-slate-800">{children}</div></div>;
 }
 
-export default function SummaryTab({ summary, patientId, onOpen, reload }) {
+export default function SummaryTab({ summary, patientId, patientName, onOpen, reload }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const o = summary.overview;
@@ -39,7 +40,7 @@ export default function SummaryTab({ summary, patientId, onOpen, reload }) {
 
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div className="flex flex-wrap gap-1.5 text-xs">{Object.entries(summary.labels).filter(([k]) => k !== "AI_GENERATED" || ai).map(([k, v]) => <span key={k} className={`rounded-full px-2.5 py-0.5 font-bold ${LABEL_STYLE[k]}`}>{v}</span>)}</div>
-        <Button variant="secondary" onClick={() => window.print()}><Printer size={15} className="mr-1.5 inline" />Print or save as PDF</Button>
+        <Button variant="secondary" onClick={() => printAs(patientName, "Clinical summary")}><Printer size={15} className="mr-1.5 inline" />Print or save as PDF</Button>
       </div>
 
       <Section title="Patient overview">
