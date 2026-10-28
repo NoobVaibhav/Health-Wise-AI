@@ -50,7 +50,7 @@ def test_lab_insights_are_short_ranked_and_free_of_unrelated_text():
     assert "Urea" in texts[2] and "WBC" in texts[2] and "MPV" in texts[2] and out["counts"] == {"normal": 0, "important": 2, "slight": 3, "no_range": 0}
     assert "2 results need attention first: Vitamin D, HbA1c" in out["doctor_suggestions"][0]
     assert all("blood count" not in s.lower() for s in out["doctor_suggestions"])                                   # minor blood-count deviations do not trigger a suggestion
-    assert len(out["patient_recommendations"]) <= 8 and len(out["doctor_suggestions"]) <= 6 and out["engine"] == 2
+    assert len(out["patient_recommendations"]) <= 8 and len(out["doctor_suggestions"]) <= 6 and out["engine"] >= 2
     assert "Look at these first: Vitamin D (much lower); HbA1c (clearly higher)" in out["summary"] and "2 results" not in out["summary"].split("Look at these first")[0]
     calm = ins.build_lab_insights([item("Hemoglobin", 14.5, 13, 16.5, "g/dL", "cbc")])
     assert calm["key_findings"] == [{"text": "Every value that has a printed range is inside it.", "concern": "normal"}] and calm["priority"] == []
@@ -178,7 +178,7 @@ def test_a_report_analysed_by_an_older_version_is_shown_with_the_new_ranking(cli
         row.insights_json = json.dumps(old)
         db.commit()
     shown = client.get(f"/api/reports/{rid}", headers=world.doctor).json()["insights"]
-    assert shown["engine"] == 2 and [e["name"] for e in shown["priority"]] == ["Vitamin D"] and shown["counts"]["slight"] == 2
+    assert shown["engine"] >= 2 and [e["name"] for e in shown["priority"]] == ["Vitamin D"] and shown["counts"]["slight"] == 2
     client.put(f"/api/doctor/reports/{rid}/review", headers=world.doctor, json={"decision": "APPROVED"})
     patient_view = client.get(f"/api/reports/{rid}", headers=world.patient).json()["insights"]
     assert [e["name"] for e in patient_view["priority"]] == ["Vitamin D"] and "doctor_suggestions" not in patient_view and "red_flags" not in patient_view     # patients see the ranking, not the doctor-only notes
@@ -200,3 +200,13 @@ def test_the_summary_on_screen_is_the_rebuilt_one_not_the_text_saved_by_an_older
         db.commit()
     shown = client.get(f"/api/reports/{rid}", headers=world.doctor).json()
     assert "Biosensor" not in shown["ai_summary"] and "predominant rhythm was sinus rhythm" in shown["ai_summary"]
+
+
+def test_the_summary_is_also_given_as_short_points_for_lab_and_narrative_reports():
+    from app.services.insight_service import build_lab_insights, build_narrative_insights
+    out = build_lab_insights([item("Vitamin D", 8.98, 30, 100, "ng/mL", "vitamin"), item("HbA1c", 7.1, None, 5.7, "%", "glucose"), item("Urea", 18.0, 19.3, 43, "mg/dL", "kidney")])
+    pts = out["summary_points"]
+    assert 3 <= len(pts) <= 6 and all(p["text"] for p in pts)
+    assert any(p.get("items") for p in pts) and "not a diagnosis" in pts[-1]["text"].lower()
+    holter = build_narrative_insights("Holter report\nImpression: Sinus rhythm with first degree AV block.\nMax heart rate: 103 bpm", "ECG")
+    assert len(holter["summary_points"]) >= 3 and "not a diagnosis" in holter["summary_points"][-1]["text"].lower()

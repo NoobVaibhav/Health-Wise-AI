@@ -2,6 +2,7 @@
 // It sits on the page all the time but only shows when printing (the app's print rule hides everything except "print-area").
 // The same sheet serves the doctor (points to consider) and the patient (tips); the report data already holds only what that role may see.
 import { fmtDate, fmtUtc } from "./ui";
+import SummaryPoints from "./SummaryPoints";
 
 const num = (v) => (typeof v === "number" ? v.toLocaleString(undefined, { maximumFractionDigits: 2 }) : v);
 const CONCERN = { attention: "Worth a look", normal: "Looks normal", neutral: "Note" };
@@ -41,7 +42,7 @@ export default function ReportPrintSheet({ report, role, short = false }) {
       </div>
 
       <Block title="In short">
-        <p className="text-[13px]">{report.ai_summary}</p>
+        <SummaryPoints report={report} print />
         {!report.is_narrative && !short && <p className="mt-1.5 font-semibold">Normal: {c.WITHIN_RANGE ?? 0} - Too high: {c.ABOVE_RANGE ?? 0} - Too low: {c.BELOW_RANGE ?? 0} - No normal range: {c.UNKNOWN ?? 0}</p>}
       </Block>
 

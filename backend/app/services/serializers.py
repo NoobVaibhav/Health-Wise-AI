@@ -12,7 +12,7 @@ from app.schemas.patient import PatientBasic, PatientFull
 from app.schemas.prescription import PrescriptionItemOut, PrescriptionOut
 from app.schemas.report import ParameterOut, ReportDetail, ReportListItem
 from app.services.analysis_engine import STATUS_LABELS
-from app.services.insight_service import (REPORT_TYPE_LABELS, LabItem, build_lab_insights, build_narrative_insights,
+from app.services.insight_service import (INSIGHTS_ENGINE, REPORT_TYPE_LABELS, LabItem, build_lab_insights, build_narrative_insights,
                                           detect_report_type, extract_metrics)
 from app.services.parameter_catalog import get_parameter_info
 from app.services.safety_filter import DISCLAIMER
@@ -64,7 +64,6 @@ def report_list_item(r: HealthReport) -> ReportListItem:
     )
 
 
-INSIGHTS_ENGINE = 2          # bump when the way insights are worked out changes: stored rule-based insights of an older version are rebuilt when shown
 
 
 def stored_insights(r: HealthReport) -> dict | None:
@@ -88,7 +87,7 @@ def stored_insights(r: HealthReport) -> dict | None:
     return data
 
 
-PATIENT_INSIGHT_KEYS = ("report_type", "source", "summary", "key_findings", "metrics", "patient_recommendations", "priority", "slightly_outside", "counts", "holter")
+PATIENT_INSIGHT_KEYS = ("report_type", "source", "summary", "key_findings", "metrics", "patient_recommendations", "priority", "slightly_outside", "counts", "holter", "summary_points")
 
 
 def insights_for_role(r: HealthReport, role: str) -> dict | None:

@@ -93,6 +93,30 @@ def prioritise(items: list) -> dict:
             "counts": {"normal": normal, "important": len(important), "slight": len(slight) + len(derived), "no_range": len(no_range)}}
 
 
+def summary_points(items: list) -> list[dict]:
+    """The same summary as a few short points for the screen and the PDF: [{"text": ..., "items": [...optional sub-points]}]."""
+    p = prioritise(items)
+    total, c = len(items), p["counts"]
+    out = c["important"] + c["slight"]
+    first = f"{total} test result{'s' if total != 1 else ''} read: {c['normal']} normal, {out} outside the printed range"
+    first += f", {c['no_range']} with no printed range." if c["no_range"] else "."
+    points = [{"text": first}]
+    if p["important"]:
+        points.append({"text": "Look at these first (most important first):",
+                       "items": [f"{e['name']}: {e['value']:g}{(' ' + e['unit']) if e['unit'] else ''}, {DEGREE[e['severity']]} {'higher' if e['direction'] == 'HIGH' else 'lower'} than normal ({e['range']})"
+                                 for e in p["important"][:6]]})
+    else:
+        points.append({"text": "No result is far outside its printed range."})
+    minor = p["slight"] + p["derived"]
+    if minor:
+        names = ", ".join(e["name"] for e in minor[:8]) + (f" and {len(minor) - 8} more" if len(minor) > 8 else "")
+        points.append({"text": f"{len(minor)} other{'s are' if len(minor) != 1 else ' is'} only slightly outside the range, or minor: {names}."})
+    if p["no_range"]:
+        points.append({"text": f"No normal range is printed for {', '.join(p['no_range'][:6])}. Ask the doctor, who can check it against the lab's own comments."})
+    points.append({"text": "This is not a diagnosis. A doctor must review these results."})
+    return points
+
+
 def summary_text(items: list) -> str:
     """One plain paragraph: what was read, what to look at first, what is only slightly outside."""
     p = prioritise(items)

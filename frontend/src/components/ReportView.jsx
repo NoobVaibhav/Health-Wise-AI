@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Bot, FileDown, Hourglass } from "lucide-react";
 import ReportPrintSheet from "./ReportPrintSheet";
+import SummaryPoints from "./SummaryPoints";
 import { AtAGlance, CopySummary, DownloadMenu } from "./ReportActions";
 import { Section } from "./HealthCard";
 import ParameterTable from "./ParameterTable";
@@ -73,7 +74,7 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
         <>
           <Section title="In short">
             <p className="mb-2 inline-flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800"><Bot size={13} /> Written by the computer, not by a doctor. A doctor will check it.</p>
-            <p className="text-lg leading-relaxed text-slate-800">{report.ai_summary}</p>
+            <SummaryPoints report={report} />
             {!report.is_narrative && (
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Count n={c.WITHIN_RANGE} label="Normal" color="text-emerald-600" />

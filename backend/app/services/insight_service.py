@@ -18,7 +18,9 @@ import re
 from dataclasses import dataclass
 
 # ------------------------------------------------------------------ report types
-from app.services.result_priority import DERIVED, prioritise, summary_text
+from app.services.result_priority import DERIVED, prioritise, summary_points, summary_text
+
+INSIGHTS_ENGINE = 3          # bump when the way insights are worked out changes: stored rule-based insights of an older version are rebuilt when shown
 
 REPORT_TYPE_LABELS = {
     "LAB": "Laboratory test report",
@@ -578,9 +580,9 @@ def build_lab_insights(items: list[LabItem]) -> dict:
     patient += PATIENT_GENERAL
 
     return {
-        "report_type": "LAB", "source": "rules", "summary": summary_text(items),
+        "report_type": "LAB", "source": "rules", "summary": summary_text(items), "summary_points": summary_points(items),
         "key_findings": key_findings, "red_flags": red_flags, "doctor_suggestions": _dedupe(doctor)[:6], "patient_recommendations": _dedupe(patient)[:8],
-        "engine": 2, "priority": important, "slightly_outside": [{k: e[k] for k in ("name", "value", "unit", "range", "direction", "how_far")} for e in minor],
+        "engine": INSIGHTS_ENGINE, "priority": important, "slightly_outside": [{k: e[k] for k in ("name", "value", "unit", "range", "direction", "how_far")} for e in minor],
         "counts": pri["counts"],
     }
 
@@ -632,8 +634,19 @@ def build_narrative_insights(text: str, report_type: str) -> dict:
         summary += f'The report\'s impression: "{impression[:240]}"'
     elif findings:
         summary += f'The report\'s findings: "{" ".join(f["text"] for f in findings[:2])[:260]}"'
+    points = [{"text": f"{label}."}]
+    if findings:
+        points.append({"text": f"{len(findings)} key statement{'s' if len(findings) != 1 else ''} found: {len(normal)} look normal, {len(attention)} worth a look."})
+    if metrics:
+        look = [m["label"] for m in metrics if m["concern"] == "attention"]
+        points.append({"text": f"{len(metrics)} key number{'s' if len(metrics) != 1 else ''} read" + (f"; worth a look: {', '.join(look[:4])}." if look else "; none stands out.")})
+    if impression:
+        points.append({"text": "The report's impression:", "items": [impression[:240]]})
+    elif findings:
+        points.append({"text": "The report's findings:", "items": [f["text"][:200] for f in findings[:3]]})
+    points.append({"text": "This is not a diagnosis. A doctor must review the report."})
     return {
-        "report_type": report_type, "source": "rules", "engine": 2, "summary": summary.strip(),
+        "report_type": report_type, "source": "rules", "engine": INSIGHTS_ENGINE, "summary": summary.strip(), "summary_points": points,
         "key_findings": findings, "metrics": metrics, "red_flags": red_flags,
         "doctor_suggestions": _dedupe(doctor), "patient_recommendations": _dedupe(patient),
         **({"holter": {"recording": next((m["value"] for m in metrics if m["label"] == "Recording analysed"), None)}} if holter else {}),
