@@ -149,4 +149,13 @@ Docker is not installed here, so `docker compose up` was reviewed by reading onl
 | F-04 | the wake phrase needs a greeting before the name ("hey / hi / hello / ok healthwise"); "health wise" in normal speech no longer switches the microphone on | `voice.chaos.test.js` |
 | V-01 | the spoken "clear the chat" / "start over" asks "Do you want to clear this chat? Say yes or no." and deletes only after a yes | `assistant.chaos.test.jsx` |
 
-The `it.fails` marks of these six tests were removed (they are normal tests now). Still open: everything in sections 3 that is not in this table; waiting for your decision.
+### Fixed: the clinical-reading bugs (T-02, T-03, T-04, T-06)
+
+| ID | Fix | Proof |
+|---|---|---|
+| T-02 | "cannot / unable to / not possible to rule out or exclude X" and "X cannot be excluded" are rewritten to "possible X" before the negation check, so the finding counts as present | `test_ai_integrity.py` T-02 case |
+| T-03 | an urgent word now makes the sentence "worth a look" and urgent by itself (before, it only counted when a second word also matched); the urgent list gained ST-segment elevation, STEMI, cardiac arrest, free air, pneumoperitoneum, torsion, ventricular tachycardia and fibrillation, asystole, stroke, sepsis, subarachnoid and subdural bleeds, cord compression and others | all 8 T-03 sentences |
+| T-04 | "not suspicious for X" is read as "no evidence of X" | T-04 case |
+| T-06 | rows that print their tiers on one line without colons (`Deficient <20 Insufficient 20-30 Sufficient 30-100`, `Low <40 High >60`) now use the tier that means normal (or no range at all when none does): Vitamin D 15 and 25 are BELOW range, HDL 35 and 70 are UNKNOWN; Cholesterol, Glucose, HbA1c, LDL and Triglyceride rows are unchanged | 4 T-06 cases |
+
+The `it.fails` marks of the browser tests were removed (they are normal tests now). Still open: everything in section 3 that is not in the two tables above; waiting for your decision.

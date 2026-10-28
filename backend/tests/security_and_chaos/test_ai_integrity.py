@@ -108,7 +108,6 @@ DANGEROUS_FALSE_NEGATIVES = [
 
 
 @pytest.mark.parametrize("sentence,concern,urgent,finding", DANGEROUS_FALSE_NEGATIVES, ids=[f"{f}-{s[:28]}" for s, c, u, f in DANGEROUS_FALSE_NEGATIVES])
-@bust("T-02/03/04")
 def test_phrases_where_the_reading_is_wrong_or_dangerous(sentence, concern, urgent, finding):
     """T-02 'cannot rule out' is read as a negation (the finding is treated as absent): the most dangerous direction.
     T-03 serious findings named in another way than the word list are not recognised. T-04 'not suspicious for' is read as suspicious."""
@@ -253,7 +252,6 @@ def test_the_patient_never_gets_doctor_only_parts_in_any_response(client, world)
                 assert secret not in text or secret == "uploaded_by_id", (path, secret)
 
 
-@bust("T-06")
 @pytest.mark.parametrize("row,name,wrong", [
     ("Vitamin D 15 ng/mL Deficient <20 Insufficient 20-30 Sufficient 30-100", "Vitamin D", {WITHIN}),          # a deficient value read as "within range"
     ("Vitamin D 25 ng/mL Deficient <20 Insufficient 20-30 Sufficient 30-100", "Vitamin D", {ABOVE}),           # an insufficient value read as "too high"

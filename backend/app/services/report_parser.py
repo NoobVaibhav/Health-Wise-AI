@@ -97,6 +97,13 @@ def _to_float(text: str) -> float:
 LABELLED = re.compile(rf"([A-Za-z][A-Za-z/\- ]{{1,30}}?)\s*:\s*(?:(<=|>=|<|>|≤|≥|=)\s*)?({NUMBER})\s*%?(?:\s*[-–\ufffd]\s*({NUMBER}))?")
 NORMAL_LABEL = re.compile(r"^(?:normal|desirable|optimal|non[- ]?diabet\w*|sufficien\w*|adequate|non[- ]?reactive|negative|healthy|acceptable)\b", re.IGNORECASE)
 
+# The same tiers written on one line without colons: "Deficient <20 Insufficient 20-30 Sufficient 30-100", "Low <40 High >60". The tier words are matched by name so
+# that a unit or a test name is never taken for a label. Longest words first ("very high" before "high", "near optimal" before "optimal").
+TIER_WORDS = ["very high", "near optimal", "non-diabetic", "non diabetic", "pre-diabetes", "prediabetes", "pre-diabetic", "insufficiency", "insufficient", "deficiency", "deficient",
+              "sufficient", "sufficiency", "borderline", "desirable", "optimal", "normal", "diabetes", "diabetic", "elevated", "high", "low", "moderate", "mild", "severe", "adequate",
+              "toxic", "excess", "risk"]
+INLINE_TIER = re.compile(rf"\b({'|'.join(re.escape(w) for w in TIER_WORDS)})\b\s*:?\s*(?:(<=|>=|<|>|≤|≥)\s*)?({NUMBER})\s*%?(?:\s*[-–]\s*({NUMBER}))?", re.IGNORECASE)
+
 SEX_MALE = re.compile(r"\b(?:male|men|man)\b", re.IGNORECASE)
 SEX_FEMALE = re.compile(r"\b(?:female|women|woman)\b", re.IGNORECASE)
 
@@ -107,6 +114,10 @@ def parse_reference_text(text: str) -> ParsedReference | None:
     if not text:
         return None
     labelled = LABELLED.findall(text)          # looked at before a leading "Normal:" label is cut off below
+    if len(labelled) < 2:
+        inline = INLINE_TIER.findall(text)     # the same tiers on one line, without colons
+        if len(inline) >= 2:
+            labelled = inline
     label = REF_LABEL_RE.search(text)
     if label:
         text = text[label.end():]

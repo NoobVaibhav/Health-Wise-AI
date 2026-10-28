@@ -93,12 +93,20 @@ URGENT_TERMS = [
     "urgent", "immediate", "critical", "life-threatening", "malignan", "carcinoma", "pulmonary embol", "st elevation",
     "pneumothorax", "hemorrhage", "haemorrhage", "dissection", "infarct", "rupture", "perforation", "acute abdomen",
     "stat ", "emergent",
+    # serious findings named in other words (matched when no other attention word is present: see classify_statement)
+    "st-segment elevation", "st segment elevation", "stemi", "nstemi", "cardiac arrest", "free air", "pneumoperitoneum", "torsion", "ventricular tachycardia",
+    "ventricular fibrillation", "asystole", "status epilepticus", "ectopic pregnancy", "volvulus", "sepsis", "septic shock", "necrotizing", "necrotising", "aortic aneurysm",
+    "subarachnoid", "subdural", "epidural hematoma", "epidural haematoma", "intracranial haemorrhage", "intracranial hemorrhage", "stroke", "cord compression", "cauda equina",
 ]
+# "Cannot rule out X", "unable to exclude X", "X cannot be excluded" mean the finding is POSSIBLE, not absent. The negation list contains "rule out",
+# so these phrases are first rewritten to "possible" (otherwise a possible pulmonary embolism would be read as a normal sentence).
+UNCERTAIN_RE = re.compile(r"\b(?:cannot|can not|can't|unable to|not able to|not possible to|impossible to|difficult to|hard to)\s+(?:be\s+)?(?:rule[sd]?\s+out|exclude[sd]?)\b"
+                          r"|\b(?:not|never)\s+(?:been\s+)?(?:excluded|ruled out)\b")
 # A negation word cancels every finding named after it in the same clause ("no evidence of A or B"),
 # until a full stop, semicolon, colon, or a turning word such as "but" / "however".
 NEGATION_RE = re.compile(
     r"\b(no|without|negative for|absence of|absent|not seen|not identified|not demonstrated|free of|"
-    r"rules? out|ruled out|nil|unremarkable|within normal)\b")
+    r"rules? out|ruled out|not suspicious(?: for| of)?|nil|unremarkable|within normal)\b")
 CLAUSE_BREAK_RE = re.compile(r"[.;:]|\b(but|however|except|although|whereas)\b")
 NORMAL_PHRASES = ["no acute", "within normal limits", "unremarkable", "normal study", "normal sinus rhythm",
                   "no abnormality", "no significant", "grossly normal", "normal in", "are normal", "is normal",
@@ -437,6 +445,8 @@ def _is_negated(sentence: str, start: int) -> bool:
 def classify_statement(sentence: str) -> tuple[str, bool]:
     """Return (concern, urgent). concern is 'normal', 'attention' or 'neutral'."""
     lowered = sentence.lower().replace("body mass index", "bmi")   # "mass" in BMI is not a finding
+    lowered = UNCERTAIN_RE.sub("possible", lowered)               # "cannot rule out X" = X is possible, not absent
+    lowered = re.sub(r"\bnot suspicious (?:for|of)\b", "no evidence of", lowered)     # "not suspicious for X" says X is not there
     attention_hit = False
     negated_hit = False
     urgent_hit = False
@@ -451,7 +461,7 @@ def classify_statement(sentence: str) -> tuple[str, bool]:
         for match in re.finditer(r"\b" + re.escape(term), lowered):
             if not _is_negated(lowered, match.start()):
                 urgent_hit = True
-    if attention_hit:
+    if attention_hit or urgent_hit:                               # an urgent word is always worth a look, also when no other attention word is present
         return "attention", urgent_hit
     if negated_hit or any(phrase in lowered for phrase in NORMAL_PHRASES) or any(n in lowered for n in ("no evidence of", "negative for")):
         return "normal", False
