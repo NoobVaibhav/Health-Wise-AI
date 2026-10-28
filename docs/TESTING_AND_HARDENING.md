@@ -123,3 +123,18 @@ A person who logs in with the starting password sees a pop-up on top of the app 
 
 ## Download the analysis of a report (PDF)
 The report page has a **Download analysis (PDF)** button (doctor and patient, once the analysis is visible). It prints an A4 sheet named after the patient, for example `Hari_Lad_Laboratory_Test_Report_Analysis`: summary, doctor's review, the results to look at first, key numbers, all test results and the doctor's points or the patient's tips. It uses only what the screen already received, so a patient never gets anything before the doctor has checked the report. Sheet: `ReportPrintSheet.jsx`.
+
+## Reports that are not lab tables (echo, angiography, scans ...)
+`services/report_measures.py` recognises the kind of report from its title and reads its key numbers and graded findings:
+
+| Kind | What is read |
+|---|---|
+| 2D echo | LVEF (pumping strength), chamber and wall sizes, lung-artery pressure, leaking or narrowed valves with their grade, wall motion, fluid round the heart, diastolic grade |
+| Coronary angiography | % narrowing of each artery (LAD, LCx, RCA, left main ...), completely blocked arteries, TIMI flow, dominance, LV ejection fraction; a severe narrowing is raised as a red flag for the doctor |
+| Treadmill (stress) test | METs, % of the target heart rate, ST depression, positive / negative result |
+| Lung function | FEV1/FVC, FEV1 and FVC as % of predicted |
+| Bone density | T-score and Z-score for each site |
+| X-ray, CT, MRI, ultrasound | the conclusion first, the size of each nodule, node, stone or cyst, organ sizes, the cardiothoracic ratio |
+
+Numbers are judged only against standard adult reference values shown on the card (or the grade the report itself uses). The summary starts with the report's own conclusion; headers, patient banners and titles are removed. Each kind has its own points for the doctor and tips for the patient.
+**Limits:** only the written report is analysed, never the picture itself (the computer does not read an X-ray or CT image). A scanned report or a photo needs OCR (Tesseract), which is not installed on this computer, so such files are refused with a clear message until it is installed. Tests: `tests/test_report_kinds.py` (invented reports in `tests/sample_reports.py`).

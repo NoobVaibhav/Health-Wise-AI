@@ -20,7 +20,7 @@ def process(name: str, lines: list[str]):
 
 # ---------- recognising what kind of report it is
 @pytest.mark.parametrize("lines,expected", [
-    (sd.CHEST_XRAY_LINES, "IMAGING"), (sd.ECG_LINES, "ECG"), (sd.DISCHARGE_LINES, "DISCHARGE"),
+    (sd.CHEST_XRAY_LINES, "XRAY"), (sd.ECG_LINES, "ECG"), (sd.DISCHARGE_LINES, "DISCHARGE"),
     (sd.PRESCRIPTION_LINES, "PRESCRIPTION"),
 ])
 def test_report_type_is_detected(lines, expected):
@@ -157,8 +157,8 @@ def test_any_report_workflow_and_role_visibility(client, world):
     response = upload(client, world.employee, world.patient_id, "xray.pdf", sd.lines_to_pdf(sd.CHEST_XRAY_LINES))
     assert response.status_code == 201, response.text
     body = response.json()
-    assert body["report_type"] == "IMAGING" and body["is_narrative"] is True and body["parameter_count"] == 0
-    assert body["report_type_label"].startswith("Imaging report") and body["insights"] is None      # employee: none
+    assert body["report_type"] == "XRAY" and body["is_narrative"] is True and body["parameter_count"] == 0
+    assert body["report_type_label"].startswith("X-ray report") and body["insights"] is None      # employee: none
     report_id = body["id"]
 
     doctor_view = client.get(f"/api/reports/{report_id}", headers=world.doctor).json()
@@ -173,7 +173,7 @@ def test_any_report_workflow_and_role_visibility(client, world):
     assert "doctor_suggestions" not in after and "red_flags" not in after                           # patient never sees these
 
     listing = client.get("/api/reports", headers=world.employee).json()
-    assert listing[0]["report_type"] == "IMAGING"
+    assert listing[0]["report_type"] == "XRAY"
     assert client.get(f"/api/reports/{report_id}", headers=world.admin).json()["insights"] is None
 
 

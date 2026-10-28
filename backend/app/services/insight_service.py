@@ -18,9 +18,10 @@ import re
 from dataclasses import dataclass
 
 # ------------------------------------------------------------------ report types
+from app.services import report_measures
 from app.services.result_priority import DERIVED, prioritise, summary_points, summary_text
 
-INSIGHTS_ENGINE = 3          # bump when the way insights are worked out changes: stored rule-based insights of an older version are rebuilt when shown
+INSIGHTS_ENGINE = 4          # bump when the way insights are worked out changes: stored rule-based insights of an older version are rebuilt when shown
 
 REPORT_TYPE_LABELS = {
     "LAB": "Laboratory test report",
@@ -31,6 +32,15 @@ REPORT_TYPE_LABELS = {
     "PRESCRIPTION": "Prescription / medicine list",
     "CLINICAL": "Clinical note / consultation",
     "OTHER": "Other medical report",
+    "ECHO": "2D echo (heart ultrasound) report",
+    "ANGIO": "Coronary angiography report",
+    "TMT": "Treadmill (stress) test report",
+    "PFT": "Lung function (spirometry) report",
+    "DEXA": "Bone density (DEXA) report",
+    "XRAY": "X-ray report",
+    "CT": "CT scan report",
+    "MRI": "MRI report",
+    "ULTRASOUND": "Ultrasound (sonography) report",
 }
 
 TYPE_KEYWORDS = {
@@ -75,6 +85,9 @@ ATTENTION_TERMS = [
     "stone", "calculus", "cyst", "polyp", "ulcer", "inflammation", "abnormal", "elevated", "raised", "decreased",
     "reduced", "impaired", "suspicious", "atelectasis", "pneumothorax", "deviat", "thicken", "irregular", "dysplasia",
     "positive for", "worsen", "progress", "increase", "ectopic", "extrasystol", "pause",
+    "ptca", "stent", "cabg", "angioplasty", "hypokines", "hypokinetic", "akinesia", "dyskinesia", "dysfunction", "osteoporosis", "osteopenia", "obstructive",
+    "restrictive", "protrusion", "compression", "lymphadenopathy", "fatty liver", "cholelithiasis", "spiculated", "blunting", "pulmonary hypertension",
+    "narrowing", "disease", "atherosclero", "collateral",
 ]
 URGENT_TERMS = [
     "urgent", "immediate", "critical", "life-threatening", "malignan", "carcinoma", "pulmonary embol", "st elevation",
@@ -89,7 +102,7 @@ NEGATION_RE = re.compile(
 CLAUSE_BREAK_RE = re.compile(r"[.;:]|\b(but|however|except|although|whereas)\b")
 NORMAL_PHRASES = ["no acute", "within normal limits", "unremarkable", "normal study", "normal sinus rhythm",
                   "no abnormality", "no significant", "grossly normal", "normal in", "are normal", "is normal",
-                  "appears normal", "no focal", "clear lung", "preserved", "benign"]
+                  "appears normal", "no focal", "clear lung", "preserved", "benign", "are clear", "is clear", "normal study", "normal chest", "normal coronar", "normal echo"]
 
 
 # ------------------------------------------------------------------ helpers
@@ -100,13 +113,16 @@ STRONG_MEDICAL = [
     "medication", "discharge summary", "admission", "lung", "liver", "kidney", "abdomen", "chest", "fracture", "lesion",
     "tumour", "tumor", "infection", "reference range", "serum", "plasma", "urine", "haematology", "hematology", "biochemistry",
     "cardiac", "heart rate", "sinus rhythm", "bpm", "mg/dl", "g/dl", "clinical", "ectopic", "rhythm", "ventricular",
+    "echocardiograph", "angiograph", "coronary", "stenosis", "ejection fraction", "valve", "artery", "treadmill", "spirometry", "bone mineral",
+    "tomography", "radiograph", "sonograph", "cardiologist", "stent", "lumbar", "nodule", "pleural", "t-score", "fev1",
 ]
 # Words that only real reports contain (who the patient is, who reported it, what sample it is).
 REPORT_MARKERS = [
     "patient name", "name of patient", "patient id", "uhid", "mrn", "referred by", "ref. by", "referring doctor", "consultant",
     "specimen", "sample collected", "collected on", "reported on", "reported by", "pathologist", "radiologist", "cardiologist",
     "impression:", "findings:", "reference range", "reg no", "lab no", "ipd no", "opd no", "bio. ref", "ref. range", "holter",
-    "date of admission", "chief complaint", "rx",
+    "date of admission", "chief complaint", "rx", "age/sex", "referred by",
+    "echocardiograph", "angiograph", "tmt", "treadmill", "spirometry", "dexa", "ct scan", "x-ray", "mri ", "ultrasound",
 ]
 # Words that show the file is some other kind of document (a project report, an assignment, an invoice, a CV).
 NOT_MEDICAL_MARKERS = [
@@ -150,6 +166,9 @@ def looks_medical(text: str) -> bool:
 def detect_report_type(text: str, has_lab_values: bool = False) -> str:
     if has_lab_values:
         return "LAB"
+    specific = report_measures.detect_kind(text)         # echo, angiography, stress test, lung function, bone density, X-ray, CT, MRI, ultrasound
+    if specific:
+        return specific
     lowered = text.lower()
     scores = {kind: sum(1 for word in words if word in lowered) for kind, words in TYPE_KEYWORDS.items()}
     kind, best = max(scores.items(), key=lambda item: item[1])
@@ -159,14 +178,14 @@ def detect_report_type(text: str, has_lab_values: bool = False) -> str:
 def split_sections(text: str) -> dict[str, str]:
     """{'impression': '...', 'findings': '...'}  Lines like 'IMPRESSION: ...' start a section. A heading with nothing after it (a blank
     impression to be filled in by hand) ends at the next short heading-like line instead of taking everything that follows."""
-    pattern = re.compile(rf"^\s*({'|'.join(re.escape(n) for n in SECTION_NAMES)})\s*[:\-]\s*(.*)$", re.IGNORECASE)
+    pattern = re.compile(rf"^\s*({'|'.join(re.escape(n) for n in SECTION_NAMES)})\s*(?:[:\-]\s*(.*))?$", re.IGNORECASE)
     sections: dict[str, str] = {}
     current, since_heading = None, 0
     for line in text.split("\n"):
         match = pattern.match(line)
         if match:
             current, since_heading = match.group(1).lower(), 0
-            sections[current] = (sections.get(current, "") + " " + match.group(2)).strip()
+            sections[current] = (sections.get(current, "") + " " + (match.group(2) or "")).strip()
         elif current:
             since_heading += 1
             if line.strip().startswith("*"):
@@ -238,7 +257,7 @@ UNITS = r"(?:bpm|ms|msec|sec|s|mm|cm|mmhg|mm/s|mv|%|beats|/min|min|hrs|hr|hours|
 METRIC_RE = re.compile(
     r"(?P<label>[A-Za-z][A-Za-z0-9 /()%\-]{1,60}?)\s*[:=]\s*(?P<value>-?\d[\d,]*(?:\.\d+)?)(?:\s*(?P<unit>" + UNITS + r")(?![A-Za-z]))?"
     r"(?:\s*\(\s*(?P<low>-?\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(?P<high>-?\d+(?:\.\d+)?)\s*\))?", re.IGNORECASE)
-SKIP_LABELS = ("age", "date", "phone", "mobile", "tel", "id", "uhid", "mrn", "pin", "page", "ref", "dob", "time", "bed", "room",
+SKIP_LABELS = ("age/sex", "age", "date", "phone", "mobile", "tel", "id", "uhid", "mrn", "pin", "page", "ref", "dob", "time", "bed", "room",
                "sex", "gender", "year", "no", "number", "sr", "serial", "visit", "opd", "ipd", "contact", "zip")
 EVENT_WORDS = ("episode", "ectopic", "pause", "run", "couplet", "pair", "vtac", "svt", "vpb", "event", "arrhythm", "block")
 
@@ -465,11 +484,56 @@ DOCTOR_BY_TYPE = {
         "Check that the assessment and plan match the findings written in the note.",
         "Confirm that any tests or referrals mentioned in the plan have been ordered.",
     ],
+    "ECHO": [
+        "Look first at the pumping strength (LVEF), the size of the chambers and any valve that leaks or is narrowed, and compare with the patient's earlier echo.",
+        "Consider symptoms (breathlessness, swelling of the legs, chest pain), blood pressure and the heart medicines when you read this result.",
+    ],
+    "ANGIO": [
+        "Look first at the arteries that are narrowed by 70 % or more (50 % or more in the left main artery), at any artery that is completely blocked and at the pumping strength.",
+        "Decide with the patient and the heart team on medicines, stenting or bypass surgery. The report's own advice is listed among the findings.",
+    ],
+    "TMT": [
+        "Consider whether the heart rate target was reached, how much ST depression appeared and how fast it settled, together with the patient's symptoms.",
+        "A positive or unclear stress test may need a further test such as an echo or an angiography, which is a decision for the doctor.",
+    ],
+    "PFT": [
+        "Look at the FEV1/FVC ratio first (below 70 % suggests narrowed airways) and then at how much FEV1 is reduced, and whether the medicine test changed it.",
+        "Correlate with smoking history, cough, breathlessness and any earlier lung function test.",
+    ],
+    "DEXA": [
+        "Look at the lowest T-score (-2.5 or lower is the osteoporosis range) and at the fracture history and the patient's age.",
+        "Consider calcium, vitamin D and a fall-risk review, and when to repeat the scan.",
+    ],
+    "XRAY": [
+        "Review the image together with this report and correlate the impression with the patient's symptoms and examination.",
+        "Compare with an earlier X-ray if there is one: a new finding matters more than an old one.",
+    ],
+    "CT": [
+        "Review the images together with this report, especially any measured nodule, node or mass, and compare the sizes with earlier scans.",
+        "A finding the radiologist calls suspicious usually needs a clear next step (repeat scan, biopsy, specialist), which is a decision for the doctor.",
+    ],
+    "MRI": [
+        "Review the images together with this report and match the level and side of any finding with the patient's symptoms and examination.",
+        "Compare with an earlier MRI if there is one.",
+    ],
+    "ULTRASOUND": [
+        "Match the findings (organ size, stones, cysts, fluid) with the patient's symptoms and with the blood tests, and repeat the scan if the question is not settled.",
+        "Compare with an earlier scan if there is one.",
+    ],
     "OTHER": [
         "The computer cannot be sure of the type of this document. Please read the original before relying on this summary.",
     ],
 }
 PATIENT_BY_TYPE = {
+    "ECHO": ["Your echo shows how well your heart pumps and how its valves work. Ask your doctor what the numbers mean for you and keep taking your heart medicines as advised."],
+    "ANGIO": ["Your angiography shows how open the arteries of your heart are. Your doctor will explain whether you need medicines, a stent or surgery. Do not stop any medicine on your own."],
+    "TMT": ["A stress test shows how your heart behaves during effort. Tell your doctor about chest pain, breathlessness or dizziness when you walk or climb stairs."],
+    "PFT": ["This test shows how well your lungs work. Do not smoke, and tell your doctor if you are more breathless than usual."],
+    "DEXA": ["This test shows how strong your bones are. Walking, enough calcium and vitamin D and avoiding falls help; ask your doctor what suits you."],
+    "XRAY": ["Bring any earlier scans or X-rays to your appointment so your doctor can compare them."],
+    "CT": ["Bring any earlier scans to your appointment so your doctor can compare them. Your doctor will explain what the findings mean."],
+    "MRI": ["Bring any earlier scans to your appointment so your doctor can compare them. Your doctor will explain what the findings mean."],
+    "ULTRASOUND": ["Bring any earlier scans to your appointment so your doctor can compare them."],
     "IMAGING": ["Bring any earlier scans or X-rays to your appointment so your doctor can compare them."],
     "ECG": ["Tell your doctor about chest discomfort, dizziness, fainting or a racing heartbeat if you notice them."],
     "PATHOLOGY": ["Ask your doctor to explain this result in person. Waiting for results can be stressful, so talking to someone you trust can help."],
@@ -587,13 +651,75 @@ def build_lab_insights(items: list[LabItem]) -> dict:
     }
 
 
+HEADER_LINE = re.compile(r"^\s*(?:patient|name|age|sex|gender|dob|date|referred|ref\b|uhid|mrn|id\b|consultant|reg\b|address|phone|mobile|bed|ward|doctor|dr\.|reported|collected|sample|accession|study date|exam date|hospital no)", re.IGNORECASE)
+BANNER_RE = re.compile(r"age\s*/\s*sex|\bdate\s*:\s*\d|patient (?:name|id)\s*:", re.IGNORECASE)
+
+
+def strip_header(text: str) -> str:
+    """The report without its title block: hospital name, report title in capitals, patient name, age, sex, date, referring doctor.
+    Used when a report has no Findings or Impression heading, so the key statements are about the patient's results and not the page header."""
+    keep = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        words = stripped.split()
+        if not stripped:
+            continue
+        if HEADER_LINE.match(stripped) or BANNER_RE.search(stripped):
+            continue
+        if stripped.upper() == stripped and len(words) <= 9 and re.search(r"[A-Z]", stripped) and not re.search(r"\d\s*(?:%|mm|cm|bpm)", stripped):
+            continue                                   # a title such as "CT SCAN CHEST (PLAIN AND CONTRAST)" or a hospital name
+        keep.append(line)
+    return "\n".join(keep)
+
+
+def _metric_text(m: dict) -> str:
+    value = f"{m['value']}{(' ' + m['unit']) if m.get('unit') else ''}"
+    return f"{m['label']}: {value}" + (f" ({m['detail']})" if m.get("detail") else "")
+
+
+def narrative_points(label: str, findings: list[dict], metrics: list[dict], conclusion: str | None) -> list[dict]:
+    """The summary of a written report as a few points: what the report concludes, the measured values that need a look, other findings
+    that need a look. Short enough to read in a few seconds."""
+    attention = [f for f in findings if f["concern"] == "attention"]
+    normal = [f for f in findings if f["concern"] == "normal"]
+    look_metrics = [m for m in metrics if m["concern"] == "attention"]
+    points = [{"text": f"{label}."}]
+    if conclusion:
+        statements = split_statements(conclusion)[:4] or [conclusion[:240]]
+        points.append({"text": "What the report concludes:", "items": statements})
+    elif findings:                                          # a report with no impression: its first statements say what it is about
+        points.append({"text": "What the report says:", "items": [f["text"][:240] for f in findings[:3]]})
+    if look_metrics:
+        points.append({"text": "Measured values worth a look:", "items": [_metric_text(m) for m in look_metrics[:6]]})
+    concluded = (conclusion or "").lower()
+    shown = " ".join(f["text"] for f in findings[:3]).lower() if not conclusion else ""
+    numbers = [str(m["value"]) for m in look_metrics if isinstance(m["value"], (int, float))]
+    on_a_card = lambda text: any(re.search(r"(?<![\d.])" + re.escape(n) + r"(?![\d.])", text) for n in numbers)         # the card already shows this number
+    more = [f for f in attention if f["text"].lower() not in concluded and f["text"].lower() not in shown and not on_a_card(f["text"])][:4]
+    if more:
+        points.append({"text": "Other findings worth a look:", "items": [f["text"][:200] for f in more]})
+    if not look_metrics and not attention:
+        points.append({"text": "Nothing in the findings was marked as worth a look."
+                       + (f" {len(normal)} statement{'s' if len(normal) != 1 else ''} describe normal results." if normal else "")})
+    elif metrics:
+        ok = len([m for m in metrics if m["concern"] == "normal"])
+        points.append({"text": f"{len(metrics)} key value{'s' if len(metrics) != 1 else ''} read from the report" + (f", {ok} normal." if ok else ".")})
+    points.append({"text": "This is not a diagnosis. A doctor must review the report."})
+    return points
+
+
 def build_narrative_insights(text: str, report_type: str) -> dict:
     cleaned = clean_report_text(text)
     sections = split_sections(cleaned)
     holter = extract_holter_facts(text)
-    key_text = " ".join(sections[name] for name in KEY_SECTIONS if name in sections) or (holter["findings"] if holter and holter["findings"] else cleaned)
+    key_names = [name for name in KEY_SECTIONS if name in sections]
+    key_text = " ".join(sections[name] for name in key_names) or (holter["findings"] if holter and holter["findings"] else strip_header(cleaned))
     statements = split_statements(key_text)[:14]
-    metrics = holter["facts"] if holter and holter["facts"] else extract_metrics(text)
+    specific = report_measures.measures(report_type, text)
+    generic = holter["facts"] if holter and holter["facts"] else extract_metrics(text)
+    metrics = specific if specific else generic                  # a report of a known kind shows its own measured values, not every "word: number" pair
+    order = {"attention": 0, "neutral": 1, "normal": 2}
+    metrics.sort(key=lambda m: order.get(m["concern"], 1))
 
     findings, red_flags = [], []
     for sentence in statements:
@@ -604,6 +730,8 @@ def build_narrative_insights(text: str, report_type: str) -> dict:
     for m in metrics:                                           # a pause, atrial fibrillation or a dangerously slow rate is raised even when the sentences do not say it
         if holter and m["concern"] == "attention" and m["label"].startswith(("Pauses", "Atrial fib")):
             red_flags.append(f"{m['label']}: {m['value']}{(' ' + m['unit']) if m['unit'] else ''}. Please check this against the original report.")
+        if m.get("urgent"):
+            red_flags.append(f"{_metric_text(m)}. This is a marked finding: please check it against the original report and decide how soon it needs action.")
 
     attention = [f for f in findings if f["concern"] == "attention"]
     normal = [f for f in findings if f["concern"] == "normal"]
@@ -624,35 +752,16 @@ def build_narrative_insights(text: str, report_type: str) -> dict:
 
     patient = list(PATIENT_BY_TYPE.get(report_type, [])) + PATIENT_GENERAL
 
-    impression = sections.get("impression") or sections.get("conclusion") or sections.get("diagnosis")
-    summary = f"{label}. "
-    if findings:
-        summary += f"{len(findings)} key statements were found: {len(normal)} look normal and {len(attention)} are worth a look. "
-    if metrics:
-        summary += f"{len(metrics)} key numbers were read. "
-    if impression:
-        summary += f'The report\'s impression: "{impression[:240]}"'
-    elif findings:
-        summary += f'The report\'s findings: "{" ".join(f["text"] for f in findings[:2])[:260]}"'
-    points = [{"text": f"{label}."}]
-    if findings:
-        points.append({"text": f"{len(findings)} key statement{'s' if len(findings) != 1 else ''} found: {len(normal)} look normal, {len(attention)} worth a look."})
-    if metrics:
-        look = [m["label"] for m in metrics if m["concern"] == "attention"]
-        points.append({"text": f"{len(metrics)} key number{'s' if len(metrics) != 1 else ''} read" + (f"; worth a look: {', '.join(look[:4])}." if look else "; none stands out.")})
-    if impression:
-        points.append({"text": "The report's impression:", "items": [impression[:240]]})
-    elif findings:
-        points.append({"text": "The report's findings:", "items": [f["text"][:200] for f in findings[:3]]})
-    points.append({"text": "This is not a diagnosis. A doctor must review the report."})
+    conclusion_names = ("impression", "conclusion", "diagnosis", "opinion", "interpretation")
+    conclusion = next((sections[n] for n in conclusion_names if n in sections), None)
+    points = narrative_points(label, findings, metrics, conclusion)
+    summary = " ".join(p["text"] + ((" " + " ".join(p["items"])) if p.get("items") else "") for p in points)
     return {
         "report_type": report_type, "source": "rules", "engine": INSIGHTS_ENGINE, "summary": summary.strip(), "summary_points": points,
         "key_findings": findings, "metrics": metrics, "red_flags": red_flags,
         "doctor_suggestions": _dedupe(doctor), "patient_recommendations": _dedupe(patient),
         **({"holter": {"recording": next((m["value"] for m in metrics if m["label"] == "Recording analysed"), None)}} if holter else {}),
     }
-
-
 def _dedupe(items: list[str]) -> list[str]:
     seen, out = set(), []
     for item in items:
