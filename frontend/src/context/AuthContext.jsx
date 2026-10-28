@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import * as authApi from "../services/authApi";
-import { tokenStore } from "../services/api";
+import { clearSavedPatientData, tokenStore } from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -24,6 +24,17 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // Logging out (or logging in as someone else) in another tab ends this tab's session at once, instead of showing the old person's pages.
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== "healthwise_token") return;
+      if (!e.newValue) setUser(null);
+      else if (e.newValue !== e.oldValue) authApi.getMe().then(setUser).catch(() => setUser(null));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   const value = {
     user,
     loading,
@@ -41,6 +52,7 @@ export function AuthProvider({ children }) {
     },
     logout: () => {
       tokenStore.clear();
+      clearSavedPatientData();
       setUser(null);
     },
     refresh: () => authApi.getMe().then(setUser),

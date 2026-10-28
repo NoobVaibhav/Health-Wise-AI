@@ -1,4 +1,4 @@
-// Route guards, session handling and error paths. Findings are marked with their ID from docs/BUST_REPORT.md; `it.fails` is a test that asserts the
+
 // secure behaviour and is expected to fail until the finding is fixed (remove `.fails` then).
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";

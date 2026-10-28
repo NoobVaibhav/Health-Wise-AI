@@ -8,7 +8,7 @@ import { AlertTriangle, Check, Copy, Loader2, Mic, Pause, Play, RotateCcw, Send,
 import { deleteConversation, getAssistantInfo, getSuggestions, sendChat } from "../../services/assistantApi";
 import { getErrorMessage } from "../../services/api";
 import {
-  LANG_NAMES, VOICE_NOTICE, createListener, createSpeaker, createWakeListener, cue, matchVoiceCommand, speechInputSupported, speechOutputSupported,
+  LANG_NAMES, VOICE_NOTICE, createListener, createSpeaker, createWakeListener, cue, isYes, matchVoiceCommand, speechInputSupported, speechOutputSupported,
   voiceErrorMessage, voicesFor,
 } from "../../utils/voice";
 import VoicePanel from "./VoicePanel";
@@ -107,6 +107,7 @@ export default function AssistantChat() {
   const inputRef = useRef(null);
   const speakingId = useRef(null);
   const handsFreeRef = useRef(false);
+  const pendingClear = useRef(false);                     // the assistant asked "clear this chat?" and waits for yes or no
   const silent = useRef(0);                               // listening rounds in a row in which nothing was said
   const messagesRef = useRef([]);
   const api = useRef({});                                 // the latest functions, for timers and callbacks that outlive a render
@@ -225,13 +226,25 @@ export default function AssistantChat() {
 
   /** A spoken sentence: a command for the voice itself ("stop", "repeat", "speak slower", "switch to Hindi"), or a question. */
   const onSpoken = useCallback((text) => {
+    if (pendingClear.current) {                           // the answer to "Do you want to clear this chat?"
+      pendingClear.current = false;
+      setVoiceMessage("");
+      if (isYes(text)) { setInput(""); setHeard(""); clearChat().then(() => { if (handsFreeRef.current) later(() => api.current.listen({ auto: true }), 300); }); return; }
+      // anything else: the chat is kept and the sentence is taken as it was meant
+    }
     const command = matchVoiceCommand(text);
     if (!command) { send(text, true); return; }
     setInput(""); setHeard("");
     const lastReply = [...messagesRef.current].reverse().find((m) => m.role === "ASSISTANT");
     const keepListening = () => { if (handsFreeRef.current) later(() => api.current.listen({ auto: true }), 300); };
     if (command.type === "stop" || command.type === "exit") { speaker.stop(); endHandsFree(); return; }
-    if (command.type === "clear") { clearChat().then(keepListening); return; }
+    if (command.type === "clear") {                       // deleting the chat cannot be undone and background speech can sound like the command: ask first
+      pendingClear.current = true;
+      const ask = "Do you want to clear this chat? Say yes or no.";
+      setVoiceMessage(ask);
+      if (!outputOk || !speaker.speak(ask, { lang: language, rate, voiceName, onEnd: keepListening })) keepListening();
+      return;
+    }
     if (command.type === "language") { changeLanguage(command.value); keepListening(); return; }
     if (command.type === "repeat" && lastReply) { if (!speak(lastReply, { then: keepListening })) keepListening(); return; }
     if (command.type === "slower" || command.type === "faster") {
@@ -241,7 +254,7 @@ export default function AssistantChat() {
       return;
     }
     keepListening();
-  }, [send, speaker, endHandsFree, clearChat, speak, rate, later]);
+  }, [send, speaker, endHandsFree, clearChat, speak, rate, later, outputOk, language, voiceName]);
 
   // ------------------------------------------------------------------ voice input
   /** One round of listening. auto: send what is heard at once and go on (hands-free, or after "Hey HealthWise"); otherwise the words are put in the box to be checked. */

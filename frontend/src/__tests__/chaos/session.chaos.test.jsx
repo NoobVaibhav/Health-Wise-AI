@@ -39,7 +39,7 @@ describe("session", () => {
     expect(tokenStore.get()).toBe("t");
   });
 
-  it.fails("F-02: logging out removes the patient history drafts that were saved in the browser (patient details must not stay on a shared computer)", async () => {
+  it("F-02: logging out removes the patient history drafts that were saved in the browser (patient details must not stay on a shared computer)", async () => {
     localStorage.setItem("healthwise_token", "t");
     localStorage.setItem("hw_history_draft_7", JSON.stringify({ f: { chief_complaint: "Chest pain, HIV positive" }, v: {} }));
     getMe.mockResolvedValue({ id: 1, role: "DOCTOR" });
@@ -48,7 +48,7 @@ describe("session", () => {
     expect(localStorage.getItem("hw_history_draft_7")).toBeNull();
   });
 
-  it.fails("F-03: logging out in one tab ends the session on screen in the other tabs at once", async () => {
+  it("F-03: logging out in one tab ends the session on screen in the other tabs at once", async () => {
     localStorage.setItem("healthwise_token", "t");
     getMe.mockResolvedValue({ id: 1, role: "DOCTOR" });
     await act(async () => { render(<AuthProvider><Probe /></AuthProvider>); });

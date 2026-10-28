@@ -67,8 +67,8 @@ export default function Profile() {
         <div className="flex flex-wrap items-center gap-6">
           <Avatar name={u.full_name} size={120} userId={u.id} version={u.avatar_version} round />
           <div className="min-w-0 flex-1">
-            <p className="text-2xl font-extrabold text-slate-900">{u.full_name}</p>
-            <p className="mt-1 flex flex-wrap items-center gap-2 text-base text-slate-600"><StatusPill value={u.role} /> {u.email}</p>
+            <p className="break-words text-2xl font-extrabold text-slate-900">{u.full_name}</p>
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-base text-slate-600"><StatusPill value={u.role} /> <span className="min-w-0 break-all">{u.email}</span></p>
             <div className="mt-4 flex flex-wrap gap-3">
               <input ref={picker} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label="Choose a profile photo" onChange={choosePhoto} />
               <Button onClick={() => picker.current?.click()} disabled={busy === "photo"}><Camera size={20} /> {busy === "photo" ? "Saving..." : u.has_avatar ? "Change photo" : "Add a photo"}</Button>

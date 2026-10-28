@@ -72,8 +72,9 @@ export function createListener({ lang = "en", continuous = false, onText, onErro
   };
 }
 
-// "Hey HealthWise": the name, with or without a greeting before it. English, Hindi and Marathi spellings.
-const WAKE = /(?:\b(?:hey|hi|hello|ok|okay)\s+)?(?:health\s?wise|हेल्थ\s?वाइज़?|हेल्थ\s?वाईज|हेल्थवाइज)/i;
+// "Hey HealthWise": the name WITH a greeting before it (English, Hindi and Marathi spellings). The name alone is not enough: people say "health wise"
+// in ordinary talk ("being health wise is important") and that must not switch the microphone on.
+const WAKE = /(?:^|\s)(?:hey|hi|hello|ok|okay|हे|हाय|हेलो|ओके)\s+(?:health\s?wise|हेल्थ\s?वाइज़?|हेल्थ\s?वाईज|हेल्थवाइज)/i;
 
 /** Text after the wake phrase ("hey healthwise what medicines am I taking" gives "what medicines am I taking"), or null when it was not said. */
 export function afterWakePhrase(text) {
@@ -131,6 +132,9 @@ const COMMANDS = [
   ["clear", /^(?:please\s+)?(?:clear(?:\s+the)?\s+chat|start over|new chat|चैट साफ़ करो|चैट साफ करो|चॅट साफ करा)$/i],
   ["exit", /^(?:stop listening|that'?s all|that is all|i am done|no more|बस इतना|मैं हो गया|एवढेच)$/i],
 ];
+/** "yes" in English, Hindi and Marathi, for questions the assistant asks before it does something that cannot be undone. */
+export const isYes = (text) => /^(?:yes|yeah|yep|yup|sure|ok|okay|confirm|do it|haan|han|हाँ|हां|जी|जी हाँ|ठीक है|हो|होय|हा)[\s.!]*$/i.test(String(text || "").trim());
+
 const LANGUAGE_WORDS = { english: "en", "अंग्रेज़ी": "en", "अंग्रेजी": "en", इंग्लिश: "en", hindi: "hi", "हिंदी": "hi", "हिन्दी": "hi", marathi: "mr", "मराठी": "mr" };
 const LANGUAGE_COMMAND = /^(?:please\s+)?(?:speak\s+(?:in\s+)?|talk\s+(?:in\s+)?|switch\s+to\s+|change\s+(?:the\s+)?language\s+to\s+|answer\s+in\s+)?(english|hindi|marathi|अंग्रेज़ी|अंग्रेजी|इंग्लिश|हिंदी|हिन्दी|मराठी)(?:\s+please)?$/i;
 

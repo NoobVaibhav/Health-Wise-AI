@@ -72,9 +72,9 @@ export function ComparisonView({ patientId }) {
     <div className="space-y-4">
       <Hint title="How to read this">Each box shows the same test from two different dates. "BEFORE" is the older report and "NOW" is the newer one. A number that changed is not always good or bad. Please ask the doctor what it means for you.</Hint>
       <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-600">
-        <label>Older report: <select className="ml-1 rounded-xl border border-slate-300 bg-white px-3 py-2" value={previousId} onChange={(e) => setPreviousId(e.target.value)}>
+        <label className="block max-w-full sm:inline">Older report: <select className="ml-1 max-w-full rounded-xl border border-slate-300 bg-white px-3 py-2" value={previousId} onChange={(e) => setPreviousId(e.target.value)}>
           {result.reports.map((r) => <option key={r.id} value={r.id}>{label(r)}</option>)}</select></label>
-        <label>Newer report: <select className="ml-1 rounded-xl border border-slate-300 bg-white px-3 py-2" value={latestId} onChange={(e) => setLatestId(e.target.value)}>
+        <label className="block max-w-full sm:inline">Newer report: <select className="ml-1 max-w-full rounded-xl border border-slate-300 bg-white px-3 py-2" value={latestId} onChange={(e) => setLatestId(e.target.value)}>
           {result.reports.map((r) => <option key={r.id} value={r.id}>{label(r)}</option>)}</select></label>
       </div>
       {result.rows.length === 0 ? <p className="text-slate-500">These two reports have no tests in common.</p> : (

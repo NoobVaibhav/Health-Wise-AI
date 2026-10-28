@@ -3,6 +3,13 @@ import axios from "axios";
 
 const TOKEN_KEY = "healthwise_token";
 
+/** Patient details saved in this browser (the unsaved history drafts). They are removed when the person logs out, so the next person at a shared computer cannot read them. */
+export function clearSavedPatientData() {
+  try {
+    for (const key of Object.keys(localStorage)) if (key.startsWith("hw_history_draft_")) localStorage.removeItem(key);
+  } catch { /* storage may be blocked: nothing was saved */ }
+}
+
 export const tokenStore = {
   get: () => localStorage.getItem(TOKEN_KEY),
   set: (t) => localStorage.setItem(TOKEN_KEY, t),

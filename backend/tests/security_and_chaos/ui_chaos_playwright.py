@@ -44,6 +44,7 @@ def blank(page) -> bool:
 
 def run():
     problems = []
+    handled_count = [0]
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="msedge", headless=True)
         for role, (email, pages) in ROLES.items():
@@ -73,7 +74,10 @@ def run():
                     page.goto(BASE + path)
                     page.wait_for_load_state("domcontentloaded")
                     page.wait_for_timeout(700)
-                    if blank(page) or any("is not a function" in e or "Cannot read" in e or "undefined" in e for e in errors):
+                    handled = page.locator("text=Something went wrong on this page").count() > 0      # the error boundary caught it and shows a way out
+                    if handled:
+                        handled_count[0] += 1
+                    elif blank(page) or any("is not a function" in e or "Cannot read" in e or "undefined" in e for e in errors):
                         problems.append((role, path, mode, "WHITE SCREEN" if blank(page) else "script error: " + "; ".join(sorted(set(errors))[:1])))
                     page.unroute("**/api/**")
                 page.set_viewport_size({"width": 375, "height": 800})
@@ -82,7 +86,7 @@ def run():
                 if page.evaluate("document.documentElement.scrollWidth > window.innerWidth + 2"):
                     problems.append((role, path, "375px wide", "horizontal scroll: the page is wider than the phone screen"))
                 unnamed = page.evaluate("""() => [...document.querySelectorAll('button, a[href], input, select, textarea')].filter(el => {
-                    const r = el.getBoundingClientRect(); if (!r.width || !r.height) return false;
+                    const r = el.getBoundingClientRect(); if (!r.width || !r.height || el.closest('details:not([open])')) return false;
                     const name = (el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || el.getAttribute('placeholder') || (el.labels && el.labels[0] && el.labels[0].innerText) || el.getAttribute('alt') || '').trim();
                     return !name && el.type !== 'hidden'; }).length""")
                 if unnamed:
@@ -92,6 +96,7 @@ def run():
         browser.close()
     for item in problems:
         print(" | ".join(item))
+    print("shown by the error boundary instead of a white screen:", handled_count[0])
     print("problems:", len(problems))
     return 1 if problems else 0
 

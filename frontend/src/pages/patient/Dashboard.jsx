@@ -41,8 +41,8 @@ export default function PatientDashboard() {
       {r && (
         <Section title="Latest report">
           <Link to={`/patient/reports/${r.id}`} className="tile flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 p-4">
-            <span className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><ClipboardList size={22} /></span>
-              <span><span className="block font-bold">{r.filename}</span><span className="text-sm text-slate-500">Uploaded {fmtUtcDate(r.uploaded_at)}</span></span></span>
+            <span className="flex min-w-0 items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><ClipboardList size={22} /></span>
+              <span className="min-w-0"><span className="block break-words font-bold">{r.filename}</span><span className="text-sm text-slate-500">Uploaded {fmtUtcDate(r.uploaded_at)}</span></span></span>
             <StatusPill value={r.display_status} />
           </Link>
         </Section>

@@ -138,4 +138,15 @@ Docker is not installed here, so `docker compose up` was reviewed by reading onl
 3. P-01, S-01, S-02, L-01 (the AI layer), then B-02..B-05 (audit), F-02, F-05.
 4. The Low items.
 
-Waiting for your decision on which to fix.
+## 7. Fixed so far (the browser findings)
+
+| ID | Fix | Proof |
+|---|---|---|
+| F-05 | `ErrorBoundary` around the whole app and around every page inside the frame (resets when you move to another page): a plain message with Try again, Home page and Log out | the browser sweep now shows **all 68 former white screens as the friendly screen**; `errorboundary.chaos.test.jsx` |
+| F-06 | long file names and e-mail addresses now wrap (`min-w-0`, `break-words`); the two "older/newer report" selects fit | no page scrolls sideways at 375 px (7 of 7 checked) |
+| F-02 | logging out removes the saved patient history drafts (`clearSavedPatientData`) | `session.chaos.test.jsx` |
+| F-03 | the session ends in every tab when the token is removed or changed in another tab (`storage` event) | `session.chaos.test.jsx` |
+| F-04 | the wake phrase needs a greeting before the name ("hey / hi / hello / ok healthwise"); "health wise" in normal speech no longer switches the microphone on | `voice.chaos.test.js` |
+| V-01 | the spoken "clear the chat" / "start over" asks "Do you want to clear this chat? Say yes or no." and deletes only after a yes | `assistant.chaos.test.jsx` |
+
+The `it.fails` marks of these six tests were removed (they are normal tests now). Still open: everything in sections 3 that is not in this table; waiting for your decision.

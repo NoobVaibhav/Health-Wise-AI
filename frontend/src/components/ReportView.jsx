@@ -34,8 +34,8 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
     <div className="space-y-5">
       <ReportPrintSheet report={report} role={user.role} short={sheetMode === "short"} />
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">{report.filename}</h1>
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">{report.filename}</h1>
           <p className="text-base text-slate-600">
             Patient: <b className="text-slate-700">{report.patient_name}</b> ({report.patient_code}) - Test date: {report.report_date ? fmtDate(report.report_date) : "not printed on the report"} -
             Added on {fmtUtcDate(report.uploaded_at)} by {report.uploaded_by_name}

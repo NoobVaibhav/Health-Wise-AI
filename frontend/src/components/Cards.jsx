@@ -124,10 +124,10 @@ export function ReportsTable({ reports, base, showPatient = true, onChanged }) {
     <div className="space-y-2">
       {reports.map((r) => (
         <Link key={r.id} to={`${base}/${r.id}`} className="tile flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><ClipboardList size={22} /></span>
-            <div>
-              <p className="font-bold text-slate-900">{r.filename}</p>
+            <div className="min-w-0">
+              <p className="break-words font-bold text-slate-900">{r.filename}</p>
               <p className="text-sm text-slate-500">
                 {showPatient && <>{r.patient_name} ({r.patient_code}) - </>}{r.report_type_label.split(" (")[0]} - report date {fmtDate(r.report_date)}{r.parameter_count > 0 && ` - ${r.parameter_count} tests`} - uploaded by {r.uploaded_by_name}
               </p>

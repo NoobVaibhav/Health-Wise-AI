@@ -17,7 +17,7 @@ describe("voice assistant", () => {
     expect(speakableText("<b>Bold</b> text *star* _under_ #hash", "en")).not.toMatch(/[*_#]/);
     expect(speakableText("x. ".repeat(2000), "en").length).toBeLessThan(1000);
   });
-  it.fails("F-04: ordinary speech that contains the words 'health wise' does not switch the microphone on", () => {
+  it("F-04: ordinary speech that contains the words 'health wise' does not switch the microphone on", () => {
     for (const said of ["being health wise is important", "he is quite healthwise these days", "health wise I feel fine", "my family is health wise careful"]) {
       expect(afterWakePhrase(said)).toBeNull();
     }
