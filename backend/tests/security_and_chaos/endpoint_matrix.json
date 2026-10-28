@@ -1,0 +1,2154 @@
+[
+ {
+  "method": "GET",
+  "path": "/api/auth/setup-status",
+  "public": true,
+  "roles": "PUBLIC",
+  "results": {
+   "none": 200,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/auth/register",
+  "public": true,
+  "roles": "PUBLIC",
+  "results": {
+   "none": 422,
+   "PATIENT": 422,
+   "PHARMACY": 422,
+   "LAB": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/auth/login",
+  "public": true,
+  "roles": "PUBLIC",
+  "results": {
+   "none": 422,
+   "PATIENT": 422,
+   "PHARMACY": 422,
+   "LAB": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/auth/me",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/auth/change-password",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 422,
+   "PHARMACY": 422,
+   "LAB": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/admin/dashboard",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/admin/users",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/admin/people",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/admin/doctors",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/admin/employees",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/admin/pharmacy-staff",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/admin/lab-staff",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/admin/users/{user_id}",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/admin/users/{user_id}/delete-check",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/admin/users/{user_id}",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 409,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/admin/departments",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/admin/departments",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/admin/audit-logs",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/patients",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "EMPLOYEE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patients",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patients/{patient_id}",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/patients/{patient_id}",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "EMPLOYEE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patients/{patient_id}/comparison",
+  "public": false,
+  "roles": [
+   "DOCTOR",
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patients/{patient_id}/trends",
+  "public": false,
+  "roles": [
+   "DOCTOR",
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patients/{patient_id}/trends/{parameter_name}",
+  "public": false,
+  "roles": [
+   "DOCTOR",
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/dashboard",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/patients",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/patients/{patient_id}/history",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/doctor/reports/{report_id}/review",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/doctor/notes",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/notes",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/doctor/recommendations",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/recommendations",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/doctor/history-entries",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/employee/dashboard",
+  "public": false,
+  "roles": [
+   "EMPLOYEE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 200,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/reports/upload",
+  "public": false,
+  "roles": [
+   "DOCTOR",
+   "EMPLOYEE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 422,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/reports",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/reports/{report_id}",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 404,
+   "PHARMACY": 404,
+   "LAB": 404,
+   "EMPLOYEE": 404,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/reports/{report_id}/analysis",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 404,
+   "PHARMACY": 404,
+   "LAB": 404,
+   "EMPLOYEE": 404,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/reports/{report_id}/insights/refresh",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/reports/{report_id}",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 404,
+   "PHARMACY": 404,
+   "LAB": 404,
+   "EMPLOYEE": 404,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/reports/{report_id}/file",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 404,
+   "PHARMACY": 404,
+   "LAB": 404,
+   "EMPLOYEE": 404,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/appointments",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 422,
+   "PHARMACY": 422,
+   "LAB": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/appointments",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/appointments/{appointment_id}",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 404,
+   "PHARMACY": 404,
+   "LAB": 404,
+   "EMPLOYEE": 404,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/prescriptions",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/prescriptions",
+  "public": false,
+  "roles": [
+   "DOCTOR",
+   "PATIENT",
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/prescriptions/{prescription_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR",
+   "PATIENT",
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 404,
+   "PHARMACY": 404,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/prescriptions/{prescription_id}/cancel",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/pharmacy/dashboard",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 200,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/pharmacy/prescriptions",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 200,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/pharmacy/dispense",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 422,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/pharmacy/history",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 200,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/pharmacy/inventory",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 200,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/pharmacy/inventory",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 422,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/pharmacy/inventory/{item_id}",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 404,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient/dashboard",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient/profile",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient/reports",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient/history",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient/notes",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient/recommendations",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient/prescriptions",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/dashboard",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/catalog/medicines",
+  "public": false,
+  "roles": [
+   "DOCTOR",
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 200,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/catalog/tests",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/lab/test-orders",
+  "public": false,
+  "roles": [
+   "EMPLOYEE",
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/lab/dashboard",
+  "public": false,
+  "roles": [
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 200,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/lab/worklist",
+  "public": false,
+  "roles": [
+   "EMPLOYEE",
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/lab/tests/{order_id}/status",
+  "public": false,
+  "roles": [
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/lab/tests/{order_id}/urgent",
+  "public": false,
+  "roles": [
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/lab/tests/{order_id}/result",
+  "public": false,
+  "roles": [
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/lab/my-tests",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/lab/patient/{patient_id}/tests",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/pharmacy/inventory/lookup",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 422,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/pharmacy/inventory/receive",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 422,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/pharmacy/sales",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 422,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/pharmacy/prescriptions/{prescription_id}/bill-preview",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 404,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/pharmacy/prescriptions/{prescription_id}/bill",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 404,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/pharmacy/sales/summary",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 200,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/pharmacy/sales",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 200,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/pharmacy/sales/{sale_id}",
+  "public": false,
+  "roles": [
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 404,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/profile",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/profile",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/profile/avatar",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 422,
+   "PHARMACY": 422,
+   "LAB": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/profile/avatar",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/profile/avatar/{user_id}",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 404,
+   "PHARMACY": 404,
+   "LAB": 404,
+   "EMPLOYEE": 404,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/health-history/me",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/health-history/me",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/health-history/patient/{patient_id}/preview",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/health-history/patient/{patient_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/health-history/patient/{patient_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/health-history/patient/{patient_id}/assessments",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 201
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/health-history/patient/{patient_id}/past",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/health-history/patient/{patient_id}/revisions",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/health-history/patient/{patient_id}/conditions",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/health-history/patient/{patient_id}/conditions/{condition_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/health-history/patient/{patient_id}/conditions/{condition_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/health-history/patient/{patient_id}/medicines",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/health-history/patient/{patient_id}/medicines/{medication_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/health-history/patient/{patient_id}/medicines/{medication_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/health-history/patient/{patient_id}/admissions",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/health-history/patient/{patient_id}/admissions/{admission_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/health-history/patient/{patient_id}/admissions/{admission_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/health-history/patient/{patient_id}/surgeries",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/health-history/patient/{patient_id}/surgeries/{surgery_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/health-history/patient/{patient_id}/surgeries/{surgery_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/health-history/patient/{patient_id}/verify/{entity}/{entity_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/patients/{patient_id}/clinical-summary",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/doctor/patients/{patient_id}/clinical-summary/generate",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 503
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/doctor/patients/{patient_id}/clinical-summary/review",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/patients/{patient_id}/timeline",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/patients/{patient_id}/report-trends",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/patients/{patient_id}/medication-history",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/patients/{patient_id}/follow-ups",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/doctor/patients/{patient_id}/follow-ups",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "PATCH",
+  "path": "/api/doctor/patients/{patient_id}/follow-ups/{task_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/patients/{patient_id}/emergency-history",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/doctor/patients/{patient_id}/emergency-events",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctor/emergency-events/{event_id}",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient-assistant/info",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient-assistant/suggestions",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/patient-assistant/chat",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 422,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient-assistant/conversations",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/patient-assistant/conversations/{conversation_id}",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 404,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/patient-assistant/conversations/{conversation_id}",
+  "public": false,
+  "roles": [
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 404,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/doctors",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "PATIENT"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/health",
+  "public": true,
+  "roles": "PUBLIC",
+  "results": {
+   "none": 200,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ }
+]
