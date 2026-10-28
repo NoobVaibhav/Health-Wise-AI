@@ -3,6 +3,8 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
+const navigateMock = vi.hoisted(() => vi.fn());
+vi.mock("react-router-dom", async (orig) => ({ ...(await orig()), useNavigate: () => navigateMock }));
 vi.mock("../../services/assistantApi", () => ({
   getAssistantInfo: vi.fn(() => Promise.resolve({ disclaimer: "This assistant gives information from your own records.", ai_wording_available: false })),
   getSuggestions: vi.fn(() => Promise.resolve([{ key: "checkup", text: "My last checkup" }])),
@@ -141,5 +143,99 @@ describe("AssistantChat", () => {
     expect(screen.getByText(/\(2\)/)).toBeTruthy();
     expect(screen.getByText("Follow-up date given:").tagName).toBe("B");
     expect(screen.getByRole("button", { name: "Copy this answer" })).toBeTruthy();
+  });
+});
+
+describe("AssistantChat hands-free voice conversation", () => {
+  let recs, said;
+  const fakeSpeech = () => {
+    recs = []; said = [];
+    window.SpeechRecognition = class { constructor() { recs.push(this); } start() { this.onstart?.(); } stop() { this.onend?.(); } abort() { this.onend?.(); } };
+    window.speechSynthesis = { speak: (u) => said.push(u), cancel: () => {}, pause: () => {}, resume: () => {}, getVoices: () => [] };
+    window.SpeechSynthesisUtterance = class { constructor(t) { this.text = t; } };
+    localStorage.setItem("hw_voice_notice", "yes");
+    localStorage.setItem("hw_assistant_sounds", "no");
+  };
+  const hear = (rec, text, isFinal = true) => rec.onresult({ results: [Object.assign([{ transcript: text }], { isFinal })] });
+  const orb = () => screen.getByRole("button", { name: "Start talking with HealthWise" });
+
+  it("listens, sends what was said, reads the answer aloud and listens again; 'stop' ends it", async () => {
+    fakeSpeech();
+    sendChat.mockResolvedValue(reply({ text: "Your next appointment is on 3 Nov 2026." }));
+    open();
+    await userEvent.click(orb());
+    expect(recs.length).toBe(1);
+    expect(screen.getByText(/Hands-free conversation is on/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Stop listening" }).getAttribute("data-state")).toBe("listening");
+    hear(recs[0], "when is my", false);
+    await waitFor(() => expect(screen.getAllByText(/when is my/).length).toBeGreaterThan(0));                       // what is heard is shown as it comes
+    hear(recs[0], "when is my next appointment", true);
+    await waitFor(() => expect(sendChat).toHaveBeenCalledWith(expect.objectContaining({ message: "when is my next appointment" })));
+    await waitFor(() => expect(said.length).toBe(1));                                   // the answer is read without pressing anything
+    expect(said[0].text).toMatch(/next appointment is on 3 Nov 2026/);
+    said[0].onend();
+    await waitFor(() => expect(recs.length).toBe(2), { timeout: 2000 });                // and it listens again
+    sendChat.mockClear();
+    hear(recs[1], "stop", true);
+    await waitFor(() => expect(screen.queryByText(/Hands-free conversation is on/)).toBeNull());
+    expect(sendChat).not.toHaveBeenCalled();                                            // "stop" is a command, not a question
+  });
+
+  it("repeats the last answer and slows down when asked", async () => {
+    fakeSpeech();
+    sendChat.mockResolvedValue(reply({ text: "Your next appointment is on 3 Nov 2026." }));
+    open();
+    await userEvent.click(orb());
+    hear(recs[0], "next appointment", true);
+    await waitFor(() => expect(said.length).toBe(1));
+    said[0].onend();
+    await waitFor(() => expect(recs.length).toBe(2), { timeout: 2000 });
+    hear(recs[1], "speak slower", true);
+    await waitFor(() => expect(said.length).toBe(2));
+    expect(said[1].rate).toBe(0.8);
+    expect(said[1].text).toMatch(/next appointment/);
+    expect(localStorage.getItem("hw_assistant_rate")).toBe("0.8");
+    expect(sendChat).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the page the server names, and a goodbye ends the conversation after it is spoken", async () => {
+    fakeSpeech();
+    navigateMock.mockClear();
+    sendChat.mockResolvedValueOnce(reply({ text: "Opening your reports.", action: { type: "navigate", to: "/patient/reports", label: "your reports" } }));
+    open();
+    await userEvent.type(screen.getByLabelText("Type your question"), "open my reports{Enter}");
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/patient/reports"), { timeout: 2000 });
+    sendChat.mockResolvedValueOnce(reply({ text: "Goodbye. Take care!", action: { type: "end_conversation" } }));
+    await userEvent.click(orb());
+    hear(recs[0], "goodbye", true);
+    await waitFor(() => expect(said.length).toBe(1));
+    said[0].onend();
+    await new Promise((r) => setTimeout(r, 600));
+    expect(recs.length).toBe(1);                                                       // it did not listen again
+    expect(screen.queryByText(/Hands-free conversation is on/)).toBeNull();
+  });
+
+  it("stops by itself, and says so, when nothing is heard twice in a row", async () => {
+    fakeSpeech();
+    open();
+    await userEvent.click(orb());
+    recs[0].onerror({ error: "no-speech" }); recs[0].onend();
+    await waitFor(() => expect(recs.length).toBe(2), { timeout: 2000 });
+    recs[1].onerror({ error: "no-speech" }); recs[1].onend();
+    expect(await screen.findByText(/I stopped listening because I did not hear anything/)).toBeTruthy();
+    expect(screen.queryByText(/Hands-free conversation is on/)).toBeNull();
+    expect(recs.length).toBe(2);
+  });
+
+  it("tapping the orb while it speaks interrupts and listens at once", async () => {
+    fakeSpeech();
+    sendChat.mockResolvedValue(reply({ text: "Your next appointment is on 3 Nov 2026." }));
+    open();
+    await userEvent.click(orb());
+    hear(recs[0], "next appointment", true);
+    await waitFor(() => expect(said.length).toBe(1));
+    await userEvent.click(await screen.findByRole("button", { name: "Interrupt and ask something else" }));
+    await waitFor(() => expect(recs.length).toBe(2));
+    expect(screen.getByRole("button", { name: "Stop listening" })).toBeTruthy();
   });
 });

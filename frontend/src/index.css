@@ -64,3 +64,20 @@ body {
   #root { height: 0 !important; overflow: hidden !important; }
   .print-compact { zoom: 0.82; }
 }
+
+/* The voice orb of Ask HealthWise: it breathes when idle, ripples when listening, spins when thinking, and its bars move when speaking */
+.voice-orb { transition: transform 0.15s ease; }
+.voice-orb:active { transform: scale(0.95); }
+.voice-orb-idle { animation: orb-breathe 3.2s ease-in-out infinite; }
+.voice-orb-listening { animation: orb-ripple 1.4s ease-out infinite; }
+.voice-orb-speaking { animation: orb-ripple-green 1.6s ease-out infinite; }
+.voice-orb-thinking::after { content: ""; position: absolute; inset: -6px; border-radius: 9999px; border: 4px solid transparent; border-top-color: #f59e0b; animation: orb-spin 0.9s linear infinite; }
+.voice-bars { position: absolute; inset: auto 0 10px 0; display: flex; justify-content: center; gap: 3px; height: 14px; align-items: flex-end; opacity: 0.9; }
+.voice-bars i { display: block; width: 3px; background: rgba(255,255,255,0.9); border-radius: 2px; animation: orb-bar 0.9s ease-in-out infinite; }
+.voice-bars i:nth-child(2) { animation-delay: 0.12s; } .voice-bars i:nth-child(3) { animation-delay: 0.24s; } .voice-bars i:nth-child(4) { animation-delay: 0.36s; } .voice-bars i:nth-child(5) { animation-delay: 0.48s; }
+@keyframes orb-breathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.35); transform: scale(1); } 50% { box-shadow: 0 0 0 10px rgba(8, 145, 178, 0); transform: scale(1.04); } }
+@keyframes orb-ripple { 0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.55), 0 0 0 0 rgba(225, 29, 72, 0.3); } 100% { box-shadow: 0 0 0 16px rgba(225, 29, 72, 0), 0 0 0 30px rgba(225, 29, 72, 0); } }
+@keyframes orb-ripple-green { 0% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.5); } 100% { box-shadow: 0 0 0 22px rgba(13, 148, 136, 0); } }
+@keyframes orb-spin { to { transform: rotate(360deg); } }
+@keyframes orb-bar { 0%, 100% { height: 3px; } 50% { height: 13px; } }
+@media (prefers-reduced-motion: reduce) { .voice-orb, .voice-orb::after, .voice-bars i { animation: none !important; } }

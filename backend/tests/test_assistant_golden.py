@@ -37,7 +37,10 @@ GOLDEN = [
     # terms
     ("Can you explain what haemoglobin means in simple English?", "en", "TERM"), ("What is cholesterol?", "en", "TERM"), ("What does creatinine mean", "en", "TERM"),
     # nothing to answer
-    ("hello", "en", "HELP"), ("thanks", "en", "HELP"), ("what is the weather", "en", "HELP"),
+    ("hello", "en", "GREETING"), ("thanks", "en", "THANKS"), ("what is the weather", "en", "HELP"),
+    ("good morning", "en", "GREETING"), ("namaste", "hi", "GREETING"), ("bye", "en", "BYE"), ("what can you do", "en", "WHO"), ("what time is it", "en", "TIME"),
+    ("आज की तारीख क्या है", "hi", "TIME"), ("open my reports", "en", "NAVIGATE"), ("रिपोर्ट खोलो", "hi", "NAVIGATE"), ("औषधे उघडा", "mr", "NAVIGATE"),
+    ("brief me", "en", "BRIEFING"), ("आज की जानकारी", "hi", "BRIEFING"),
 ]
 
 EMERGENCY = [

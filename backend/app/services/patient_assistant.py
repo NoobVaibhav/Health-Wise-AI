@@ -24,7 +24,7 @@ from app.database.models import (
     Appointment, DoctorNote, DoctorRecommendation, HealthReport, Patient, PatientAssistantConversation,
     PatientAssistantEvidence, PatientAssistantMessage, Prescription, PrescriptionItem, utcnow,
 )
-from app.services import assistant_safety, llm_service, medication_history, report_trends
+from app.services import assistant_safety, assistant_talk, llm_service, medication_history, report_trends
 from app.services.assistant_text import GLOSSARY, LANGUAGES, fdate, has_devanagari, normalise_lang, t
 from app.services.clinical_timeline import source
 from app.services.health_history_service import load_history
@@ -473,8 +473,48 @@ def _mentions_prescribed_medicine(db: Session, patient: Patient, text: str) -> b
     return False
 
 
+def answer_briefing(db, patient, lang) -> dict:
+    """The daily update from the patient's own records: the next appointment, results outside the printed range, open medicines, a follow-up date."""
+    now = datetime.now()
+    name = assistant_talk.first_name(patient.user.full_name)
+    lines, sources = [assistant_talk.say("brief_head", lang, part=assistant_talk.part_of_day(now, lang), name=name or {"en": "there", "hi": "जी", "mr": "तुम्ही"}[lang])], []
+    upcoming = db.scalars(select(Appointment).where(Appointment.patient_id == patient.id, Appointment.scheduled_at >= now, Appointment.status.in_(("SCHEDULED", "CONFIRMED")))
+                          .order_by(Appointment.scheduled_at)).first()
+    if upcoming:
+        lines.append(t("next_appt", lang, date=fdate(upcoming.scheduled_at.date(), lang) + f" {upcoming.scheduled_at:%H:%M}", doctor=upcoming.doctor.user.full_name))
+        sources.append(_src("appointment", upcoming.id, "Appointment", upcoming.scheduled_at.date().isoformat()))
+    else:
+        lines.append(t("no_next_appt", lang))
+    series, waiting = reviewed_series(db, patient)
+    outside = [(s["name"], s["points"][-1]) for s in series if s["points"][-1]["status"] in ("ABOVE_RANGE", "BELOW_RANGE")]
+    if outside:
+        lines.append(assistant_talk.say("brief_results", lang, n=len(outside), be="is" if len(outside) == 1 else "are", names=", ".join(n for n, _ in outside[:4]) + (f" +{len(outside) - 4}" if len(outside) > 4 else "")))
+        sources += [_point_source(p) for _, p in outside[:4]]
+    else:
+        lines.append(assistant_talk.say("brief_clear" if series else "brief_none", lang))
+    if waiting:
+        lines.append(t("waiting", lang, n=waiting))
+    meds = medication_history.build(db, patient)["medicines"]
+    open_meds = [m for m in meds if m["status"] in medication_history.OPEN]
+    if open_meds:
+        lines.append(assistant_talk.say("brief_meds", lang, n=len(open_meds), s="" if len(open_meds) == 1 else "s"))
+    rec = db.scalars(select(DoctorRecommendation).where(DoctorRecommendation.patient_id == patient.id, DoctorRecommendation.follow_up_date >= now.date())
+                     .order_by(DoctorRecommendation.follow_up_date)).first()
+    if rec:
+        lines.append(assistant_talk.say("brief_follow", lang, d=fdate(rec.follow_up_date, lang)))
+        sources.append(_src("recommendation", rec.id, "Doctor's advice", rec.created_at.date().isoformat()))
+    lines.append(assistant_talk.say("brief_end", lang))
+    return {"text": "\n".join(lines), "sources": _unique(sources), "topic": {"intent": "BRIEFING"}}
+
+
 def compose(db: Session, patient: Patient, message: str, lang: str, topic: dict) -> dict:
     text = _fuzzy_words(_digits(re.sub(r"\s+", " ", message).strip().lower()))
+    talk = assistant_talk.detect(text)
+    if talk and talk[0] != "BRIEFING":                                      # a greeting, thanks, the time, "open my reports" ... needs no record
+        spoken = assistant_talk.answer(talk[0], talk[1], lang, assistant_talk.first_name(patient.user.full_name))
+        return {**spoken, "sources": [], "topic": topic, "intent": talk[0]}
+    if talk:
+        return {**answer_briefing(db, patient, lang), "intent": "BRIEFING"}
     series, waiting = reviewed_series(db, patient)
     intent, tests, mode = detect_intent(text, series, topic)
     if intent == "TEST":
@@ -583,7 +623,7 @@ def chat(db: Session, patient: Patient, message: str, language: str | None, conv
         if guard in ("MED_CHANGE", "DIAGNOSIS", "REACTION"):
             extra = out["text"] if out["intent"] in ("MEDICINES", "LAST_CHECKUP", "REPORT", "TEST", "ABNORMAL") else ""
             out["text"] = guard_text(guard, lang) + (("\n\n" + extra) if extra else "")
-        elif ai_available(ai_consent) and out["intent"] not in ("HELP", "TERM_UNKNOWN"):
+        elif ai_available(ai_consent) and out["intent"] not in ("HELP", "TERM_UNKNOWN", "GREETING", "THANKS", "BYE", "WHO", "TIME", "NAVIGATE", "BRIEFING"):
             better = ai_reword(out["text"], lang)
             if better:
                 out["text"], ai_used = better, True
@@ -599,6 +639,7 @@ def chat(db: Session, patient: Patient, message: str, language: str | None, conv
     db.commit()
     reply_out = message_out(reply, out["sources"], guard, out["intent"], ai_used)
     reply_out["follow_ups"] = [] if guard == "EMERGENCY" else follow_ups(db, patient, lang, out["intent"])
+    reply_out["action"] = None if guard == "EMERGENCY" else out.get("action")             # {"type": "navigate", "to": ...} or {"type": "end_conversation"}
     return {"conversation_id": conv.id, "title": conv.title, "message": message_out(patient_msg), "reply": reply_out}
 
 

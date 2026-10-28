@@ -111,3 +111,14 @@ Tests: `backend/tests/test_patient_assistant.py` (33), `frontend/src/utils/voice
 
 ## Easier to read, and next questions (Ask HealthWise)
 Each answer shows its lines as short paragraphs with the label in bold, the closing reminder in smaller print, repeated sources once (with a count), and Copy and Listen buttons. After an answer the suggestion chips change to up to three next questions that fit it (ollow_ups in the chat reply, chosen by the topic just answered, only questions the patient's own records can answer, none after an emergency answer). A new answer scrolls into view together with the question that led to it.
+
+## Voice assistant (hands-free, free, no outside voice service)
+Everything uses the browser's own speech recognition and speech synthesis: no paid service, no API key, nothing recorded or kept by HealthWise.
+
+- **Round button (orb):** one tap starts a hands-free conversation. The assistant listens, sends what was said as soon as the person stops, reads the answer aloud and listens again. The orb shows the state (breathing, red ripple while listening, spinner while thinking, green bars while speaking) and the words being heard appear live. Tapping it while the assistant speaks interrupts it and listens at once. Two rounds of silence end the conversation with a clear message.
+- **Spoken commands:** "stop", "repeat" / "say that again", "speak slower", "speak faster", "clear the chat", "switch to Hindi / Marathi / English", "that's all" (English, Hindi and Marathi wording).
+- **Hey HealthWise (beta, optional):** switched on in *Voice settings*; listens for the name only on this page, only after the person turned it on and accepted the privacy note.
+- **Small microphone:** unchanged; dictates one question into the box to be checked before sending.
+- **Reading aloud:** sentence by sentence (long answers are not cut off), the most natural installed voice first (Edge "Natural"/"Online", then Google), a voice chooser, speed, units and abbreviations said in words, a small sound cue (can be switched off), "read every answer aloud" option.
+- **More it understands (fixed rules, `assistant_talk.py`):** greetings by name and time of day, thanks, goodbye, "what can you do", the date and time, **"brief me"** (today's update from the patient's own records: next appointment, results outside the printed range, open medicines, follow-up date) and **"open my reports / medicines / appointments / timeline / health history / notes / advice / profile"**, which opens that page. An emergency message is always answered first and never as small talk.
+- **Limits:** the browser decides which speech service hears the voice (Chrome: Google, Edge: Microsoft) and whether Hindi/Marathi voices are installed; a browser without speech recognition (for example Firefox) still gets typing and read-aloud. Fully offline voice recognition would need a large model download and is not included.
