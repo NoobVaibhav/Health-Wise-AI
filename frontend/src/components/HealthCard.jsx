@@ -8,20 +8,22 @@ const TONES = {
   violet: "from-violet-400 to-violet-600",
 };
 
-// Number card with a coloured icon. `value` can be text or a component.
+// Number card: coloured icon and the number on one line, then the name and a short note. Every card has the same height, so a row looks even
+// whether or not a card has a note. `value` can be text or a component.
 export default function HealthCard({ title, value, sub, icon: Icon, tone = "brand" }) {
+  const big = typeof value === "number";
   return (
-    <div className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-3">
+    <div className="flex h-full min-h-[8.5rem] flex-col rounded-3xl border border-slate-200/70 bg-white p-5 shadow-sm transition hover:shadow-md">
+      <div className="flex items-start justify-between gap-3">
         {Icon && (
           <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow ${TONES[tone] || TONES.brand}`}>
             <Icon size={22} />
           </span>
         )}
-        <p className="text-sm font-semibold text-slate-500">{title}</p>
+        <div className={`min-w-0 break-words text-right font-extrabold leading-none text-slate-900 ${big ? "text-4xl" : "text-xl"}`}>{value}</div>
       </div>
-      <p className="mt-3 break-words text-2xl font-extrabold text-slate-900">{value}</p>
-      {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
+      <p className="mt-4 text-[15px] font-bold leading-snug text-slate-800">{title}</p>
+      <p className="mt-0.5 text-sm leading-snug text-slate-500">{sub || " "}</p>
     </div>
   );
 }

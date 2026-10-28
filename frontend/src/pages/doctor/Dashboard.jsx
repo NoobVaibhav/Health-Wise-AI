@@ -24,13 +24,13 @@ export default function DoctorDashboard() {
         <HeroButton to="/doctor/patients">My patients</HeroButton>
       </Hero>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
         <HealthCard title="Urgent wording" icon={AlertTriangle} tone="rose" value={d.waiting_urgent_count} sub="Reports waiting with urgent wording" />
         <HealthCard title="Values to look at" icon={FileSearch} tone="amber" value={d.waiting_outside_values} sub="Outside range, in waiting reports" />
-        <HealthCard title="Today's appointments" icon={CalendarClock} value={d.todays_appointments.length} />
-        <HealthCard title="My patients" icon={Users} tone="sky" value={d.my_patients_count} />
+        <HealthCard title="Today's appointments" icon={CalendarClock} value={d.todays_appointments.length} sub="Booked for today" />
+        <HealthCard title="My patients" icon={Users} tone="sky" value={d.my_patients_count} sub="Assigned to you" />
         <HealthCard title="Reports to review" icon={FileSearch} tone="amber" value={waiting} sub="Computer-read, waiting for you" />
-        <HealthCard title="Follow-ups coming up" icon={ClipboardList} tone="violet" value={d.pending_follow_ups.length} />
+        <HealthCard title="Follow-ups coming up" icon={ClipboardList} tone="violet" value={d.pending_follow_ups.length} sub="Tasks still open" />
       </div>
 
       <AttentionQueue items={d.attention_queue} />
