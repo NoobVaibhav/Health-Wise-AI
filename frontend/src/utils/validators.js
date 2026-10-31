@@ -76,7 +76,7 @@ export const bloodGroup = (value) => (empty(value) || BLOOD_GROUPS.includes(Stri
 const pad = (n) => String(n).padStart(2, "0");
 /** Today's date in the person's own calendar (not the UTC date, which is still "yesterday" in the early morning in India). */
 export const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
-export const MIN_DOB = "1900-01-01";
+export const MIN_DOB = "1930-01-01";         // the earliest date of birth: the date box starts here
 
 const realDate = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -96,7 +96,7 @@ export function dateOfBirth(value, { required = false } = {}) {
   const d = realDate(String(value));
   if (!d) return "Please enter a real date.";
   if (value > todayISO()) return "The date of birth cannot be in the future.";
-  if (value < MIN_DOB) return "The date of birth cannot be before 1900.";
+  if (value < MIN_DOB) return "The date of birth cannot be before 1930.";
   if (ageOf(value) > 120) return "The age cannot be more than 120 years.";
   return "";
 }

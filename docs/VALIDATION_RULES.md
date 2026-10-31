@@ -31,7 +31,7 @@ One set of rules, written once and used everywhere.
 | Pincode (when present) | 6 digits | `Pincode` |
 | Gender | `male`, `female` or `other` (any case; stored lower case) | `Gender`; `gender()` |
 | Blood group | A+, A-, B+, B-, AB+, AB-, O+, O- | `BloodGroup`; `bloodGroup()` |
-| Date of birth | a real calendar date, not in the future, not before 1900-01-01, age at most 120; the date box has `min` and `max`; **a warning only** (not an error) under 1 year or over 110 | `DateOfBirth`; `dateOfBirth()`, `ageWarning()` |
+| Date of birth | a real calendar date, not in the future, not before 1930-01-01, age at most 120; the date box has `min` and `max`; **a warning only** (not an error) under 1 year or over 110 | `DateOfBirth`; `dateOfBirth()`, `ageWarning()` |
 | Appointment time | not in the past (5 minutes of grace), not more than 1 year ahead; a time with a time zone is converted first; no double booking of a doctor at the same time (409, existing check) | `check_appointment_time`; `routers/appointments.py` |
 | Appointment status | `SCHEDULED`, `CONFIRMED`, `COMPLETED`, `CANCELLED` | `AppointmentUpdate` |
 | Dates of entries (history entry date) | not in the future | `PastOrTodayRequired` |

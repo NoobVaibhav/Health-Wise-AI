@@ -185,7 +185,7 @@ BloodGroup = Annotated[str | None, BeforeValidator(_blood_group)]
 
 
 # ------------------------------------------------------------------ dates
-MIN_DATE = date(1900, 1, 1)
+MIN_DATE = date(1930, 1, 1)           # the earliest date of birth accepted
 
 
 def _date_of_birth(value):
@@ -195,7 +195,7 @@ def _date_of_birth(value):
     if value > today:
         raise ValueError("The date of birth cannot be in the future.")
     if value < MIN_DATE:
-        raise ValueError("The date of birth cannot be before 1900.")
+        raise ValueError("The date of birth cannot be before 1930.")
     age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
     if age > 120:
         raise ValueError("The age cannot be more than 120 years.")

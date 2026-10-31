@@ -93,8 +93,8 @@ TODAY = date.today()
 
 
 @pytest.mark.parametrize("dob,ok", [
-    (TODAY, True), (TODAY - timedelta(days=1), True), (date(1990, 5, 14), True), (TODAY.replace(year=TODAY.year - 120) + timedelta(days=1), True),
-    (TODAY + timedelta(days=1), False), (date(2999, 1, 1), False), (date(1899, 12, 31), False), (date(1, 1, 1), False), (TODAY.replace(year=TODAY.year - 121), False),
+    (TODAY, True), (TODAY - timedelta(days=1), True), (date(1930, 1, 1), True), (date(1990, 5, 14), True),
+    (TODAY + timedelta(days=1), False), (date(2999, 1, 1), False), (date(1929, 12, 31), False), (date(1899, 12, 31), False), (date(1, 1, 1), False), (TODAY.replace(year=TODAY.year - 121), False),
 ])
 def test_date_of_birth_boundaries(dob, ok):
     assert (accepts(field_model(v.DateOfBirth), value=dob) is not None) == ok

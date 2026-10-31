@@ -36,8 +36,8 @@ describe("dates", () => {
     expect(v.dateOfBirth("1990-05-14")).toBe("");
     expect(v.dateOfBirth(iso(1))).toMatch(/future/);
     expect(v.dateOfBirth("2999-01-01")).toMatch(/future/);
-    expect(v.dateOfBirth("1899-12-31")).toMatch(/before 1900/);
-    expect(v.dateOfBirth("1900-01-01")).toMatch(/120/);
+    expect(v.dateOfBirth("1929-12-31")).toMatch(/before 1930/);
+    expect(v.dateOfBirth("1930-01-01")).toBe("");
     expect(v.dateOfBirth("2026-02-30")).toMatch(/real date/);
     expect(v.dateOfBirth("not a date")).toMatch(/real date/);
     expect(v.dateOfBirth("")).toBe("");
