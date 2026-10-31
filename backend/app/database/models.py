@@ -71,6 +71,10 @@ class Patient(Base):
     medical_history_text: Mapped[str | None] = mapped_column(Text)
     current_medications: Mapped[str | None] = mapped_column(Text)
     assigned_doctor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    uhid: Mapped[str | None] = mapped_column(String(30), unique=True, index=True)     # BRANCH-YY-000123 (the old patient_code stays too)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"))
+    abha_id: Mapped[str | None] = mapped_column(String(20))                             # only with an active ABHA consent
+    merged_into_id: Mapped[int | None] = mapped_column(ForeignKey("patients.id"))      # set on an archived duplicate
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     user: Mapped[User] = relationship()
@@ -853,3 +857,174 @@ class Referral(Base):
     trainee: Mapped[Trainee] = relationship()
     doctor: Mapped[Doctor] = relationship()
     history: Mapped[TraineeHistory] = relationship()
+
+
+# ------------------------------------------------------------------ hospital foundation (branches, settings, price list, permissions)
+class Branch(Base):
+    __tablename__ = "branches"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(8), unique=True)               # used in the UHID, for example PUN
+    name: Mapped[str] = mapped_column(String(150))
+    address: Mapped[str | None] = mapped_column(String(300))
+    phone: Mapped[str | None] = mapped_column(String(30))
+    email: Mapped[str | None] = mapped_column(String(150))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class HospitalProfile(Base):
+    """The single row that describes the hospital (name and address on letterheads and bills)."""
+    __tablename__ = "hospital_profile"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str | None] = mapped_column(String(200))
+    address: Mapped[str | None] = mapped_column(String(300))
+    phone: Mapped[str | None] = mapped_column(String(30))
+    email: Mapped[str | None] = mapped_column(String(150))
+    registration_number: Mapped[str | None] = mapped_column(String(80))
+    gst_number: Mapped[str | None] = mapped_column(String(30))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
+class HospitalSetting(Base):
+    """A configurable value (key and text value). branch_id empty = for the whole hospital."""
+    __tablename__ = "hospital_settings"
+    __table_args__ = (UniqueConstraint("branch_id", "key", name="uq_setting_branch_key"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"))
+    key: Mapped[str] = mapped_column(String(60), index=True)
+    value: Mapped[str] = mapped_column(String(500))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
+class ServiceCatalog(Base):
+    """The price list: consultation fees and every chargeable service. Billing (a later phase) reads prices from here."""
+    __tablename__ = "service_catalog"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(30), unique=True)
+    name: Mapped[str] = mapped_column(String(200), index=True)
+    category: Mapped[str] = mapped_column(String(20), index=True)
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
+    price: Mapped[float] = mapped_column(Float, default=0)
+    gst_percent: Mapped[float] = mapped_column(Float, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    department: Mapped[Department | None] = relationship()
+
+
+class Role(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(40), unique=True)
+    name: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(String(300))
+    is_system: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Permission(Base):
+    __tablename__ = "permissions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(60), unique=True)
+    description: Mapped[str | None] = mapped_column(String(300))
+
+
+class RolePermission(Base):
+    __tablename__ = "role_permissions"
+    __table_args__ = (UniqueConstraint("role_id", "permission_id", name="uq_role_permission"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), index=True)
+    permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id"), index=True)
+
+
+class UserRole(Base):
+    """An extra role given to a user on top of the role they log in with (users.role)."""
+    __tablename__ = "user_roles"
+    __table_args__ = (UniqueConstraint("user_id", "role_id", name="uq_user_role"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"))
+    granted_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    granted_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class BreakGlassGrant(Base):
+    """Emergency access to a patient the clinician is not otherwise authorised for: a written reason, a short time window, always reviewed afterwards."""
+    __tablename__ = "break_glass_grants"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    reason: Mapped[str] = mapped_column(String(500))
+    granted_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    review_note: Mapped[str | None] = mapped_column(String(500))
+
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+    patient: Mapped[Patient] = relationship()
+
+
+# ------------------------------------------------------------------ patient registry (UHID, consent, insurance, merge)
+class UhidCounter(Base):
+    """The last UHID number used per branch and year, so numbers are never reused or skipped."""
+    __tablename__ = "uhid_counters"
+    __table_args__ = (UniqueConstraint("branch_id", "year", name="uq_uhid_counter"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    branch_id: Mapped[int] = mapped_column(ForeignKey("branches.id"))
+    year: Mapped[int] = mapped_column(Integer)
+    last_number: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class PatientConsent(Base):
+    __tablename__ = "patient_consents"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(20), index=True)               # TREATMENT / DATA_SHARING / ABHA / PHOTO / RESEARCH
+    granted_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    recorded_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    given_by: Mapped[str | None] = mapped_column(String(150))                # the patient, or the relative who signed
+    note: Mapped[str | None] = mapped_column(String(300))
+    withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime)
+    withdrawn_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
+class PatientInsurance(Base):
+    __tablename__ = "patient_insurance"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    insurer_name: Mapped[str] = mapped_column(String(150))
+    tpa_name: Mapped[str | None] = mapped_column(String(150))
+    policy_number: Mapped[str] = mapped_column(String(60))
+    member_id: Mapped[str | None] = mapped_column(String(60))
+    valid_from: Mapped[date | None] = mapped_column(Date)
+    valid_to: Mapped[date | None] = mapped_column(Date)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class PatientMerge(Base):
+    """Two records of one person joined into one. The old record is kept (archived); this row says who did it, why, and what moved."""
+    __tablename__ = "patient_merges"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kept_patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    merged_patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    merged_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    reason: Mapped[str] = mapped_column(String(500))
+    moved_json: Mapped[str | None] = mapped_column(Text)                     # {"table": rows moved}
+    merged_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

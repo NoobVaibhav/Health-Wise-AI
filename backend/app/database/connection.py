@@ -35,6 +35,12 @@ def init_db() -> None:
         backfill_barcodes(db)
         from app.services.catalog_service import ensure_catalog
         ensure_catalog(db)
+        from app.services import access_service, hospital_service, registry_service
+        hospital_service.default_branch(db)
+        hospital_service.get_profile(db)
+        access_service.seed_access(db)
+        db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_patients_uhid ON patients (uhid)"))   # an old database got the column without the unique rule
+        registry_service.backfill_uhids(db)
 
 
 def add_missing_columns(bind=None) -> None:

@@ -1,7 +1,7 @@
-import { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, Send, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
+import { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, Hospital as HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
 
 // Icon lookup (only the icons used in menus are bundled).
-export const ICONS = { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, Send, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
+export const ICONS = { CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
 
 // Sidebar menu for each role: [path, label, icon name]. The backend enforces the same permissions.
 export const NAV = {
@@ -17,6 +17,7 @@ export const NAV = {
     ["/admin/appointments", "Appointments", "CalendarClock"],
     ["/admin/reports", "Reports", "FileText"],
     ["/admin/audit-logs", "Activity Log", "ScrollText"],
+    ["/admin/hospital", "Hospital", "HospitalIcon"],
     ["/admin/settings", "Settings", "Settings"],
     ["/admin/profile", "My Profile", "CircleUser"],
   ],
@@ -25,6 +26,7 @@ export const NAV = {
     ["/doctor/patients", "My Patients", "UserRound"],
     ["/doctor/appointments", "Appointments", "CalendarClock"],
     ["/doctor/referrals", "Trainee Referrals", "Send"],
+    ["/doctor/emergency-access", "Emergency access", "ShieldAlert"],
     ["/doctor/reports", "Reports to Review", "FileSearch"],
     ["/doctor/notes", "Doctor Notes", "NotebookPen"],
     ["/doctor/recommendations", "Recommendations", "ListChecks"],

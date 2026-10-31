@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from app.core.permissions import DOCTOR, EMPLOYEE, LAB, PHARMACY, TRAINEE
 from app.database.connection import SessionLocal, init_db
-from app.database.models import Department, Doctor, MedicineInventory, Specialization, User
+from app.database.models import Department, Doctor, MedicineInventory, ServiceCatalog, Specialization, User
 from app.schemas.auth import StaffCreate
 from app.schemas.patient import PatientCreate
 from app.services import catalog_service, user_service
@@ -64,6 +64,12 @@ def main() -> None:
                 email="rahul.patil@healthwise.demo.com", full_name="Rahul Patil", password=DEMO_PASSWORD,
                 gender="male", date_of_birth=date(1998, 5, 14), phone="9000000001",
                 assigned_doctor_id=doctor.id if doctor else None))
+
+        if db.scalar(select(ServiceCatalog.id).limit(1)) is None:            # a small demo price list (the real one is entered by the administrator)
+            for code, name, category, price in (("OPD-GEN", "OPD consultation, General Medicine", "CONSULTATION", 500), ("OPD-FU", "Follow-up consultation", "CONSULTATION", 300),
+                                                ("LAB-CBC", "Complete blood count", "LAB", 350), ("XRAY-CH", "X-ray chest", "RADIOLOGY", 600)):
+                db.add(ServiceCatalog(code=code, name=name, category=category, price=price, gst_percent=0, is_active=True))
+            db.commit()
 
         if db.scalar(select(MedicineInventory.id).limit(1)) is None:
             for name, qty, price in (("Medicine A", 100, 2.5), ("Medicine B", 60, 4.0)):

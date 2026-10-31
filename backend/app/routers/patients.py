@@ -4,6 +4,8 @@ import json
 
 import re
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
+from app.services import hospital_service, registry_service
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -26,6 +28,11 @@ reception = require_roles(EMPLOYEE, ADMIN)
 @router.post("", response_model=PatientCreated, status_code=status.HTTP_201_CREATED)
 def register_patient(data: PatientCreate, request: Request, user: User = Depends(reception),
                      db: Session = Depends(get_db)):
+    if not data.allow_duplicate and hospital_service.setting_value(db, "duplicate_check") == "on":
+        strong = [e for e in registry_service.find_duplicates(db, data.full_name, data.date_of_birth, data.phone) if e["strong"]]
+        if strong:                                   # the same name and date of birth: ask reception to look before a second record is made
+            return JSONResponse(status_code=409, content={"detail": "A patient with the same name and date of birth is already registered. Please check, and confirm if this is a different person.",
+                                                           "duplicates": [registry_service.duplicate_out(e) for e in strong]})
     patient, temporary = user_service.create_patient(db, data)
     audit_service.log_action(db, user, audit_service.PATIENT_CREATED, "patient", patient.id, request)
     return PatientCreated(patient=patient_basic(patient), temporary_password=temporary)
@@ -35,14 +42,14 @@ def register_patient(data: PatientCreate, request: Request, user: User = Depends
 def list_patients(q: SearchText = None, user: User = Depends(require_roles(ADMIN, EMPLOYEE, DOCTOR)),
                   db: Session = Depends(get_db)):
     """Search by name, patient id, phone or email. Doctors only get their own authorized patients."""
-    query = select(Patient).join(User, Patient.user_id == User.id).order_by(User.full_name)
+    query = select(Patient).join(User, Patient.user_id == User.id).where(Patient.merged_into_id.is_(None)).order_by(User.full_name)
     if user.role == DOCTOR:
         ids = doctor_patient_ids(db, get_doctor_profile(db, user))
         query = query.where(Patient.id.in_(ids or {-1}))
     if q:
         like = f"%{q.strip()}%"
         query = query.where(or_(User.full_name.ilike(like), Patient.patient_code.ilike(like),
-                                Patient.phone.ilike(like), User.email.ilike(like)))
+                                Patient.phone.ilike(like), User.email.ilike(like), Patient.uhid.ilike(like)))
     return [patient_basic(p) for p in db.scalars(query)]
 
 

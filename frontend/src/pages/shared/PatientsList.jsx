@@ -1,7 +1,8 @@
 // Searchable patient list as friendly cards. Admin/employee see basic details only; doctors see their own authorized patients.
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FolderOpen, Pencil, Search } from "lucide-react";
+import { FolderOpen, Pencil, Search, ShieldCheck } from "lucide-react";
+import PatientRegistryPanel from "../../components/PatientRegistryPanel";
 import useFetch from "../../hooks/useFetch";
 import { useAuth } from "../../context/AuthContext";
 import { listPatients, updatePatient } from "../../services/patientApi";
@@ -17,6 +18,7 @@ export default function PatientsList() {
   const [q, setQ] = useState("");
   const { data, loading, error, reload } = useFetch(() => listPatients(q), [q]);
   const [editing, setEditing] = useState(null);
+  const [registry, setRegistry] = useState(null);
   const toast = useToast();
   const isDoctor = user.role === "DOCTOR";
   const canEdit = ["EMPLOYEE", "ADMIN"].includes(user.role);
@@ -26,7 +28,7 @@ export default function PatientsList() {
       <PageTitle title={isDoctor ? "My patients" : "Patients"} subtitle={isDoctor ? "People assigned to you, or who have an appointment or report with you" : "Find a patient and keep their contact details up to date"} />
       <div className="relative">
         <Search className="pointer-events-none absolute left-3.5 top-3 text-slate-400" size={18} />
-        <input className={`${inputClass} pl-10`} placeholder="Search by name, patient ID, phone or email" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className={`${inputClass} pl-10`} placeholder="Search by name, UHID, phone or email" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       {loading && !data ? <Loading /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.length === 0 ? (
         <EmptyState message={q ? "No patients match your search" : "No patients yet"} hint={q ? "Check the spelling or try the patient ID." : undefined}
@@ -35,7 +37,7 @@ export default function PatientsList() {
         <div className="space-y-3">
           {data.map((p) => (
             <PersonCard key={p.id} name={p.full_name} subtitle={p.email}
-              badge={<span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-bold text-brand-800">{p.patient_code}</span>}
+              badge={<span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-bold text-brand-800">{p.uhid || p.patient_code}</span>}
               facts={[
                 ...(p.age != null ? [["Age", `${p.age} years`]] : []), ...(p.gender ? [["Gender", p.gender]] : []),
                 ...(p.phone ? [["Phone", p.phone]] : []), ["Doctor", p.assigned_doctor_name || "not chosen yet"],
@@ -43,10 +45,12 @@ export default function PatientsList() {
               actions={<>
                 {isDoctor && <Link to={`/doctor/patients/${p.id}`} className="rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm"><FolderOpen size={15} className="mr-1.5 inline" />Open record</Link>}
                 {canEdit && <Button variant="secondary" onClick={() => setEditing(p)}><Pencil size={15} className="mr-1.5 inline" />Edit details</Button>}
+                {canEdit && <Button variant="secondary" onClick={() => setRegistry(p)}><ShieldCheck size={15} className="mr-1.5 inline" />Registration</Button>}
               </>} />
           ))}
         </div>
       )}
+      {registry && <PatientRegistryPanel patient={registry} onClose={() => setRegistry(null)} onChanged={reload} />}
       {editing && <EditPatient patient={editing} onClose={() => setEditing(null)} onSaved={() => { toast("Patient details saved"); reload(); }} />}
     </div>
   );

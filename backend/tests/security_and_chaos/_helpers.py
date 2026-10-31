@@ -28,6 +28,14 @@ def intended_roles(route: APIRoute):
             for cell in call.__closure__ or []:
                 if isinstance(cell.cell_contents, tuple):
                     state["roles"] = set(cell.cell_contents)
+        if getattr(call, "__qualname__", "").startswith("require_permission.<locals>.checker"):
+            # an endpoint guarded by permissions: the login roles whose default hospital role holds one of them are the intended callers
+            from app.services.access_service import BASE_ROLE, ROLES
+            state["public"] = False
+            for cell in call.__closure__ or []:
+                if isinstance(cell.cell_contents, tuple):
+                    needed = set(cell.cell_contents)
+                    state["roles"] = (state["roles"] or set()) | {login for login, base in BASE_ROLE.items() if needed & set(ROLES[base][2])}
         for sub in dep.dependencies:
             walk(sub)
 
@@ -38,10 +46,10 @@ def intended_roles(route: APIRoute):
 def operations():
     """Every (route, method) of the application: the routers are read directly because newer FastAPI wraps included routers."""
     from app.routers import (admin, appointments, auth, billing, catalog, clinical_intel, dashboard, doctors, employees, health_history, lab, patient_assistant, patient_portal,
-                             patients, pharmacy, prescriptions, profile, reports)
+                             patients, pharmacy, prescriptions, profile, reports, trainee, referrals, hospital, access, patient_registry)
     from app.main import health_check
     routers = [m.router for m in (auth, admin, patients, doctors, employees, reports, appointments, prescriptions, pharmacy, patient_portal, dashboard, catalog, lab,
-                                  billing, profile, health_history, clinical_intel, patient_assistant)] + [doctors.directory]
+                                  billing, profile, health_history, clinical_intel, patient_assistant, trainee, referrals, hospital, access, patient_registry)] + [doctors.directory]
     for router in routers:
         for route in router.routes:
             if isinstance(route, APIRoute):

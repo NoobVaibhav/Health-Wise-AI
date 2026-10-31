@@ -12,7 +12,9 @@ from sqlalchemy.orm import Session
 
 from app.core.security import decode_token, password_fingerprint
 from app.database.connection import get_db
-from app.database.models import Appointment, Doctor, HealthReport, Patient, Referral, Trainee, User
+from datetime import datetime, timezone
+
+from app.database.models import Appointment, BreakGlassGrant, Doctor, HealthReport, Patient, Referral, Trainee, User
 
 ADMIN = "ADMIN"
 DOCTOR = "DOCTOR"
@@ -85,10 +87,19 @@ def get_patient_profile(db: Session, user: User) -> Patient:
 
 
 # ------------------------------------------------------------------ patient-level access
+def has_break_glass(db: Session, user_id: int, patient_id: int) -> bool:
+    """An unexpired emergency (break-glass) grant of this clinician for this patient. Each grant is recorded with its reason and reviewed afterwards."""
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    return db.scalar(select(BreakGlassGrant.id).where(BreakGlassGrant.user_id == user_id, BreakGlassGrant.patient_id == patient_id,
+                                                      BreakGlassGrant.expires_at > now).limit(1)) is not None
+
+
 def doctor_can_access_patient(db: Session, doctor: Doctor, patient: Patient) -> bool:
     """A doctor is authorized for a patient if the patient is assigned to them, has an appointment with them,
     or has a report sent to them for review."""
     if patient.assigned_doctor_id == doctor.id:
+        return True
+    if has_break_glass(db, doctor.user_id, patient.id):
         return True
     has_appointment = db.scalar(
         select(Appointment.id).where(Appointment.patient_id == patient.id, Appointment.doctor_id == doctor.id).limit(1)

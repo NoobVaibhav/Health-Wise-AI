@@ -34,12 +34,13 @@ export default function RegisterPatient() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [duplicates, setDuplicates] = useState(null);       // probable second records found by the server
   const check = useValidation(RULES);
   const set = (k) => (e) => { setForm({ ...form, [k]: e.target.value }); check.clear(k); if (k === "phone") check.clear("emergency_contact"); };
   const blur = (k) => () => check.check(k, form);
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const submit = async (e, confirmNew = false) => {
+    e?.preventDefault?.();
     if (busy) return;
     if (!check.validateAll(form)) return;
     setBusy(true);
@@ -48,9 +49,11 @@ export default function RegisterPatient() {
       const payload = Object.fromEntries(Object.entries(form).map(([k, val]) => [k, String(val).trim() === "" ? null : (typeof val === "string" ? val.trim() : val)]));
       payload.email = payload.email.toLowerCase();
       if (payload.assigned_doctor_id) payload.assigned_doctor_id = Number(payload.assigned_doctor_id);
-      setResult(await registerPatient(payload));
+      setResult(await registerPatient({ ...payload, ...(confirmNew ? { allow_duplicate: true } : {}) }));
       setForm(EMPTY);
+      setDuplicates(null);
     } catch (err) {
+      if (err?.response?.status === 409 && err.response.data?.duplicates) { setDuplicates(err.response.data.duplicates); return; }   // a probable second record: ask reception first
       if (!check.fromServer(err)) setError(getErrorMessage(err));          // the typed details stay in the form
     } finally {
       setBusy(false);
@@ -61,7 +64,7 @@ export default function RegisterPatient() {
     <div className="mx-auto max-w-3xl space-y-5">
       <PageTitle title="Register Patient" subtitle="Creates the patient record and a login for the patient" />
       {result && (
-        <AccountCreatedDialog kind="patient" name={result.patient.full_name} code={result.patient.patient_code} email={result.patient.email} password={result.temporary_password}
+        <AccountCreatedDialog kind="patient" name={result.patient.full_name} code={result.patient.uhid || result.patient.patient_code} email={result.patient.email} password={result.temporary_password}
           onClose={() => setResult(null)}
           actions={<Link to="/employee/upload" className="inline-flex min-h-11 items-center rounded-xl border-2 border-brand-700 bg-white px-5 py-2.5 text-base font-bold text-brand-800 hover:bg-brand-50">Upload a report for this patient</Link>} />
       )}
@@ -110,6 +113,15 @@ export default function RegisterPatient() {
           </div>
           <p className="mt-2 text-xs text-slate-500">Only the patient and their doctors can see these details.</p>
         </Section>
+        {duplicates && (
+          <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+            <p className="font-extrabold">This person may already be registered</p>
+            <ul className="mt-2 space-y-1 text-sm">{duplicates.map((d) => <li key={d.id}><b>{d.full_name}</b> · {d.uhid || d.patient_code} · born {d.date_of_birth || "date not set"} · {d.phone || "no phone"} <span className="text-amber-800">({d.reasons.join(", ")})</span></li>)}</ul>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link to="/employee/patients" className="inline-flex min-h-11 items-center rounded-xl border-2 border-brand-700 bg-white px-5 py-2.5 font-bold text-brand-800">Look at the existing patient</Link>
+              <Button type="button" variant="secondary" disabled={busy} onClick={() => submit(null, true)}>This is a different person, register anyway</Button>
+            </div>
+          </div>)}
         {error && <ErrorBox message={error} />}
         <Button disabled={busy}>{busy ? "Registering..." : "Register patient"}</Button>
       </form>

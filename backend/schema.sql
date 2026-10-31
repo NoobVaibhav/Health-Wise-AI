@@ -1,6 +1,20 @@
 -- Reference PostgreSQL schema, generated from app/database/models.py
 -- (the app also creates these tables automatically on startup)
 
+CREATE TABLE branches (
+	id SERIAL NOT NULL, 
+	code VARCHAR(8) NOT NULL, 
+	name VARCHAR(150) NOT NULL, 
+	address VARCHAR(300), 
+	phone VARCHAR(30), 
+	email VARCHAR(150), 
+	is_active BOOLEAN NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (code)
+);
+
+
 CREATE TABLE departments (
 	id SERIAL NOT NULL, 
 	name VARCHAR(100) NOT NULL, 
@@ -26,6 +40,26 @@ CREATE TABLE medicine_inventory (
 
 CREATE INDEX ix_medicine_inventory_barcode ON medicine_inventory (barcode);
 CREATE INDEX ix_medicine_inventory_medicine_name ON medicine_inventory (medicine_name);
+
+CREATE TABLE permissions (
+	id SERIAL NOT NULL, 
+	code VARCHAR(60) NOT NULL, 
+	description VARCHAR(300), 
+	PRIMARY KEY (id), 
+	UNIQUE (code)
+);
+
+
+CREATE TABLE roles (
+	id SERIAL NOT NULL, 
+	code VARCHAR(40) NOT NULL, 
+	name VARCHAR(100) NOT NULL, 
+	description VARCHAR(300), 
+	is_system BOOLEAN NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (code)
+);
+
 
 CREATE TABLE users (
 	id SERIAL NOT NULL, 
@@ -72,6 +106,36 @@ CREATE TABLE employees (
 );
 
 
+CREATE TABLE hospital_profile (
+	id SERIAL NOT NULL, 
+	name VARCHAR(200), 
+	address VARCHAR(300), 
+	phone VARCHAR(30), 
+	email VARCHAR(150), 
+	registration_number VARCHAR(80), 
+	gst_number VARCHAR(30), 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_by INTEGER, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(updated_by) REFERENCES users (id)
+);
+
+
+CREATE TABLE hospital_settings (
+	id SERIAL NOT NULL, 
+	branch_id INTEGER, 
+	key VARCHAR(60) NOT NULL, 
+	value VARCHAR(500) NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_by INTEGER, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_setting_branch_key UNIQUE (branch_id, key), 
+	FOREIGN KEY(branch_id) REFERENCES branches (id), 
+	FOREIGN KEY(updated_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_hospital_settings_key ON hospital_settings (key);
+
 CREATE TABLE lab_staff (
 	id SERIAL NOT NULL, 
 	user_id INTEGER NOT NULL, 
@@ -98,6 +162,37 @@ CREATE TABLE pharmacy_staff (
 );
 
 
+CREATE TABLE role_permissions (
+	id SERIAL NOT NULL, 
+	role_id INTEGER NOT NULL, 
+	permission_id INTEGER NOT NULL, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_role_permission UNIQUE (role_id, permission_id), 
+	FOREIGN KEY(role_id) REFERENCES roles (id), 
+	FOREIGN KEY(permission_id) REFERENCES permissions (id)
+);
+
+CREATE INDEX ix_role_permissions_permission_id ON role_permissions (permission_id);
+CREATE INDEX ix_role_permissions_role_id ON role_permissions (role_id);
+
+CREATE TABLE service_catalog (
+	id SERIAL NOT NULL, 
+	code VARCHAR(30) NOT NULL, 
+	name VARCHAR(200) NOT NULL, 
+	category VARCHAR(20) NOT NULL, 
+	department_id INTEGER, 
+	price FLOAT NOT NULL, 
+	gst_percent FLOAT NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (code), 
+	FOREIGN KEY(department_id) REFERENCES departments (id)
+);
+
+CREATE INDEX ix_service_catalog_category ON service_catalog (category);
+CREATE INDEX ix_service_catalog_name ON service_catalog (name);
+
 CREATE TABLE specializations (
 	id SERIAL NOT NULL, 
 	name VARCHAR(100) NOT NULL, 
@@ -110,6 +205,32 @@ CREATE TABLE specializations (
 );
 
 CREATE INDEX ix_specializations_department_id ON specializations (department_id);
+
+CREATE TABLE uhid_counters (
+	id SERIAL NOT NULL, 
+	branch_id INTEGER NOT NULL, 
+	year INTEGER NOT NULL, 
+	last_number INTEGER NOT NULL, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_uhid_counter UNIQUE (branch_id, year), 
+	FOREIGN KEY(branch_id) REFERENCES branches (id)
+);
+
+
+CREATE TABLE user_roles (
+	id SERIAL NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	role_id INTEGER NOT NULL, 
+	granted_by INTEGER, 
+	granted_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_user_role UNIQUE (user_id, role_id), 
+	FOREIGN KEY(user_id) REFERENCES users (id), 
+	FOREIGN KEY(role_id) REFERENCES roles (id), 
+	FOREIGN KEY(granted_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_user_roles_user_id ON user_roles (user_id);
 
 CREATE TABLE doctors (
 	id SERIAL NOT NULL, 
@@ -143,14 +264,21 @@ CREATE TABLE patients (
 	medical_history_text TEXT, 
 	current_medications TEXT, 
 	assigned_doctor_id INTEGER, 
+	uhid VARCHAR(30), 
+	branch_id INTEGER, 
+	abha_id VARCHAR(20), 
+	merged_into_id INTEGER, 
 	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
 	UNIQUE (user_id), 
 	FOREIGN KEY(user_id) REFERENCES users (id), 
-	FOREIGN KEY(assigned_doctor_id) REFERENCES doctors (id)
+	FOREIGN KEY(assigned_doctor_id) REFERENCES doctors (id), 
+	FOREIGN KEY(branch_id) REFERENCES branches (id), 
+	FOREIGN KEY(merged_into_id) REFERENCES patients (id)
 );
 
 CREATE UNIQUE INDEX ix_patients_patient_code ON patients (patient_code);
+CREATE UNIQUE INDEX ix_patients_uhid ON patients (uhid);
 
 CREATE TABLE trainees (
 	id SERIAL NOT NULL, 
@@ -191,6 +319,26 @@ CREATE TABLE appointments (
 CREATE INDEX ix_appointments_doctor_id ON appointments (doctor_id);
 CREATE INDEX ix_appointments_patient_id ON appointments (patient_id);
 CREATE INDEX ix_appointments_scheduled_at ON appointments (scheduled_at);
+
+CREATE TABLE break_glass_grants (
+	id SERIAL NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	reason VARCHAR(500) NOT NULL, 
+	granted_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	reviewed_by INTEGER, 
+	reviewed_at TIMESTAMP WITHOUT TIME ZONE, 
+	review_note VARCHAR(500), 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(user_id) REFERENCES users (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(reviewed_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_break_glass_grants_expires_at ON break_glass_grants (expires_at);
+CREATE INDEX ix_break_glass_grants_patient_id ON break_glass_grants (patient_id);
+CREATE INDEX ix_break_glass_grants_user_id ON break_glass_grants (user_id);
 
 CREATE TABLE chronic_conditions (
 	id SERIAL NOT NULL, 
@@ -443,6 +591,25 @@ CREATE TABLE patient_assistant_conversations (
 CREATE INDEX ix_patient_assistant_conversations_patient_id ON patient_assistant_conversations (patient_id);
 CREATE INDEX ix_patient_assistant_conversations_updated_at ON patient_assistant_conversations (updated_at);
 
+CREATE TABLE patient_consents (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	kind VARCHAR(20) NOT NULL, 
+	granted_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	recorded_by INTEGER, 
+	given_by VARCHAR(150), 
+	note VARCHAR(300), 
+	withdrawn_at TIMESTAMP WITHOUT TIME ZONE, 
+	withdrawn_by INTEGER, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(recorded_by) REFERENCES users (id), 
+	FOREIGN KEY(withdrawn_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_patient_consents_kind ON patient_consents (kind);
+CREATE INDEX ix_patient_consents_patient_id ON patient_consents (patient_id);
+
 CREATE TABLE patient_history (
 	id SERIAL NOT NULL, 
 	patient_id INTEGER NOT NULL, 
@@ -457,6 +624,42 @@ CREATE TABLE patient_history (
 );
 
 CREATE UNIQUE INDEX ix_patient_history_patient_id ON patient_history (patient_id);
+
+CREATE TABLE patient_insurance (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	insurer_name VARCHAR(150) NOT NULL, 
+	tpa_name VARCHAR(150), 
+	policy_number VARCHAR(60) NOT NULL, 
+	member_id VARCHAR(60), 
+	valid_from DATE, 
+	valid_to DATE, 
+	is_active BOOLEAN NOT NULL, 
+	created_by INTEGER, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_patient_insurance_patient_id ON patient_insurance (patient_id);
+
+CREATE TABLE patient_merges (
+	id SERIAL NOT NULL, 
+	kept_patient_id INTEGER NOT NULL, 
+	merged_patient_id INTEGER NOT NULL, 
+	merged_by INTEGER NOT NULL, 
+	reason VARCHAR(500) NOT NULL, 
+	moved_json TEXT, 
+	merged_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(kept_patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(merged_patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(merged_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_patient_merges_kept_patient_id ON patient_merges (kept_patient_id);
+CREATE INDEX ix_patient_merges_merged_patient_id ON patient_merges (merged_patient_id);
 
 CREATE TABLE summary_reviews (
 	id SERIAL NOT NULL, 

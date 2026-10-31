@@ -106,10 +106,15 @@ def next_patient_code(db: Session) -> str:
 def create_patient(db: Session, data: PatientCreate) -> tuple[Patient, str | None]:
     if data.assigned_doctor_id and not db.get(Doctor, data.assigned_doctor_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Doctor not found.")
+    from app.database.models import Branch
+    from app.services import hospital_service, registry_service
+    branch = db.get(Branch, data.branch_id) if data.branch_id else hospital_service.default_branch(db)
+    if branch is None or not branch.is_active:
+        raise HTTPException(422, "The selected branch does not exist.")
     user, temporary = _new_user(db, data.email, data.full_name, PATIENT, data.password)
     patient = Patient(
-        user_id=user.id, patient_code=next_patient_code(db),
-        **data.model_dump(exclude={"email", "full_name", "password"}),
+        user_id=user.id, patient_code=next_patient_code(db), branch_id=branch.id, uhid=registry_service.next_uhid(db, branch),
+        **data.model_dump(exclude={"email", "full_name", "password", "allow_duplicate", "branch_id"}),
     )
     db.add(patient)
     db.commit()

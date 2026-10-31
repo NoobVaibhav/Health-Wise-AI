@@ -49,6 +49,8 @@ import TraineeTakeHistory from "./pages/trainee/TakeHistory";
 import TraineeSelectDoctor from "./pages/trainee/SelectDoctor";
 import TraineeReferrals from "./pages/trainee/MyReferrals";
 import DoctorReferrals from "./pages/doctor/Referrals";
+import EmergencyAccess from "./pages/doctor/EmergencyAccess";
+import Hospital from "./pages/admin/Hospital";
 import PharmacyDashboard from "./pages/pharmacy/Dashboard";
 import Billing from "./pages/pharmacy/Billing";
 import Bills from "./pages/pharmacy/Bills";
@@ -91,6 +93,7 @@ export default function App() {
             <Route path="reports/:id" element={<ReportDetails />} />
             <Route path="audit-logs" element={<AuditLogs />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="hospital" element={<Hospital />} />
           </Route>
 
           <Route path="/doctor" element={<RoleRoute roles={["DOCTOR"]} />}>
@@ -102,6 +105,7 @@ export default function App() {
             <Route path="reports" element={<ReportsList base="/doctor/reports" pendingOnly title="Reports to Review" subtitle="Reports waiting for your review" />} />
             <Route path="reports/:id" element={<ReportReview />} />
             <Route path="referrals" element={<DoctorReferrals />} />
+            <Route path="emergency-access" element={<EmergencyAccess />} />
             <Route path="notes" element={<DoctorNotes />} />
             <Route path="recommendations" element={<DoctorRecommendations />} />
             <Route path="prescriptions" element={<DoctorPrescriptions />} />

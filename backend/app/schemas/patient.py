@@ -37,6 +37,8 @@ class PatientFields(BaseModel):
 class PatientCreate(PatientFields):
     email: Email
     full_name: PersonName
+    allow_duplicate: bool = False        # reception confirms that a probable second record is really a new person
+    branch_id: int | None = None
     password: Password | None = None  # generated when empty
 
     @model_validator(mode="after")
@@ -54,6 +56,7 @@ class PatientBasic(BaseModel):
     """What reception staff and admins may see."""
     id: int
     patient_code: str
+    uhid: str | None = None
     full_name: str
     email: str
     date_of_birth: date | None

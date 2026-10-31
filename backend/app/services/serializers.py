@@ -24,7 +24,7 @@ PRESCRIPTION_VALID_DAYS = 30
 # ------------------------------------------------------------------ patients
 def patient_basic(p: Patient) -> PatientBasic:
     return PatientBasic(
-        id=p.id, patient_code=p.patient_code, full_name=p.user.full_name, email=p.user.email,
+        id=p.id, patient_code=p.patient_code, uhid=p.uhid, full_name=p.user.full_name, email=p.user.email,
         date_of_birth=p.date_of_birth, age=age_from_dob(p.date_of_birth), gender=p.gender, phone=p.phone,
         address=p.address, emergency_contact=p.emergency_contact, assigned_doctor_id=p.assigned_doctor_id,
         assigned_doctor_name=p.assigned_doctor.user.full_name if p.assigned_doctor else None,
@@ -198,8 +198,9 @@ def tests_of(rx: Prescription) -> list[str]:
 
 
 def hospital_text(key: str) -> str | None:
-    from app.core.config import get_settings
-    return (getattr(get_settings(), key, "") or "").strip() or None
+    """hospital_name / hospital_address / ...: the saved hospital profile first, then the .env value."""
+    from app.services import hospital_service
+    return hospital_service.profile_text(key.removeprefix("hospital_"))
 
 
 def prescription_out(rx: Prescription, include_tests: bool = True) -> PrescriptionOut:
