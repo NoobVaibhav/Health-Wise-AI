@@ -93,7 +93,7 @@ def receive_stock(db: Session, data: ReceiveStock) -> MedicineInventory:
         barcode = next((r.barcode for r in batch_rows if r.barcode), None)
     sibling = batch_rows[0] if batch_rows else None
     item = MedicineInventory(
-        medicine_name=name, barcode=barcode, batch_number=batch, quantity=data.quantity, expiry_date=data.expiry_date,
+        medicine_name=name, barcode=barcode, batch_number=batch, quantity=data.quantity, expiry_date=data.expiry_date, manufacture_date=data.manufacture_date,
         manufacturer=data.manufacturer or (sibling.manufacturer if sibling else None),
         unit_price=data.unit_price if data.unit_price is not None else (sibling.unit_price if sibling else None),
         gst_percent=data.gst_percent if data.gst_percent is not None else (sibling.gst_percent if sibling else None),

@@ -1,4 +1,5 @@
 """Password hashing (bcrypt) and JWT creation / verification."""
+import base64
 import hashlib
 from datetime import datetime, timedelta, timezone
 
@@ -8,13 +9,28 @@ import jwt
 from app.core.config import get_settings
 
 
+HASH_PREFIX = "$hw1$"
+
+
+def _prepared(password: str) -> bytes:
+    """bcrypt reads only the first 72 bytes, so two long passwords that start alike would be the same password. The whole password is first
+    reduced to a fixed 44-byte digest, which bcrypt then reads in full."""
+    return base64.b64encode(hashlib.sha256(password.encode()).digest())
+
+
 def hash_password(password: str) -> str:
-    # bcrypt only uses the first 72 bytes, so we cut explicitly.
-    return bcrypt.hashpw(password.encode()[:72], bcrypt.gensalt(rounds=get_settings().bcrypt_rounds)).decode()
+    return HASH_PREFIX + bcrypt.hashpw(_prepared(password), bcrypt.gensalt(rounds=get_settings().bcrypt_rounds)).decode()
+
+
+def is_current_hash(hashed: str) -> bool:
+    return hashed.startswith(HASH_PREFIX)
 
 
 def verify_password(password: str, hashed: str) -> bool:
+    """Passwords saved by an older version (plain bcrypt of the first 72 bytes) still work; they are re-saved in the new form at the next login."""
     try:
+        if hashed.startswith(HASH_PREFIX):
+            return bcrypt.checkpw(_prepared(password), hashed[len(HASH_PREFIX):].encode())
         return bcrypt.checkpw(password.encode()[:72], hashed.encode())
     except ValueError:
         return False

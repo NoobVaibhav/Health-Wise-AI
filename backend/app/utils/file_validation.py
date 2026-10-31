@@ -1,10 +1,26 @@
 """Validate an uploaded file: extension, size and real content type (magic bytes)."""
+import re
 from pathlib import Path
 
 from app.core.errors import FileTooLargeError, UnreadableReportError, UnsupportedFileError
 
-ALLOWED_EXTENSIONS = {"pdf", "jpg", "jpeg", "png", "webp", "txt", "csv"}
-IMAGE_TYPES = {"jpg", "jpeg", "png", "webp"}
+ALLOWED_EXTENSIONS = {"pdf", "jpg", "jpeg", "png", "txt", "csv"}     # PDF, PNG and JPG are the normal reports; plain text and CSV are kept for lab exports
+IMAGE_TYPES = {"jpg", "jpeg", "png"}
+ALLOWED_TEXT = "PDF, PNG or JPG (a plain text or CSV export is also accepted), up to 10 MB"
+MAX_FILENAME = 150
+
+
+def safe_filename(name: str | None) -> str:
+    """The name shown to people: no folder part, no control characters or markup, no odd symbols, at most 150 characters (the extension is kept)."""
+    base = re.split(r"[\\/]", name or "")[-1]
+    base = re.sub(r"[\x00-\x1f\x7f<>:\"|?*]", "", base)
+    base = re.sub(r"\s+", " ", base).strip(" .")
+    if not base or base.startswith("."):
+        base = ("report" + base) if base.startswith(".") else "report"
+    if len(base) > MAX_FILENAME:
+        stem, dot, ext = base.rpartition(".")
+        base = (stem[: MAX_FILENAME - len(ext) - 1] + "." + ext) if dot and len(ext) <= 8 else base[:MAX_FILENAME]
+    return base
 
 
 def get_extension(filename: str) -> str:
@@ -26,9 +42,10 @@ def detect_file_type(filename: str, content: bytes) -> str:
     if ext in IMAGE_TYPES:
         is_jpeg = content.startswith(b"\xff\xd8\xff")
         is_png = content.startswith(b"\x89PNG\r\n\x1a\n")
-        is_webp = content[:4] == b"RIFF" and content[8:12] == b"WEBP"
-        if not (is_jpeg or is_png or is_webp):
-            raise UnsupportedFileError("This file is not a valid image.")
+        if not (is_jpeg or is_png):
+            raise UnsupportedFileError("This file is not a valid PNG or JPG image.")
+        if (ext == "png") != is_png:
+            raise UnsupportedFileError("The file type does not match its name. Please choose a real PNG or JPG file.")
         return "image"
 
     # txt / csv: must be readable text

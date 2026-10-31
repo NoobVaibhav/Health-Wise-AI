@@ -42,7 +42,7 @@ def test_a_person_can_edit_only_their_own_contact_and_professional_details(clien
     assert r.status_code == 200, r.text
     assert r.json()["user"]["full_name"] == "Dr. Anjali Sharma"
     fields = {f["key"]: f["value"] for f in r.json()["fields"]}
-    assert fields["phone"] == "+91 98765 43210" and fields["qualification"] == "MBBS, MD" and fields["experience_years"] == 12
+    assert fields["phone"] == "9876543210" and fields["qualification"] == "MBBS, MD" and fields["experience_years"] == 12
     # the new name is what the app shows from now on
     assert client.get("/api/auth/me", headers=world.doctor).json()["full_name"] == "Dr. Anjali Sharma"
 

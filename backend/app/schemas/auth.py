@@ -1,38 +1,45 @@
-import re
+"""Request schemas of the account endpoints. The input rules come from app/utils/validators.py (see docs/VALIDATION_RULES.md)."""
+from pydantic import BaseModel, Field, model_validator
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from app.utils.validators import (
+    COMMON_PASSWORDS, NO_NAME_IN_PASSWORD, Email, OptionalPhone, PersonName, Password, PositiveId, check_password, opt_text, password_has_email_name, text,
+)
 
-COMMON_PASSWORDS = {"password", "password1", "password123", "12345678", "123456789", "qwerty123", "admin123", "welcome123", "iloveyou1"}
+__all__ = ["COMMON_PASSWORDS", "check_strength"]
 
 
 def check_strength(value: str) -> str:
-    """At least one letter and one digit, and not a well-known password."""
-    if not re.search(r"[A-Za-z]", value) or not re.search(r"\d", value):
-        raise ValueError("The password must contain at least one letter and one number.")
-    if value.lower() in COMMON_PASSWORDS:
-        raise ValueError("This password is too common. Please choose another one.")
-    return value
+    """Kept for older imports: the rule now lives in validators.check_password."""
+    return check_password(value)
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
+    email: Email
+    password: str = Field(min_length=1, max_length=128)        # the real password rules apply when a password is CHOSEN, not when it is used
 
 
 class FirstAdminRequest(BaseModel):
     """Used once, on a brand new system, to create the first administrator."""
-    email: EmailStr
-    full_name: str = Field(min_length=2, max_length=150)
-    password: str = Field(min_length=8, max_length=128)
+    email: Email
+    full_name: PersonName
+    password: Password
 
-    _strong = field_validator("password")(check_strength)
+    @model_validator(mode="after")
+    def not_the_email(self):
+        if password_has_email_name(self.password, self.email):
+            raise ValueError(NO_NAME_IN_PASSWORD)
+        return self
 
 
 class ChangePasswordRequest(BaseModel):
-    current_password: str
-    new_password: str = Field(min_length=8, max_length=128)
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: Password
 
-    _strong = field_validator("new_password")(check_strength)
+    @model_validator(mode="after")
+    def different(self):
+        if self.current_password == self.new_password:
+            raise ValueError("The new password must be different from the current one.")
+        return self
 
 
 class UserOut(BaseModel):
@@ -54,19 +61,25 @@ class TokenResponse(BaseModel):
 
 class StaffCreate(BaseModel):
     """Admin creates doctors, employees and pharmacy staff with this one schema; unused fields are ignored."""
-    email: EmailStr
-    full_name: str = Field(min_length=2, max_length=150)
-    password: str | None = Field(default=None, min_length=8, max_length=128)  # generated when empty
-    phone: str | None = Field(default=None, max_length=30)
+    email: Email
+    full_name: PersonName
+    password: Password | None = None                  # generated when empty
+    phone: OptionalPhone = None
     # doctor
-    department_id: int | None = None
-    specialization: str | None = Field(default=None, max_length=120)
+    department_id: PositiveId | None = None
+    specialization: opt_text(120) = None
     # employee
-    designation: str | None = Field(default=None, max_length=100)
+    designation: opt_text(100) = None
     # pharmacy
-    pharmacy_name: str | None = Field(default=None, max_length=150)
+    pharmacy_name: opt_text(150) = None
     # laboratory
-    lab_name: str | None = Field(default=None, max_length=150)
+    lab_name: opt_text(150) = None
+
+    @model_validator(mode="after")
+    def not_the_email(self):
+        if self.password and password_has_email_name(self.password, self.email):
+            raise ValueError(NO_NAME_IN_PASSWORD)
+        return self
 
 
 class CreatedUserResponse(BaseModel):
@@ -76,8 +89,8 @@ class CreatedUserResponse(BaseModel):
 
 class UserUpdate(BaseModel):
     is_active: bool | None = None
-    full_name: str | None = Field(default=None, min_length=2, max_length=150)
+    full_name: PersonName | None = None
 
 
 class DepartmentCreate(BaseModel):
-    name: str = Field(min_length=2, max_length=100)
+    name: text(100, min_length=2)

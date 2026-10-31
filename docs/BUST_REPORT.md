@@ -158,4 +158,15 @@ Docker is not installed here, so `docker compose up` was reviewed by reading onl
 | T-04 | "not suspicious for X" is read as "no evidence of X" | T-04 case |
 | T-06 | rows that print their tiers on one line without colons (`Deficient <20 Insufficient 20-30 Sufficient 30-100`, `Low <40 High >60`) now use the tier that means normal (or no range at all when none does): Vitamin D 15 and 25 are BELOW range, HDL 35 and 70 are UNKNOWN; Cholesterol, Glucose, HbA1c, LDL and Triglyceride rows are unchanged | 4 T-06 cases |
 
-The `it.fails` marks of the browser tests were removed (they are normal tests now). Still open: everything in section 3 that is not in the two tables above; waiting for your decision.
+### Fixed by the input-validation change (see docs/VALIDATION_RULES.md)
+
+| ID | Fix |
+|---|---|
+| A-01 | the login lock is per e-mail AND address (5 in 15 minutes), 30 per e-mail overall and 30 per address; the message says how many minutes to wait |
+| A-02 | the whole password counts (SHA-256 then bcrypt); old password records still work and are re-saved at the next login |
+| A-03 | a password longer than 128 characters is a 422 (and a body over 1 MB is a 413) |
+| D-01 | a request body over 1 MB (12 MB for an upload form) is refused from its announced size |
+| J-01 | a body nested too deeply or unreadable is a 400 or 422 |
+| X-01, X-02 | birth dates before 1900, in the future or over 120 years, and control characters or NUL in a name, are refused |
+
+The `it.fails` marks of the browser tests were removed (they are normal tests now). Still open: everything in section 3 that is not in the tables above; waiting for your decision.

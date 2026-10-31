@@ -1,24 +1,39 @@
+import re
 from datetime import date
 
 from pydantic import BaseModel, Field, field_validator
+from app.utils.validators import Quantity, check_duration, opt_text, text, PositiveId
 
 
 class PrescriptionItemCreate(BaseModel):
-    medicine_name: str = Field(min_length=2, max_length=200)
-    dosage: str = Field(min_length=1, max_length=100)
-    frequency: str = Field(min_length=1, max_length=100)
-    duration: str = Field(min_length=1, max_length=100)
-    quantity: int = Field(gt=0, le=10000)
-    instructions: str | None = Field(default=None, max_length=1000)
+    medicine_name: text(200, min_length=2)
+    dosage: text(100, min_length=1)
+    frequency: text(100, min_length=1)
+    duration: text(100, min_length=1)
+    quantity: Quantity
+    instructions: opt_text(1000, multiline=True) = None
+
+    @field_validator("dosage", "frequency")
+    @classmethod
+    def _positive(cls, value):
+        """A dose or frequency of zero or a negative number is a mistake ('0 mg', '-1 tablet')."""
+        if value.lstrip().startswith("-") or re.match(r"^\s*0+(\.0+)?(\s|[A-Za-z]|$)", value):
+            raise ValueError("The dose and the frequency must be more than zero.")
+        return value
+
+    @field_validator("duration")
+    @classmethod
+    def _duration(cls, value):
+        return check_duration(value)
 
 
 class PrescriptionCreate(BaseModel):
-    patient_id: int
-    report_id: int | None = None
-    clinical_indication: str | None = Field(default=None, max_length=300)
-    notes: str | None = Field(default=None, max_length=2000)
+    patient_id: PositiveId
+    report_id: PositiveId | None = None
+    clinical_indication: opt_text(300) = None
+    notes: opt_text(2000, multiline=True) = None
     items: list[PrescriptionItemCreate] = Field(min_length=1, max_length=30)
-    tests: list[str] = Field(default_factory=list, max_length=30)   # tests to get done (lab); not shown to the pharmacy
+    tests: list[text(120)] = Field(default_factory=list, max_length=30)   # tests to get done (lab); not shown to the pharmacy
 
     @field_validator("tests")
     @classmethod
@@ -49,10 +64,10 @@ class PrescriptionItemOut(BaseModel):
 class PrescriptionOut(BaseModel):
     id: int
     code: str
-    patient_id: int
+    patient_id: PositiveId
     patient_name: str
     patient_code: str
-    doctor_id: int
+    doctor_id: PositiveId
     doctor_name: str
     report_id: int | None
     prescription_date: date
@@ -63,3 +78,4 @@ class PrescriptionOut(BaseModel):
     items: list[PrescriptionItemOut]
     tests: list[str] = []   # empty for the pharmacy, which never sees tests
     label: str = "Prescribed by a doctor"
+    warnings: list[str] = []      # for the doctor who just wrote it: for example the same medicine twice

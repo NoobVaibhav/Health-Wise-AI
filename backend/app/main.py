@@ -3,6 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
@@ -16,6 +17,7 @@ from app.routers import (
 )
 from app.services.ocr_service import ocr_is_available
 from app.services.safety_filter import DISCLAIMER
+from app.utils.validation_errors import friendly
 
 
 DEFAULT_SECRET = "change-me-in-production"
@@ -57,6 +59,21 @@ app.add_middleware(
 )
 
 
+MAX_JSON_BYTES = 1 * 1024 * 1024            # a request body (not a file) is never this big in this application
+MAX_UPLOAD_BYTES = 12 * 1024 * 1024          # a report is limited to 10 MB; the rest is the form around it
+
+
+@app.middleware("http")
+async def limit_body_size(request: Request, call_next):
+    """A body bigger than the limit is refused from its announced size, before it is read into memory (a body sent without a size is not caught here: the proxy in front must limit it)."""
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit():
+        limit = MAX_UPLOAD_BYTES if request.headers.get("content-type", "").startswith("multipart/") else MAX_JSON_BYTES
+        if int(declared) > limit:
+            return JSONResponse(status_code=413, content={"detail": f"The request is too large (at most {limit // (1024 * 1024)} MB)."})
+    return await call_next(request)
+
+
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     """Basic browser protections; API answers (patient data) are never cached."""
@@ -67,6 +84,22 @@ async def security_headers(request: Request, call_next):
     if request.url.path.startswith("/api") and request.url.path != "/api/health":
         response.headers.setdefault("Cache-Control", "no-store")
     return response
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_input_handler(_: Request, exc: RequestValidationError):
+    """Invalid input is a 422 with plain sentences (see utils/validation_errors.py), never a 500 and never a list of technical codes."""
+    try:
+        errors = exc.errors()
+    except Exception:                                      # the error list itself could not be built (for example an unreadable body)
+        errors = [{"type": "json_invalid", "loc": ("body",), "msg": "The request could not be read."}]
+    return JSONResponse(status_code=422, content=friendly(errors))
+
+
+@app.exception_handler(RecursionError)
+async def too_deep_handler(_: Request, exc: RecursionError):
+    """A request body nested so deeply that it cannot be read is a bad request, not a crash."""
+    return JSONResponse(status_code=400, content={"detail": "The request could not be read."})
 
 
 @app.exception_handler(OverflowError)

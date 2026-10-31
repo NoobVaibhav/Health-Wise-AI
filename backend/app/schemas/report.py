@@ -1,6 +1,7 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+from app.utils.validators import PositiveId, opt_text
 
 
 class ParameterOut(BaseModel):
@@ -19,14 +20,14 @@ class ParameterOut(BaseModel):
 
 class ReportListItem(BaseModel):
     id: int
-    patient_id: int
+    patient_id: PositiveId
     patient_name: str
     patient_code: str
     filename: str
     report_date: date | None
     uploaded_at: datetime
     uploaded_by_name: str
-    uploaded_by_id: int
+    uploaded_by_id: PositiveId
     parameter_count: int
     processing_status: str
     doctor_review_status: str
@@ -55,4 +56,12 @@ class ReportDetail(ReportListItem):
 
 class ReviewRequest(BaseModel):
     decision: str            # APPROVED / MODIFIED / CLARIFIED
-    comment: str | None = None
+    comment: opt_text(2000, multiline=True) = None
+
+    @field_validator("decision")
+    @classmethod
+    def _decision(cls, value):
+        v = (value or "").strip().upper()
+        if v not in ("APPROVED", "MODIFIED", "CLARIFIED"):
+            raise ValueError("The decision must be APPROVED, MODIFIED or CLARIFIED.")
+        return v

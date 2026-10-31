@@ -109,7 +109,7 @@ def test_complete_hospital_workflow(client, world):
     assert timeline == sorted(timeline, key=lambda e: e["timestamp"], reverse=True)
 
     # 10. Everything important was written to the audit log
-    logs = client.get("/api/admin/audit-logs?limit=500", headers=world.admin).json()
+    logs = client.get("/api/admin/audit-logs?limit=200", headers=world.admin).json()
     actions = {entry["action"] for entry in logs}
     assert {"LOGIN", "USER_CREATED", "PATIENT_CREATED", "REPORT_UPLOADED", "REPORT_ANALYZED", "REPORT_REVIEWED",
             "NOTE_ADDED", "RECOMMENDATION_ADDED", "PRESCRIPTION_CREATED", "PRESCRIPTION_VIEWED",

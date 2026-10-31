@@ -1,20 +1,23 @@
 from datetime import date, datetime
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+from app.utils.validators import PastOrTodayRequired, text, PositiveId
 
 PRIORITIES = ("NORMAL", "IMPORTANT", "FOLLOW_UP_REQUIRED")
 
 
 class NoteCreate(BaseModel):
-    patient_id: int
-    report_id: int | None = None
-    note: str = Field(min_length=2, max_length=3000)
-    priority: str = "NORMAL"
+    patient_id: PositiveId
+    report_id: PositiveId | None = None
+    note: text(3000, min_length=2, multiline=True)
+    priority: Literal["NORMAL", "IMPORTANT", "FOLLOW_UP_REQUIRED"] = "NORMAL"
 
 
 class NoteOut(BaseModel):
     id: int
-    patient_id: int
+    patient_id: PositiveId
     patient_name: str
     doctor_name: str
     report_id: int | None
@@ -25,17 +28,17 @@ class NoteOut(BaseModel):
 
 
 class RecommendationCreate(BaseModel):
-    patient_id: int
-    report_id: int | None = None
-    title: str = Field(min_length=2, max_length=200)
-    recommendation: str = Field(min_length=2, max_length=3000)
+    patient_id: PositiveId
+    report_id: PositiveId | None = None
+    title: text(200, min_length=2)
+    recommendation: text(3000, min_length=2, multiline=True)
     follow_up_date: date | None = None
     priority: str = "NORMAL"
 
 
 class RecommendationOut(BaseModel):
     id: int
-    patient_id: int
+    patient_id: PositiveId
     patient_name: str
     doctor_name: str
     report_id: int | None
@@ -48,10 +51,10 @@ class RecommendationOut(BaseModel):
 
 
 class HistoryEntryCreate(BaseModel):
-    patient_id: int
-    entry_date: date
-    entry_type: str = Field(min_length=2, max_length=40)
-    description: str = Field(min_length=2, max_length=2000)
+    patient_id: PositiveId
+    entry_date: PastOrTodayRequired
+    entry_type: text(40, min_length=2)
+    description: text(2000, min_length=2, multiline=True)
 
 
 class DoctorOut(BaseModel):

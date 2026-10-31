@@ -15,6 +15,7 @@ from app.services.history_service import build_timeline
 from app.services.serializers import (
     note_out, patient_for_role, prescription_out, recommendation_out, report_list_item,
 )
+from app.utils.validators import SearchText
 
 router = APIRouter(prefix="/api/patient", tags=["patient"])
 patient_only = require_roles(PATIENT)
@@ -36,7 +37,7 @@ def my_reports(user: User = Depends(patient_only), db: Session = Depends(get_db)
 
 
 @router.get("/history")
-def my_history(q: str | None = None, user: User = Depends(patient_only), db: Session = Depends(get_db)):
+def my_history(q: SearchText = None, user: User = Depends(patient_only), db: Session = Depends(get_db)):
     patient = get_patient_profile(db, user)
     entries = db.scalars(select(MedicalHistoryEntry).where(MedicalHistoryEntry.patient_id == patient.id)
                          .order_by(MedicalHistoryEntry.entry_date.desc())).all()

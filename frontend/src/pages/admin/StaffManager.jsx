@@ -8,6 +8,9 @@ import AccountCreatedDialog from "../../components/AccountCreatedDialog";
 import { useToast } from "../../components/Toast";
 import { getErrorMessage } from "../../services/api";
 import { Button, Field, Input, Modal, Select } from "../../components/ui";
+import { FormField, PasswordInput } from "../../components/FormField";
+import useValidation from "../../hooks/useValidation";
+import * as v from "../../utils/validators";
 import { ErrorBox, PageTitle } from "../../components/Feedback";
 
 const KINDS = {
@@ -37,37 +40,59 @@ export default function StaffManager({ kind }) {
   );
 }
 
+const STAFF_RULES = {
+  full_name: (value) => v.personName(value),
+  email: (value) => v.email(value),
+  password: (value, all) => (value ? v.password(value, { email: all.email }) : ""),         // empty = the starting password is used
+  phone: (value) => v.phone(value),
+  specialization: (value) => v.text(value, { max: 120 }),
+  designation: (value) => v.text(value, { max: 100 }),
+  pharmacy_name: (value) => v.text(value, { max: 150 }),
+  lab_name: (value) => v.text(value, { max: 150 }),
+};
+
 function CreateModal({ kind, cfg, onClose, onCreated }) {
   const { data: departments } = useFetch(listDepartments, []);
   const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", department_id: "", specialization: "", designation: "", pharmacy_name: "", lab_name: "" });
   const [error, setError] = useState("");
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const [busy, setBusy] = useState(false);
+  const check = useValidation(STAFF_RULES);
+  const set = (k) => (e) => { setForm({ ...form, [k]: e.target.value }); check.clear(k); };
+  const blur = (k) => () => check.check(k, form);
   const submit = async (e) => {
     e.preventDefault();
+    if (busy) return;
+    if (!check.validateAll(form)) return;
+    setBusy(true);
     setError("");
     try {
-      const payload = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v === "" ? null : v]));
+      const payload = Object.fromEntries(Object.entries(form).map(([k, val]) => [k, String(val).trim() === "" ? null : (typeof val === "string" ? val.trim() : val)]));
+      payload.email = payload.email.toLowerCase();
       if (payload.department_id) payload.department_id = Number(payload.department_id);
       onCreated(await createStaff(kind, payload));
       onClose();
-    } catch (err) { setError(getErrorMessage(err)); }
+    } catch (err) {
+      if (!check.fromServer(err)) setError(getErrorMessage(err));        // the typed details stay in the form
+    } finally { setBusy(false); }
   };
   return (
     <Modal title={`Add ${cfg.single}`} onClose={onClose}>
-      <form onSubmit={submit} className="space-y-4">
-        <Field label="Full name"><Input required value={form.full_name} onChange={set("full_name")} /></Field>
-        <Field label="Email (used to log in)"><Input type="email" required value={form.email} onChange={set("email")} /></Field>
-        <Field label="Password" hint="Leave empty to use the default starting password (the person must change it at first login)"><Input type="password" minLength={8} value={form.password} onChange={set("password")} /></Field>
-        <Field label="Phone"><Input value={form.phone} onChange={set("phone")} /></Field>
+      <form onSubmit={submit} noValidate className="space-y-4" aria-busy={busy}>
+        <FormField label="Full name *" name="full_name" error={check.errors.full_name}><Input autoComplete="off" maxLength={150} value={form.full_name} onChange={set("full_name")} onBlur={blur("full_name")} /></FormField>
+        <FormField label="Email (used to log in) *" name="email" error={check.errors.email}><Input type="email" inputMode="email" autoComplete="off" maxLength={254} value={form.email} onChange={set("email")} onBlur={blur("email")} /></FormField>
+        <FormField label="Password" name="password" error={check.errors.password} hint="Leave empty to use the default starting password (the person must change it at first login)">
+          <PasswordInput meter value={form.password} onChange={set("password")} onBlur={blur("password")} placeholder="Leave empty for the starting password" />
+        </FormField>
+        <FormField label="Phone" name="phone" error={check.errors.phone} hint="For example 98765 43210 or +91 98765 43210"><Input type="tel" inputMode="tel" autoComplete="off" maxLength={20} value={form.phone} onChange={set("phone")} onBlur={blur("phone")} /></FormField>
         {kind === "doctors" && (<>
           <Field label="Department"><Select value={form.department_id} onChange={set("department_id")}><option value="">None</option>{(departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
-          <Field label="Specialization"><Input value={form.specialization} onChange={set("specialization")} /></Field>
+          <FormField label="Specialization" name="specialization" error={check.errors.specialization}><Input maxLength={120} value={form.specialization} onChange={set("specialization")} onBlur={blur("specialization")} /></FormField>
         </>)}
-        {kind === "employees" && <Field label="Designation"><Input placeholder="Receptionist, lab assistant ..." value={form.designation} onChange={set("designation")} /></Field>}
-        {kind === "pharmacy-staff" && <Field label="Pharmacy name"><Input value={form.pharmacy_name} onChange={set("pharmacy_name")} /></Field>}
-        {kind === "lab-staff" && <Field label="Laboratory name"><Input value={form.lab_name} onChange={set("lab_name")} /></Field>}
+        {kind === "employees" && <FormField label="Designation" name="designation" error={check.errors.designation}><Input placeholder="Receptionist, lab assistant ..." maxLength={100} value={form.designation} onChange={set("designation")} onBlur={blur("designation")} /></FormField>}
+        {kind === "pharmacy-staff" && <FormField label="Pharmacy name" name="pharmacy_name" error={check.errors.pharmacy_name}><Input maxLength={150} value={form.pharmacy_name} onChange={set("pharmacy_name")} onBlur={blur("pharmacy_name")} /></FormField>}
+        {kind === "lab-staff" && <FormField label="Laboratory name" name="lab_name" error={check.errors.lab_name}><Input maxLength={150} value={form.lab_name} onChange={set("lab_name")} onBlur={blur("lab_name")} /></FormField>}
         {error && <ErrorBox message={error} />}
-        <Button>Create account</Button>
+        <Button disabled={busy}>{busy ? "Creating..." : "Create account"}</Button>
       </form>
     </Modal>
   );

@@ -20,6 +20,7 @@ from app.services.report_parser import names_match
 from app.services.report_processor import process_report
 from app.services.serializers import tests_of
 from app.utils.file_validation import get_extension, validate_size
+from app.utils.validators import PathId, SearchText
 
 router = APIRouter(prefix="/api/lab", tags=["lab"])
 lab_only = require_roles(LAB)
@@ -36,7 +37,7 @@ class UrgentIn(BaseModel):
 
 
 @router.get("/test-orders")
-def test_orders(q: str | None = None, user: User = Depends(require_roles(LAB, EMPLOYEE)), db: Session = Depends(get_db)):
+def test_orders(q: SearchText = None, user: User = Depends(require_roles(LAB, EMPLOYEE)), db: Session = Depends(get_db)):
     """Newest first. Search by patient name, patient ID, prescription code (RX-00001) or test name."""
     rows = db.scalars(
         select(Prescription).where(Prescription.tests_advised.is_not(None), Prescription.status != "CANCELLED")
@@ -66,7 +67,7 @@ def dashboard(user: User = Depends(lab_only), db: Session = Depends(get_db)):
 
 
 @router.get("/worklist")
-def worklist(status_filter: str | None = None, q: str | None = None, urgent: bool = False, user: User = Depends(require_roles(LAB, EMPLOYEE)), db: Session = Depends(get_db)):
+def worklist(status_filter: str | None = None, q: SearchText = None, urgent: bool = False, user: User = Depends(require_roles(LAB, EMPLOYEE)), db: Session = Depends(get_db)):
     """One row per advised test. status_filter: OPEN, ORDERED, SAMPLE_COLLECTED, IN_PROGRESS, COMPLETED, REJECTED, CANCELLED."""
     if status_filter and status_filter != "OPEN" and status_filter not in lab_service.LABELS:
         raise HTTPException(422, "Unknown status.")
@@ -74,7 +75,7 @@ def worklist(status_filter: str | None = None, q: str | None = None, urgent: boo
 
 
 @router.post("/tests/{order_id}/status")
-def change_status(order_id: int, data: StatusIn, request: Request, user: User = Depends(lab_only), db: Session = Depends(get_db)):
+def change_status(order_id: PathId, data: StatusIn, request: Request, user: User = Depends(lab_only), db: Session = Depends(get_db)):
     order = lab_service.get_order(db, order_id)
     old = order.status
     lab_service.change_status(db, order, data.status, user, data.note, data.sample_type)
@@ -83,7 +84,7 @@ def change_status(order_id: int, data: StatusIn, request: Request, user: User = 
 
 
 @router.post("/tests/{order_id}/urgent")
-def mark_urgent(order_id: int, data: UrgentIn, request: Request, user: User = Depends(lab_only), db: Session = Depends(get_db)):
+def mark_urgent(order_id: PathId, data: UrgentIn, request: Request, user: User = Depends(lab_only), db: Session = Depends(get_db)):
     order = lab_service.get_order(db, order_id)
     lab_service.set_urgent(db, order, data.urgent, user)
     audit_service.log_action(db, user, "LAB_TEST_URGENT", "lab_test", order.id, request, "urgent" if data.urgent else "not urgent")
@@ -91,7 +92,7 @@ def mark_urgent(order_id: int, data: UrgentIn, request: Request, user: User = De
 
 
 @router.post("/tests/{order_id}/result")
-def upload_result(order_id: int, request: Request, file: UploadFile = File(...), confirm_mismatch: bool = Form(default=False),
+def upload_result(order_id: PathId, request: Request, file: UploadFile = File(...), confirm_mismatch: bool = Form(default=False),
                   user: User = Depends(lab_only), db: Session = Depends(get_db)):
     """Attach the result. It is read and analysed like any report, sent to the prescribing doctor for review, and the test is marked done.
     If the name printed on the result is not the patient's, nothing is saved unless the lab confirms it on purpose."""
@@ -129,5 +130,5 @@ def my_tests(user: User = Depends(require_roles(PATIENT)), db: Session = Depends
 
 
 @router.get("/patient/{patient_id}/tests")
-def patient_tests(patient_id: int, user: User = Depends(require_roles(DOCTOR)), db: Session = Depends(get_db)):
+def patient_tests(patient_id: PathId, user: User = Depends(require_roles(DOCTOR)), db: Session = Depends(get_db)):
     return lab_service.for_patient(db, get_accessible_patient(db, user, patient_id, clinical=True), as_doctor=True)

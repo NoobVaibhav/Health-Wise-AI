@@ -13,6 +13,8 @@ from app.schemas.pharmacy import (
 from app.schemas.prescription import PrescriptionOut
 from app.services import audit_service, dashboard_service, dispensing_service, prescription_service
 from app.services.serializers import prescription_out
+from app.utils.validators import PathId, SearchText, one_of
+STATUS_FILTER = one_of("ACTIVE", "PARTIALLY_DISPENSED", "DISPENSED", "CANCELLED", "EXPIRED", "UNAVAILABLE", name="status")
 
 router = APIRouter(prefix="/api/pharmacy", tags=["pharmacy"])
 pharmacy_only = require_roles(PHARMACY)
@@ -39,7 +41,7 @@ def dashboard(_: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
 
 
 @router.get("/prescriptions", response_model=list[PrescriptionOut])
-def search_prescriptions(q: str | None = None, status_filter: str | None = None,
+def search_prescriptions(q: SearchText = None, status_filter: STATUS_FILTER = None,
                          user: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
     """Search by prescription code (RX-00001), patient name or patient id."""
     rows = prescription_service.list_prescriptions_for_user(db, user, q)
@@ -66,7 +68,7 @@ def dispensing_history(_: User = Depends(pharmacy_only), db: Session = Depends(g
 
 # ------------------------------------------------------------------ inventory
 @router.get("/inventory", response_model=list[InventoryOut])
-def list_inventory(q: str | None = None, _: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
+def list_inventory(q: SearchText = None, _: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
     query = select(MedicineInventory).order_by(MedicineInventory.medicine_name, MedicineInventory.expiry_date)
     if q:
         term = f"%{q.strip()}%"
@@ -84,7 +86,7 @@ def add_inventory(data: InventoryCreate, _: User = Depends(pharmacy_only), db: S
 
 
 @router.put("/inventory/{item_id}", response_model=InventoryOut)
-def update_inventory(item_id: int, data: InventoryUpdate, _: User = Depends(pharmacy_only),
+def update_inventory(item_id: PathId, data: InventoryUpdate, _: User = Depends(pharmacy_only),
                      db: Session = Depends(get_db)):
     item = db.get(MedicineInventory, item_id)
     if item is None:

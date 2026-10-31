@@ -276,7 +276,7 @@ def test_sensitive_actions_are_audited(client, world):
     client.get(f"/api/doctor/emergency-events/{event_id}", headers=world.doctor)
     client.post(f"{BASE}/{world.patient_id}/follow-ups", headers=world.doctor, json={"title": "Repeat ECG"})
     client.post(f"{BASE}/{world.patient_id}/clinical-summary/review", headers=world.doctor, json={"item_key": "section:missing", "action": "REVIEWED"})
-    actions = {a["action"] for a in client.get("/api/admin/audit-logs?limit=500", headers=world.admin).json()}
+    actions = {a["action"] for a in client.get("/api/admin/audit-logs?limit=200", headers=world.admin).json()}
     assert {"CLINICAL_SUMMARY_VIEWED", "EMERGENCY_RECORDED", "EMERGENCY_VIEWED", "FOLLOW_UP_CREATED", "SUMMARY_REVIEWED"} <= actions
 
 

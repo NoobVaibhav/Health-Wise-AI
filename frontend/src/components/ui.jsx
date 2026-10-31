@@ -29,9 +29,10 @@ export function Field({ label, hint, children }) {
   );
 }
 
-export const Input = (props) => <input className={inputClass} {...props} />;
-export const Textarea = (props) => <textarea className={inputClass} rows={3} {...props} />;
-export const Select = ({ children, ...props }) => <select className={inputClass} {...props}>{children}</select>;
+const withBase = (className) => (className ? `${inputClass} ${className}` : inputClass);       // a className passed in is added to the base look, not instead of it
+export const Input = ({ className, ...props }) => <input className={`${withBase(className)} aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-4 aria-[invalid=true]:ring-red-100`} {...props} />;
+export const Textarea = ({ className, ...props }) => <textarea className={`${withBase(className)} aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-4 aria-[invalid=true]:ring-red-100`} rows={3} {...props} />;
+export const Select = ({ children, className, ...props }) => <select className={`${withBase(className)} aria-[invalid=true]:border-red-500`} {...props}>{children}</select>;
 
 export function Button({ variant = "primary", className = "", ...props }) {
   const styles = {

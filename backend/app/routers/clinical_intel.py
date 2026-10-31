@@ -15,6 +15,7 @@ from app.schemas.clinical_intel import EmergencyIn, FollowUpIn, FollowUpUpdate, 
 from app.services import (
     ai_summary, audit_service, clinical_summary, clinical_timeline, emergency_review, follow_ups, medication_history, report_trends,
 )
+from app.utils.validators import PathId, SearchText
 
 router = APIRouter(prefix="/api/doctor", tags=["clinical intelligence"])
 doctor_only = require_roles(DOCTOR)
@@ -26,7 +27,7 @@ def _patient(db: Session, user: User, patient_id: int):
 
 # ------------------------------------------------------------------ the summary
 @router.get("/patients/{patient_id}/clinical-summary")
-def clinical_summary_view(patient_id: int, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def clinical_summary_view(patient_id: PathId, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     patient = _patient(db, user, patient_id)
     result = clinical_summary.build(db, patient)
     audit_service.log_action(db, user, audit_service.CLINICAL_SUMMARY_VIEWED, "patient", patient.id, request)
@@ -36,7 +37,7 @@ def clinical_summary_view(patient_id: int, request: Request, user: User = Depend
 
 
 @router.post("/patients/{patient_id}/clinical-summary/generate")
-def generate_ai_narrative(patient_id: int, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def generate_ai_narrative(patient_id: PathId, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     """Ask the optional AI model to write a short narrative from the verified statements. Never required."""
     patient = _patient(db, user, patient_id)
     if not ai_summary.available():
@@ -53,7 +54,7 @@ def generate_ai_narrative(patient_id: int, request: Request, user: User = Depend
 
 
 @router.post("/patients/{patient_id}/clinical-summary/review", status_code=status.HTTP_201_CREATED)
-def review_item(patient_id: int, data: ReviewIn, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def review_item(patient_id: PathId, data: ReviewIn, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     """A doctor marks an item reviewed, or adds an interpretation, a correction of an extraction error, or a missing-information flag.
     It is stored next to the item. The original record and the computer's statement are not changed."""
     patient = _patient(db, user, patient_id)
@@ -67,27 +68,27 @@ def review_item(patient_id: int, data: ReviewIn, request: Request, user: User = 
 
 # ------------------------------------------------------------------ the parts
 @router.get("/patients/{patient_id}/timeline")
-def timeline(patient_id: int, q: str | None = None, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def timeline(patient_id: PathId, q: SearchText = None, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     return {"events": clinical_timeline.build(db, _patient(db, user, patient_id), q)}
 
 
 @router.get("/patients/{patient_id}/report-trends")
-def trends(patient_id: int, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def trends(patient_id: PathId, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     return report_trends.analyse(db, _patient(db, user, patient_id))
 
 
 @router.get("/patients/{patient_id}/medication-history")
-def medications(patient_id: int, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def medications(patient_id: PathId, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     return medication_history.build(db, _patient(db, user, patient_id))
 
 
 @router.get("/patients/{patient_id}/follow-ups")
-def follow_up_list(patient_id: int, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def follow_up_list(patient_id: PathId, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     return follow_ups.build(db, _patient(db, user, patient_id))
 
 
 @router.post("/patients/{patient_id}/follow-ups", status_code=status.HTTP_201_CREATED)
-def create_follow_up(patient_id: int, data: FollowUpIn, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def create_follow_up(patient_id: PathId, data: FollowUpIn, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     patient = _patient(db, user, patient_id)
     task = FollowUpTask(patient_id=patient.id, created_by=get_doctor_profile(db, user).id, title=data.title.strip(), details=data.details, due_date=data.due_date,
                         source_type=data.source_type, source_id=data.source_id)
@@ -98,7 +99,7 @@ def create_follow_up(patient_id: int, data: FollowUpIn, request: Request, user: 
 
 
 @router.patch("/patients/{patient_id}/follow-ups/{task_id}")
-def update_follow_up(patient_id: int, task_id: int, data: FollowUpUpdate, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def update_follow_up(patient_id: PathId, task_id: PathId, data: FollowUpUpdate, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     patient = _patient(db, user, patient_id)
     task = db.get(FollowUpTask, task_id)
     if task is None or task.patient_id != patient.id:
@@ -113,12 +114,12 @@ def update_follow_up(patient_id: int, task_id: int, data: FollowUpUpdate, reques
 
 # ------------------------------------------------------------------ emergency events
 @router.get("/patients/{patient_id}/emergency-history")
-def emergency_history(patient_id: int, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def emergency_history(patient_id: PathId, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     return emergency_review.list_events(db, _patient(db, user, patient_id))
 
 
 @router.post("/patients/{patient_id}/emergency-events", status_code=status.HTTP_201_CREATED)
-def record_emergency(patient_id: int, data: EmergencyIn, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def record_emergency(patient_id: PathId, data: EmergencyIn, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     patient = _patient(db, user, patient_id)
     event = emergency_review.create(db, patient, get_doctor_profile(db, user), data)
     audit_service.log_action(db, user, audit_service.EMERGENCY_RECORDED, "patient", patient.id, request)
@@ -126,7 +127,7 @@ def record_emergency(patient_id: int, data: EmergencyIn, request: Request, user:
 
 
 @router.get("/emergency-events/{event_id}")
-def emergency_event(event_id: int, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def emergency_event(event_id: PathId, request: Request, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     event = db.get(EmergencyEvent, event_id)
     if event is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Emergency record not found.")

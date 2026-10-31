@@ -1,7 +1,8 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+from app.utils.validators import Barcode, Money, OptionalMoney, OptionalPercent, OptionalPersonName, OptionalPhone, Quantity, opt_text, text, PositiveId
 
 
 class StockLookupBatch(BaseModel):
@@ -25,29 +26,36 @@ class StockLookup(BaseModel):
 
 class ReceiveStock(BaseModel):
     """Add stock by scanning. If the same barcode + batch is already on the shelf, the quantity is added to it."""
-    barcode: str | None = Field(default=None, max_length=64)
-    medicine_name: str = Field(min_length=2, max_length=200)
-    batch_number: str | None = Field(default=None, max_length=50)
-    quantity: int = Field(ge=1, le=1000000)
+    barcode: Barcode = None
+    medicine_name: text(200, min_length=2)
+    batch_number: opt_text(50) = None
+    quantity: Quantity
     expiry_date: date | None = None
-    manufacturer: str | None = Field(default=None, max_length=150)
-    unit_price: float | None = Field(default=None, ge=0)
-    gst_percent: float | None = Field(default=None, ge=0, le=100)
+    manufacture_date: date | None = None
+    manufacturer: opt_text(150) = None
+    unit_price: OptionalMoney = None
+    gst_percent: OptionalPercent = None
+
+    @model_validator(mode="after")
+    def _dates(self):
+        from app.schemas.pharmacy import check_stock_dates
+        check_stock_dates(self.manufacture_date, self.expiry_date)
+        return self
 
 
 class SaleItemIn(BaseModel):
-    barcode: str | None = Field(default=None, max_length=64)
-    inventory_id: int | None = None
-    quantity: int = Field(ge=1, le=10000)
-    prescription_item_id: int | None = None   # set when the line fills a doctor's prescription
+    barcode: Barcode = None
+    inventory_id: PositiveId | None = None
+    quantity: Quantity
+    prescription_item_id: PositiveId | None = None   # set when the line fills a doctor's prescription
 
 
 class SaleCreate(BaseModel):
-    customer_name: str | None = Field(default=None, max_length=150)
-    customer_phone: str | None = Field(default=None, max_length=30)
+    customer_name: OptionalPersonName = None
+    customer_phone: OptionalPhone = None
     payment_method: Literal["CASH", "UPI", "CARD"] = "CASH"
-    discount: float = Field(default=0, ge=0, le=1000000)
-    prescription_id: int | None = None
+    discount: Money = 0       # an amount in rupees (not a percentage); the bill service refuses a discount bigger than the bill
+    prescription_id: PositiveId | None = None
     items: list[SaleItemIn] = Field(min_length=1, max_length=60)
 
     @field_validator("customer_name", "customer_phone")
@@ -87,10 +95,10 @@ class SaleOut(BaseModel):
 
 class PrescriptionBillRequest(BaseModel):
     """Bill for the medicine of one prescription that has already been given."""
-    customer_name: str | None = Field(default=None, max_length=150)
-    customer_phone: str | None = Field(default=None, max_length=30)
+    customer_name: OptionalPersonName = None
+    customer_phone: OptionalPhone = None
     payment_method: Literal["CASH", "UPI", "CARD"] = "CASH"
-    discount: float = Field(default=0, ge=0, le=1000000)
+    discount: Money = 0
 
     @field_validator("customer_name", "customer_phone")
     @classmethod

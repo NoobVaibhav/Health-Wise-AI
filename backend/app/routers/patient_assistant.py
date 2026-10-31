@@ -14,6 +14,7 @@ from app.database.models import PatientAssistantConversation, User
 from app.schemas.patient_assistant import ChatIn
 from app.services import audit_service, patient_assistant as service
 from app.services.assistant_text import LANGUAGES, normalise_lang, t
+from app.utils.validators import PathId
 
 router = APIRouter(prefix="/api/patient-assistant", tags=["patient-assistant"])
 patient_only = require_roles(PATIENT)
@@ -75,13 +76,13 @@ def conversations(user: User = Depends(patient_only), db: Session = Depends(get_
 
 
 @router.get("/conversations/{conversation_id}")
-def conversation(conversation_id: int, user: User = Depends(patient_only), db: Session = Depends(get_db)):
+def conversation(conversation_id: PathId, user: User = Depends(patient_only), db: Session = Depends(get_db)):
     conv = _conversation(db, user, conversation_id)
     return {"id": conv.id, "title": conv.title, "language": conv.language, "messages": [service.message_out(m) for m in conv.messages]}
 
 
 @router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_conversation(conversation_id: int, request: Request, user: User = Depends(patient_only), db: Session = Depends(get_db)):
+def delete_conversation(conversation_id: PathId, request: Request, user: User = Depends(patient_only), db: Session = Depends(get_db)):
     conv = _conversation(db, user, conversation_id)
     db.delete(conv)
     db.commit()

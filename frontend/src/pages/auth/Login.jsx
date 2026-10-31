@@ -6,6 +6,9 @@ import { getErrorMessage } from "../../services/api";
 import { getSetupStatus } from "../../services/authApi";
 import DisclaimerBanner from "../../components/DisclaimerBanner";
 import { Button, Input } from "../../components/ui";
+import { FormField, PasswordInput } from "../../components/FormField";
+import useValidation from "../../hooks/useValidation";
+import * as v from "../../utils/validators";
 
 // Left: simple explanation of the product. Right: the card (login / password forms).
 export function AuthShell({ title, subtitle, children }) {
@@ -60,6 +63,13 @@ const DEMO = [
   ["Employee", "priya.joshi@healthwise.demo.com"], ["Pharmacy", "pharmacy@healthwise.demo.com"], ["Lab", "lab@healthwise.demo.com"], ["Admin", "admin@healthwise.demo.com"],
 ];
 
+// Login: the e-mail must look like an e-mail and the password must not be empty. Whether the account and password are right is the server's answer,
+// and it is the same sentence for a wrong e-mail and a wrong password ("Incorrect email or password").
+const LOGIN_RULES = {
+  email: (value) => v.email(value),
+  password: (value) => (String(value ?? "") === "" ? "Please enter your password." : String(value).length > 128 ? "The password is too long (128 characters at most)." : ""),
+};
+
 export default function Login() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
@@ -67,16 +77,19 @@ export default function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
+  const check = useValidation(LOGIN_RULES);
 
   useEffect(() => { getSetupStatus().then((s) => setNeedsSetup(s.needs_setup)).catch(() => {}); }, []);
   if (user) return <Navigate to={ROLE_HOME[user.role]} replace />;
 
   const submit = async (e) => {
     e.preventDefault();
+    if (busy) return;
+    if (!check.validateAll(form)) return;
     setBusy(true);
     setError("");
     try {
-      const u = await login(form.email, form.password);
+      const u = await login(form.email.trim().toLowerCase(), form.password);
       navigate(ROLE_HOME[u.role]);                                   // a starting password shows the change-password pop-up there
     } catch (err) {
       setError(getErrorMessage(err));
@@ -87,12 +100,16 @@ export default function Login() {
 
   return (
     <AuthShell title="Welcome back" subtitle="Log in with the email and password the hospital gave you.">
-      <form onSubmit={submit} className="space-y-4">
-        <div><label className="mb-1 block text-sm font-semibold text-slate-700">Email</label>
-          <Input type="email" placeholder="you@example.com" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-        <div><label className="mb-1 block text-sm font-semibold text-slate-700">Password</label>
-          <Input type="password" placeholder="Your password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
-        {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">{error}</p>}
+      <form onSubmit={submit} noValidate className="space-y-4" aria-busy={busy}>
+        <FormField label="Email" name="email" error={check.errors.email}>
+          <Input type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" maxLength={254} value={form.email}
+            onChange={(e) => { setForm({ ...form, email: e.target.value }); check.clear("email"); }} onBlur={() => check.check("email", form)} />
+        </FormField>
+        <FormField label="Password" name="password" error={check.errors.password}>
+          <PasswordInput autoComplete="current-password" placeholder="Your password" value={form.password}
+            onChange={(e) => { setForm({ ...form, password: e.target.value }); check.clear("password"); }} onBlur={() => check.check("password", form)} />
+        </FormField>
+        {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">{error}</p>}
         <Button disabled={busy} className="w-full py-3 text-base">{busy ? "Logging in..." : "Log in"}</Button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-500">

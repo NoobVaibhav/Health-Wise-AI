@@ -10,7 +10,7 @@ from app.main import app
 from tests.conftest import PASSWORD, login
 from tests.test_patient_assistant import add_report, report
 
-BAD_VALUES = ["", None, -1, 0, 10 ** 12, 1.5e308, "x" * 6000, "'; DROP TABLE users;--", "<script>alert(1)</script>", "%", "\u0000", [], {}, [{}], True, "9999-12-31", "0001-01-01", "not-a-date"]
+BAD_VALUES = ["\U0001F600", "+91 98765 43210", "2999-01-01", "1e999", "NaN", "Infinity", "-0", "<img src=x onerror=alert(1)>", "A" * 300, "\u202e", "0000-00-00", "1.5.2", "अंजली", "", None, -1, 0, 10 ** 12, 1.5e308, "x" * 6000, "'; DROP TABLE users;--", "<script>alert(1)</script>", "%", "\u0000", [], {}, [{}], True, "9999-12-31", "0001-01-01", "not-a-date"]
 
 
 def resolve(schema, spec):

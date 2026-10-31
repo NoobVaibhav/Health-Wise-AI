@@ -1,8 +1,7 @@
 import { useRef, useState } from "react";
 import { UploadCloud } from "lucide-react";
 
-const ALLOWED = ["pdf", "jpg", "jpeg", "png", "webp", "txt", "csv"];
-const MAX_MB = 10;
+import { REPORT_FILE, file as checkFile } from "../utils/validators";
 
 // Drag & drop / click to choose. Validates type and size before anything is sent.
 export default function UploadBox({ onFile, disabled }) {
@@ -12,9 +11,8 @@ export default function UploadBox({ onFile, disabled }) {
 
   const handle = (file) => {
     if (!file) return;
-    const ext = file.name.split(".").pop().toLowerCase();
-    if (!ALLOWED.includes(ext)) return setProblem("Wrong file uploaded. Please upload a medical report as a PDF, JPG, JPEG, PNG or WEBP file.");
-    if (file.size > MAX_MB * 1024 * 1024) return setProblem(`The file is too large. Maximum size is ${MAX_MB} MB.`);
+    const message = checkFile(file, REPORT_FILE);        // type, size and empty file: the server checks the real content again
+    if (message) return setProblem(message);
     setProblem("");
     onFile(file);
   };
@@ -30,11 +28,11 @@ export default function UploadBox({ onFile, disabled }) {
       >
         <UploadCloud className="mx-auto text-brand-600" size={44} />
         <p className="mt-3 font-semibold text-slate-800">Drag and drop your report here</p>
-        <p className="text-sm text-slate-500">or click to choose a file. PDF, JPG, PNG or WEBP, up to {MAX_MB} MB</p>
-        <input ref={inputRef} type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv"
+        <p className="text-sm text-slate-500">or click to choose a file. {REPORT_FILE.hint}</p>
+        <input ref={inputRef} type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.txt,.csv"
           onChange={(e) => { handle(e.target.files[0]); e.target.value = ""; }} />
       </div>
-      {problem && <p className="mt-2 text-sm text-red-600">{problem}</p>}
+      {problem && <p role="alert" className="mt-2 text-sm font-medium text-red-600">{problem}</p>}
     </div>
   );
 }

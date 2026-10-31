@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY
 from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, User
+from app.utils.validators import clean_text, normalise_phone
 from app.schemas.profile import ProfileField, ProfileOut, ProfileUpdate, ProfileUser
 
 ROLE_LABELS = {ADMIN: "Administrator", DOCTOR: "Doctor", EMPLOYEE: "Hospital employee", PATIENT: "Patient",
@@ -30,10 +31,10 @@ ROLE_LABELS = {ADMIN: "Administrator", DOCTOR: "Doctor", EMPLOYEE: "Hospital emp
 PROFILE_MODEL = {DOCTOR: Doctor, EMPLOYEE: Employee, PATIENT: Patient, PHARMACY: PharmacyStaff, LAB: LabStaff}
 PHONE_RE = re.compile(r"^[0-9+\-() ]{7,20}$")
 
-MAX_AVATAR_BYTES = 5 * 1024 * 1024
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
 MAX_AVATAR_PIXELS = 25_000_000
 AVATAR_SIZE = 256
-ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
+ALLOWED_FORMATS = {"JPEG", "PNG"}
 
 
 @dataclass(frozen=True)
@@ -138,7 +139,7 @@ def update_profile(db: Session, user: User, data: ProfileUpdate) -> ProfileOut:
         spec = specs.get(key)
         if spec is None or not spec.editable:
             raise HTTPException(422, f"'{key}' cannot be changed here.")
-        text = ("" if raw is None else str(raw)).strip()
+        text = clean_text("" if raw is None else str(raw))        # trimmed, no HTML tags, no control characters
         if spec.kind == "number":
             if text == "":
                 clean[key] = None
@@ -149,8 +150,15 @@ def update_profile(db: Session, user: User, data: ProfileUpdate) -> ProfileOut:
             continue
         if len(text) > spec.max_length:
             raise HTTPException(422, f"{spec.label} is too long (at most {spec.max_length} characters).")
-        if key == "phone" and text and not PHONE_RE.match(text):
-            raise HTTPException(422, "Phone can have only digits, spaces and + - ( ) (7 to 20 characters).")
+        if key == "phone" and text:
+            try:
+                text = normalise_phone(text)
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from None
+        if key == "emergency_contact" and text and row is not None:
+            own = re.sub(r"\D", "", str(clean.get("phone") or getattr(row, "phone", "") or ""))[-10:]
+            if len(own) >= 10 and own == re.sub(r"\D", "", text)[-10:]:
+                raise HTTPException(422, "The emergency contact must be a different person: it has your own phone number.")
         clean[key] = text or None
     if clean and row is None:
         raise HTTPException(422, "This account has no extra details to edit.")
@@ -181,8 +189,8 @@ def set_avatar(db: Session, user: User, content: bytes) -> User:
     if not content:
         raise HTTPException(422, "Please choose a picture.")
     if len(content) > MAX_AVATAR_BYTES:
-        raise HTTPException(413, "The picture is too big. Please use one under 5 MB.")
-    bad = HTTPException(422, "This is not a usable picture. Please choose a JPG, PNG or WEBP photo.")
+        raise HTTPException(413, "The picture is too big. Please use one under 2 MB.")
+    bad = HTTPException(422, "This is not a usable picture. Please choose a JPG or PNG photo.")
     try:
         probe = Image.open(io.BytesIO(content))
         if probe.format not in ALLOWED_FORMATS or probe.width * probe.height > MAX_AVATAR_PIXELS:

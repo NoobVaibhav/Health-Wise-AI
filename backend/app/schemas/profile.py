@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field
+from app.utils.validators import PersonName
 
 
 class ProfileField(BaseModel):
@@ -30,5 +31,5 @@ class ProfileOut(BaseModel):
 
 
 class ProfileUpdate(BaseModel):
-    full_name: str | None = Field(default=None, min_length=2, max_length=150)
+    full_name: PersonName | None = None
     values: dict[str, str | int | None] = Field(default_factory=dict)

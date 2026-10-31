@@ -1,34 +1,55 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from app.utils.validators import Barcode, OptionalMoney, OptionalPercent, opt_text, text, PositiveId
+
+
+def check_stock_dates(manufactured, expiry):
+    """The manufacturing date is not in the future, and the expiry is after it."""
+    if manufactured and manufactured > date.today():
+        raise ValueError("The manufacturing date cannot be in the future.")
+    if manufactured and expiry and expiry <= manufactured:
+        raise ValueError("The expiry date must be after the manufacturing date.")
 
 
 class DispenseRequest(BaseModel):
-    prescription_item_id: int
+    prescription_item_id: PositiveId
     quantity: int = Field(ge=0, le=10000)     # 0 is allowed only together with mark_unavailable
-    notes: str | None = Field(default=None, max_length=500)
+    notes: opt_text(500, multiline=True) = None
     mark_unavailable: bool = False
 
 
 class InventoryCreate(BaseModel):
-    medicine_name: str = Field(min_length=2, max_length=200)
-    batch_number: str | None = Field(default=None, max_length=50)
+    medicine_name: text(200, min_length=2)
+    batch_number: opt_text(50) = None
     quantity: int = Field(ge=0, le=1000000)
     expiry_date: date | None = None
-    manufacturer: str | None = Field(default=None, max_length=150)
-    unit_price: float | None = Field(default=None, ge=0)
-    barcode: str | None = Field(default=None, max_length=64)
-    gst_percent: float | None = Field(default=None, ge=0, le=100)
+    manufacture_date: date | None = None
+    manufacturer: opt_text(150) = None
+    unit_price: OptionalMoney = None
+    barcode: Barcode = None
+    gst_percent: OptionalPercent = None
+
+    @model_validator(mode="after")
+    def _dates(self):
+        check_stock_dates(self.manufacture_date, self.expiry_date)
+        return self
 
 
 class InventoryUpdate(BaseModel):
     quantity: int | None = Field(default=None, ge=0, le=1000000)
     expiry_date: date | None = None
-    unit_price: float | None = Field(default=None, ge=0)
-    batch_number: str | None = Field(default=None, max_length=50)
-    manufacturer: str | None = Field(default=None, max_length=150)
-    barcode: str | None = Field(default=None, max_length=64)
-    gst_percent: float | None = Field(default=None, ge=0, le=100)
+    manufacture_date: date | None = None
+    unit_price: OptionalMoney = None
+    batch_number: opt_text(50) = None
+    manufacturer: opt_text(150) = None
+    barcode: Barcode = None
+    gst_percent: OptionalPercent = None
+
+    @model_validator(mode="after")
+    def _dates(self):
+        check_stock_dates(self.manufacture_date, self.expiry_date)
+        return self
 
 
 class InventoryOut(BaseModel):
@@ -37,6 +58,7 @@ class InventoryOut(BaseModel):
     batch_number: str | None
     quantity: int
     expiry_date: date | None
+    manufacture_date: date | None = None
     manufacturer: str | None
     unit_price: float | None
     barcode: str | None = None
@@ -45,7 +67,7 @@ class InventoryOut(BaseModel):
 
 class DispensingOut(BaseModel):
     id: int
-    prescription_id: int
+    prescription_id: PositiveId
     prescription_code: str
     patient_name: str
     medicine_name: str

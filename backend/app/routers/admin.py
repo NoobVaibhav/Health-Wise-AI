@@ -14,6 +14,8 @@ from app.services.user_service import age_from_dob
 from app.routers.auth import user_out
 from app.schemas.auth import CreatedUserResponse, DepartmentCreate, StaffCreate, UserOut, UserUpdate
 from app.services import audit_service, dashboard_service, user_service
+from app.utils.validators import Limit, PathId, SearchText, one_of
+ROLE_FILTER = one_of("ADMIN", "DOCTOR", "EMPLOYEE", "PATIENT", "PHARMACY", "LAB", name="role")
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 admin_only = require_roles(ADMIN)
@@ -25,7 +27,7 @@ def dashboard(_: User = Depends(admin_only), db: Session = Depends(get_db)):
 
 
 @router.get("/users", response_model=list[UserOut])
-def list_users(role: str | None = None, _: User = Depends(admin_only), db: Session = Depends(get_db)):
+def list_users(role: ROLE_FILTER = None, _: User = Depends(admin_only), db: Session = Depends(get_db)):
     query = select(User).order_by(User.id)
     if role:
         query = query.where(User.role == role.upper())
@@ -33,7 +35,7 @@ def list_users(role: str | None = None, _: User = Depends(admin_only), db: Sessi
 
 
 @router.get("/people")
-def people(role: str | None = None, q: str | None = None, _: User = Depends(admin_only),
+def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(admin_only),
            db: Session = Depends(get_db)):
     """Everybody with the details that matter for their role, in a form that is easy to show as cards."""
     query = select(User).order_by(User.full_name)
@@ -118,7 +120,7 @@ def create_lab_staff(data: StaffCreate, request: Request, admin: User = Depends(
 
 
 @router.put("/users/{user_id}", response_model=UserOut)
-def update_user(user_id: int, data: UserUpdate, request: Request, admin: User = Depends(admin_only),
+def update_user(user_id: PathId, data: UserUpdate, request: Request, admin: User = Depends(admin_only),
                 db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if user is None:
@@ -136,7 +138,7 @@ def update_user(user_id: int, data: UserUpdate, request: Request, admin: User = 
 
 
 @router.get("/users/{user_id}/delete-check")
-def delete_check(user_id: int, admin: User = Depends(admin_only), db: Session = Depends(get_db)):
+def delete_check(user_id: PathId, admin: User = Depends(admin_only), db: Session = Depends(get_db)):
     """Can this account be deleted, and if not, why. Used by the confirmation window."""
     user = db.get(User, user_id)
     if user is None:
@@ -145,7 +147,7 @@ def delete_check(user_id: int, admin: User = Depends(admin_only), db: Session = 
 
 
 @router.delete("/users/{user_id}")
-def delete_user(user_id: int, request: Request, admin: User = Depends(admin_only), db: Session = Depends(get_db)):
+def delete_user(user_id: PathId, request: Request, admin: User = Depends(admin_only), db: Session = Depends(get_db)):
     """Permanently deletes an account that has nothing linked to it (for example one made by mistake). An account with any
     medical, billing or other records cannot be deleted: deactivate it instead."""
     user = db.get(User, user_id)
@@ -200,7 +202,7 @@ def _entity_label(db: Session, entity_type: str | None, entity_id: int | None) -
 
 
 @router.get("/audit-logs")
-def audit_logs(action: str | None = None, limit: int = 200, _: User = Depends(admin_only),
+def audit_logs(action: SearchText = None, limit: Limit = 200, _: User = Depends(admin_only),
                db: Session = Depends(get_db)):
     query = select(AuditLog).order_by(AuditLog.id.desc()).limit(min(max(limit, 1), 1000))
     if action:

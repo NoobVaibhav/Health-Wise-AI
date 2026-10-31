@@ -24,6 +24,7 @@ from app.services.prescription_service import list_prescriptions_for_user
 from app.services.serializers import (
     note_out, patient_for_role, prescription_out, recommendation_out, report_detail, report_list_item,
 )
+from app.utils.validators import PathId, QueryId, SearchText
 
 router = APIRouter(prefix="/api/doctor", tags=["doctor"])
 directory = APIRouter(prefix="/api/doctors", tags=["doctors"])
@@ -66,7 +67,7 @@ def dashboard(user: User = Depends(doctor_only), db: Session = Depends(get_db)):
 
 
 @router.get("/patients", response_model=list[PatientFull])
-def my_patients(q: str | None = None, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def my_patients(q: SearchText = None, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     doctor = get_doctor_profile(db, user)
     ids = doctor_patient_ids(db, doctor)
     patients = db.scalars(select(Patient).join(User, Patient.user_id == User.id)
@@ -78,7 +79,7 @@ def my_patients(q: str | None = None, user: User = Depends(doctor_only), db: Ses
 
 
 @router.get("/patients/{patient_id}/history")
-def patient_history(patient_id: int, q: str | None = None, request: Request = None,
+def patient_history(patient_id: PathId, q: SearchText = None, request: Request = None,
                     user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     """Everything a doctor needs before reviewing a new report: profile, timeline, reports, notes, prescriptions."""
     patient = get_accessible_patient(db, user, patient_id)
@@ -104,7 +105,7 @@ def patient_history(patient_id: int, q: str | None = None, request: Request = No
 
 # ------------------------------------------------------------------ review, notes, recommendations
 @router.put("/reports/{report_id}/review", response_model=ReportDetail)
-def review(report_id: int, data: ReviewRequest, request: Request, user: User = Depends(doctor_only),
+def review(report_id: PathId, data: ReviewRequest, request: Request, user: User = Depends(doctor_only),
            db: Session = Depends(get_db)):
     """Approve, modify or clarify the AI analysis and mark the report as reviewed."""
     doctor = get_doctor_profile(db, user)
@@ -128,7 +129,7 @@ def add_note(data: NoteCreate, request: Request, user: User = Depends(doctor_onl
 
 
 @router.get("/notes", response_model=list[NoteOut])
-def my_notes(patient_id: int | None = None, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def my_notes(patient_id: QueryId = None, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     doctor = get_doctor_profile(db, user)
     query = select(DoctorNote).where(DoctorNote.doctor_id == doctor.id).order_by(DoctorNote.id.desc())
     if patient_id is not None:
@@ -153,7 +154,7 @@ def add_recommendation(data: RecommendationCreate, request: Request, user: User 
 
 
 @router.get("/recommendations", response_model=list[RecommendationOut])
-def my_recommendations(patient_id: int | None = None, user: User = Depends(doctor_only),
+def my_recommendations(patient_id: QueryId = None, user: User = Depends(doctor_only),
                        db: Session = Depends(get_db)):
     doctor = get_doctor_profile(db, user)
     query = select(DoctorRecommendation).where(DoctorRecommendation.doctor_id == doctor.id) \

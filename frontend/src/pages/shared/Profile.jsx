@@ -5,7 +5,9 @@ import { Link } from "react-router-dom";
 import { Camera, KeyRound, Trash2 } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import { deleteAvatar, getProfile, updateProfile, uploadAvatar } from "../../services/profileApi";
-import { getErrorMessage } from "../../services/api";
+import { getErrorMessage, getFieldErrors } from "../../services/api";
+import { FormField } from "../../components/FormField";
+import * as v from "../../utils/validators";
 import { Avatar } from "../../components/DataViews";
 import { Section } from "../../components/HealthCard";
 import { StatusPill } from "../../components/StatusBadge";
@@ -23,6 +25,7 @@ export default function Profile() {
   const [name, setName] = useState(null);
   const [busy, setBusy] = useState("");
   const [problem, setProblem] = useState("");
+  const [errs, setErrs] = useState({});                 // messages under the fields
 
   if (loading && !data) return <Loading />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
@@ -35,7 +38,8 @@ export default function Profile() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { setProblem("That picture is too big. Please choose one under 5 MB."); return; }
+    const wrong = v.file(file, v.AVATAR_FILE);         // type, size (2 MB) and empty file; the server looks at the real picture again
+    if (wrong) { setProblem(wrong); return; }
     setBusy("photo");
     setProblem("");
     try { await uploadAvatar(file); await done("Your photo was saved"); } catch (err) { setProblem(getErrorMessage(err)); } finally { setBusy(""); }
@@ -47,12 +51,19 @@ export default function Profile() {
   };
   const save = async (e) => {
     e.preventDefault();
+    if (busy) return;
+    const found = {};
+    if (name !== null && v.personName(name)) found.full_name = v.personName(name);
+    for (const f of editable) if (f.key in edits) { const m = f.key === "phone" ? v.phone(edits[f.key]) : v.text(edits[f.key], { max: 300 }); if (m) found[f.key] = m; }
+    setErrs(found);
+    const first = Object.keys(found)[0];
+    if (first) { document.getElementById(first)?.focus(); return; }
     setBusy("save");
     setProblem("");
     try {
-      await updateProfile({ ...(name !== null ? { full_name: name } : {}), values: edits });
+      await updateProfile({ ...(name !== null ? { full_name: v.cleanText(name) } : {}), values: edits });
       await done("Your details were saved");
-    } catch (err) { setProblem(getErrorMessage(err)); } finally { setBusy(""); }
+    } catch (err) { const server = getFieldErrors(err); if (Object.keys(server).length) setErrs(server); else setProblem(getErrorMessage(err)); } finally { setBusy(""); }
   };
 
   const valueOf = (f) => (f.key in edits ? edits[f.key] : f.value ?? "");
@@ -70,9 +81,10 @@ export default function Profile() {
             <p className="break-words text-2xl font-extrabold text-slate-900">{u.full_name}</p>
             <p className="mt-1 flex flex-wrap items-center gap-2 text-base text-slate-600"><StatusPill value={u.role} /> <span className="min-w-0 break-all">{u.email}</span></p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <input ref={picker} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label="Choose a profile photo" onChange={choosePhoto} />
-              <Button onClick={() => picker.current?.click()} disabled={busy === "photo"}><Camera size={20} /> {busy === "photo" ? "Saving..." : u.has_avatar ? "Change photo" : "Add a photo"}</Button>
-              {u.has_avatar && <Button variant="secondary" onClick={removePhoto} disabled={busy === "photo"} className="!border-red-600 !text-red-700 hover:!bg-red-50"><Trash2 size={18} /> Remove photo</Button>}
+              <input ref={picker} type="file" accept="image/jpeg,image/png" className="sr-only" aria-label="Choose a profile photo" onChange={choosePhoto} />
+              <Button type="button" onClick={() => picker.current?.click()} disabled={busy === "photo"}><Camera size={20} /> {busy === "photo" ? "Saving..." : u.has_avatar ? "Change photo" : "Add a photo"}</Button>
+              {u.has_avatar && <Button type="button" variant="secondary" onClick={removePhoto} disabled={busy === "photo"} className="!border-red-600 !text-red-700 hover:!bg-red-50"><Trash2 size={18} /> Remove photo</Button>}
+              <p className="w-full text-xs text-slate-500">Photo: {v.AVATAR_FILE.hint}.</p>
             </div>
             <p className="mt-2 text-sm text-slate-500">A JPG, PNG or WEBP picture under 5 MB. It is cropped to a square.</p>
           </div>
@@ -83,13 +95,18 @@ export default function Profile() {
       <form onSubmit={save} className="space-y-5">
         <Section title="My details">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Full name"><Input required minLength={2} maxLength={150} value={name ?? u.full_name} onChange={(e) => setName(e.target.value)} /></Field>
+            <FormField label="Full name" name="full_name" error={errs.full_name}>
+              <Input autoComplete="name" maxLength={150} value={name ?? u.full_name} onChange={(e) => { setName(e.target.value); setErrs({ ...errs, full_name: "" }); }}
+                onBlur={() => name !== null && setErrs({ ...errs, full_name: v.personName(name) })} />
+            </FormField>
             {editable.map((f) => (
-              <Field key={f.key} label={f.label} hint={f.help}>
+              <FormField key={f.key} label={f.label} name={f.key} hint={f.help} error={errs[f.key]}>
                 {f.kind === "textarea"
-                  ? <Textarea rows={2} value={valueOf(f)} onChange={(e) => setEdits({ ...edits, [f.key]: e.target.value })} />
-                  : <Input type={f.kind === "number" ? "number" : "text"} min={f.kind === "number" ? 0 : undefined} max={f.kind === "number" ? 70 : undefined} value={valueOf(f)} onChange={(e) => setEdits({ ...edits, [f.key]: e.target.value })} />}
-              </Field>
+                  ? <Textarea rows={2} maxLength={300} value={valueOf(f)} onChange={(e) => { setEdits({ ...edits, [f.key]: e.target.value }); setErrs({ ...errs, [f.key]: "" }); }} />
+                  : <Input type={f.kind === "number" ? "number" : f.key === "phone" ? "tel" : "text"} inputMode={f.key === "phone" ? "tel" : undefined} min={f.kind === "number" ? 0 : undefined} max={f.kind === "number" ? 70 : undefined}
+                      maxLength={f.kind === "number" ? undefined : f.key === "phone" ? 20 : 150} value={valueOf(f)} onChange={(e) => { setEdits({ ...edits, [f.key]: e.target.value }); setErrs({ ...errs, [f.key]: "" }); }}
+                      onBlur={() => f.key === "phone" && setErrs({ ...errs, phone: v.phone(valueOf(f)) })} />}
+              </FormField>
             ))}
           </div>
           <Button disabled={!changed || busy === "save"} className="mt-5 w-full sm:w-auto sm:min-w-64">{busy === "save" ? "Saving..." : "✓ Save my details"}</Button>

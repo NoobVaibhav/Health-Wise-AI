@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.health_history import Vitals
+from app.utils.validators import opt_text, text, PositiveId
 
 TIMELINE_KINDS = ("ARRIVAL", "VITALS", "INVESTIGATION", "RESULT", "ASSESSMENT", "TREATMENT", "REASSESSMENT", "DISPOSITION", "OTHER")
 
@@ -12,32 +13,32 @@ TIMELINE_KINDS = ("ARRIVAL", "VITALS", "INVESTIGATION", "RESULT", "ASSESSMENT", 
 class TimelineEntryIn(BaseModel):
     occurred_at: datetime
     kind: Literal["ARRIVAL", "VITALS", "INVESTIGATION", "RESULT", "ASSESSMENT", "TREATMENT", "REASSESSMENT", "DISPOSITION", "OTHER"] = "OTHER"
-    text: str = Field(min_length=2, max_length=500)
+    text: text(500, min_length=2, multiline=True)
 
 
 class EmergencyIn(BaseModel):
     """Every field is optional: an emergency record can be incomplete, and the review will say what is missing."""
     event_at: datetime | None = None
-    arrival_method: str | None = Field(default=None, max_length=40)
-    chief_complaint: str | None = Field(default=None, max_length=1000)
-    symptoms: list[str] = Field(default_factory=list, max_length=30)
-    onset_text: str | None = Field(default=None, max_length=120)
-    duration_text: str | None = Field(default=None, max_length=120)
+    arrival_method: opt_text(40) = None
+    chief_complaint: opt_text(1000, multiline=True) = None
+    symptoms: list[text(120)] = Field(default_factory=list, max_length=30)
+    onset_text: opt_text(120) = None
+    duration_text: opt_text(120) = None
     vitals: Vitals = Field(default_factory=Vitals)
-    recent_medication_changes: str | None = Field(default=None, max_length=1500)
-    exam_findings: str | None = Field(default=None, max_length=2000)
-    investigations_ordered: str | None = Field(default=None, max_length=1500)
-    investigation_results: str | None = Field(default=None, max_length=2000)
-    clinician_assessment: str | None = Field(default=None, max_length=2000)
-    documented_cause: str | None = Field(default=None, max_length=1000)         # only if the treating clinician wrote one
-    contributing_factors: list[str] = Field(default_factory=list, max_length=20)  # only factors the clinician recorded as relevant
-    treatment_given: str | None = Field(default=None, max_length=2000)
-    response_to_treatment: str | None = Field(default=None, max_length=1500)
+    recent_medication_changes: opt_text(1500, multiline=True) = None
+    exam_findings: opt_text(2000, multiline=True) = None
+    investigations_ordered: opt_text(1500, multiline=True) = None
+    investigation_results: opt_text(2000, multiline=True) = None
+    clinician_assessment: opt_text(2000, multiline=True) = None
+    documented_cause: opt_text(1000, multiline=True) = None         # only if the treating clinician wrote one
+    contributing_factors: list[text(120)] = Field(default_factory=list, max_length=20)  # only factors the clinician recorded as relevant
+    treatment_given: opt_text(2000, multiline=True) = None
+    response_to_treatment: opt_text(1500, multiline=True) = None
     disposition: Literal["ADMITTED", "DISCHARGED", "TRANSFERRED", "OTHER"] | None = None
-    discharge_instructions: str | None = Field(default=None, max_length=2000)
-    follow_up_recommendations: str | None = Field(default=None, max_length=2000)
-    treating_clinician: str | None = Field(default=None, max_length=150)
-    source_report_ids: list[int] = Field(default_factory=list, max_length=20)
+    discharge_instructions: opt_text(2000, multiline=True) = None
+    follow_up_recommendations: opt_text(2000, multiline=True) = None
+    treating_clinician: opt_text(150) = None
+    source_report_ids: list[PositiveId] = Field(default_factory=list, max_length=20)
     timeline: list[TimelineEntryIn] = Field(default_factory=list, max_length=60)
 
     @model_validator(mode="after")
@@ -48,22 +49,22 @@ class EmergencyIn(BaseModel):
 
 
 class FollowUpIn(BaseModel):
-    title: str = Field(min_length=3, max_length=200)
-    details: str | None = Field(default=None, max_length=1000)
+    title: text(200, min_length=3)
+    details: opt_text(1000, multiline=True) = None
     due_date: date | None = None
     source_type: Literal["recommendation", "emergency", "assessment", "note", "report"] | None = None
-    source_id: int | None = None
+    source_id: PositiveId | None = None
 
 
 class FollowUpUpdate(BaseModel):
     status: Literal["PENDING", "DONE", "CANCELLED"]
-    outcome: str | None = Field(default=None, max_length=1000)
+    outcome: opt_text(1000, multiline=True) = None
 
 
 class ReviewIn(BaseModel):
-    item_key: str = Field(min_length=3, max_length=80)         # e.g. report:12, change:HbA1c, section:missing
+    item_key: text(80, min_length=3)         # e.g. report:12, change:HbA1c, section:missing
     action: Literal["REVIEWED", "INTERPRETATION", "CORRECTION", "MISSING_FLAG"]
-    text: str | None = Field(default=None, max_length=1500)
+    text: opt_text(1500, multiline=True) = None
 
     @model_validator(mode="after")
     def text_needed(self):

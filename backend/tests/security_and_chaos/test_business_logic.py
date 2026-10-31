@@ -22,7 +22,7 @@ def make_rx(client, world, qty=5):
 
 
 def audit(client, world, action=None):
-    return client.get("/api/admin/audit-logs?limit=1000" + (f"&action={action}" if action else ""), headers=world.admin).json()
+    return client.get("/api/admin/audit-logs?limit=200" + (f"&action={action}" if action else ""), headers=world.admin).json()
 
 
 def stock(client, world, name="Tab. Test", quantity=100, price=2.0):
@@ -141,7 +141,7 @@ ODD = [   # id, field, value, must be refused
     ("phone-300-digits", "phone", "9" * 300, True), ("dob-year-9999", "date_of_birth", "9999-12-31", True), ("dob-year-0001", "date_of_birth", "0001-01-01", True),
     ("dob-year-1800", "date_of_birth", "1800-01-01", True), ("dob-future-2999", "date_of_birth", "2999-01-01", True), ("address-100k-chars", "address", "x" * 100_000, True),
 ]
-MARKS = {"name-nul-byte": bust("X-02"), "dob-year-9999": bust("X-01"), "dob-year-0001": bust("X-01"), "dob-year-1800": bust("X-01"), "dob-future-2999": bust("X-01")}
+MARKS = {}      # X-01 (odd birth dates) and X-02 (NUL byte in a name) are fixed: all of these are refused now
 
 
 @pytest.mark.parametrize("field,value,refused", [pytest.param(f, v, r, id=i, marks=MARKS.get(i, [])) for i, f, v, r in ODD])

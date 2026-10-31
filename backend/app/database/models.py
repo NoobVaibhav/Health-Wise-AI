@@ -297,6 +297,7 @@ class MedicineInventory(Base):
     batch_number: Mapped[str | None] = mapped_column(String(50))
     quantity: Mapped[int] = mapped_column(Integer, default=0)
     expiry_date: Mapped[date | None] = mapped_column(Date)
+    manufacture_date: Mapped[date | None] = mapped_column(Date)      # optional; the expiry must be after it
     manufacturer: Mapped[str | None] = mapped_column(String(150))
     unit_price: Mapped[float | None] = mapped_column(Float)       # selling price of ONE unit, before GST
     barcode: Mapped[str | None] = mapped_column(String(64), index=True)   # printed on the pack (or made by the system)

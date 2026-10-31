@@ -13,6 +13,7 @@ from app.schemas.billing import (
 )
 from app.schemas.pharmacy import InventoryOut
 from app.services import audit_service, billing_service, prescription_service
+from app.utils.validators import PathId, SearchText
 
 router = APIRouter(prefix="/api/pharmacy", tags=["billing"])
 pharmacy_only = require_roles(PHARMACY)
@@ -45,14 +46,14 @@ def create_sale(data: SaleCreate, request: Request, user: User = Depends(pharmac
 
 
 @router.get("/prescriptions/{prescription_id}/bill-preview", response_model=BillPreview)
-def prescription_bill_preview(prescription_id: int, user: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
+def prescription_bill_preview(prescription_id: PathId, user: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
     """The bill for medicine of this prescription that was given but not billed yet."""
     rx = prescription_service.get_prescription_for_user(db, user, prescription_id)
     return billing_service.prescription_bill_preview(db, rx)
 
 
 @router.post("/prescriptions/{prescription_id}/bill", response_model=SaleOut, status_code=status.HTTP_201_CREATED)
-def bill_prescription(prescription_id: int, data: PrescriptionBillRequest, request: Request,
+def bill_prescription(prescription_id: PathId, data: PrescriptionBillRequest, request: Request,
                       user: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
     """Make the bill for the medicine already given on a prescription. The stock is not touched again."""
     rx = prescription_service.get_prescription_for_user(db, user, prescription_id)
@@ -68,13 +69,13 @@ def sales_summary(_: User = Depends(pharmacy_only), db: Session = Depends(get_db
 
 
 @router.get("/sales", response_model=list[SaleListItem])
-def list_sales(q: str | None = None, day: date | None = None, _: User = Depends(pharmacy_only),
+def list_sales(q: SearchText = None, day: date | None = None, _: User = Depends(pharmacy_only),
                db: Session = Depends(get_db)):
     return billing_service.list_sales(db, q, day)
 
 
 @router.get("/sales/{sale_id}", response_model=SaleOut)
-def get_sale(sale_id: int, _: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
+def get_sale(sale_id: PathId, _: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
     sale = db.get(Sale, sale_id)
     if sale is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Bill not found.")

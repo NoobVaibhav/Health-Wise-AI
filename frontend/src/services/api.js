@@ -40,6 +40,15 @@ api.interceptors.response.use(
   }
 );
 
+/** { field: message } from a 422 answer of the server, to show each message under its own field. */
+export function getFieldErrors(error) {
+  const rows = error?.response?.data?.errors;
+  if (!Array.isArray(rows)) return {};
+  const out = {};
+  for (const r of rows) if (r.field && !out[r.field]) out[r.field] = r.message;
+  return out;
+}
+
 /** Never show a bare "Failed to fetch" / "Network Error": always return a useful sentence. */
 export function getErrorMessage(error) {
   if (error.response) {
@@ -48,8 +57,8 @@ export function getErrorMessage(error) {
     if (error.response.status === 404 && detail === "Not Found") {
       return "The server does not know this feature yet. The backend was probably started before the latest update. Please stop it and start it again (uvicorn app.main:app --reload).";
     }
-    if (typeof detail === "string") return detail;
-    if (Array.isArray(detail)) return detail.map((d) => d.msg).join(". ");
+    if (typeof detail === "string") return detail;                                    // the server writes one readable sentence for invalid input (422)
+    if (Array.isArray(detail)) return [...new Set(detail.map((d) => String(d.msg || "").replace(/^Value error, /, "")))].join(" ");
     return "Something went wrong while processing your request. Please try again.";
   }
   if (error.code === "ECONNABORTED") {

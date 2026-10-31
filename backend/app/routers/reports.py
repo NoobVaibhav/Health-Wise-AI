@@ -22,7 +22,8 @@ from app.services import audit_service, report_service
 from app.services.report_parser import names_match
 from app.services.report_processor import process_report
 from app.services.serializers import analysis_visible_to, report_detail, report_list_item
-from app.utils.file_validation import get_extension, validate_size
+from app.utils.file_validation import get_extension, safe_filename, validate_size
+from app.utils.validators import PathId, QueryId
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
@@ -56,7 +57,7 @@ def upload_report(
         if db.get(Doctor, review_doctor_id) is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Doctor not found.")
 
-    filename = Path(file.filename or "report").name
+    filename = safe_filename(file.filename)
     content = file.file.read(settings.max_file_size + 1)
     validate_size(content, settings.max_file_size)
 
@@ -87,25 +88,25 @@ def upload_report(
 
 
 @router.get("", response_model=list[ReportListItem])
-def list_reports(patient_id: int | None = None, user: User = Depends(get_current_user),
+def list_reports(patient_id: QueryId = None, user: User = Depends(get_current_user),
                  db: Session = Depends(get_db)):
     reports = report_service.list_reports_for_user(db, user, patient_id)
     return [report_list_item(r) for r in reports]
 
 
 @router.get("/{report_id}", response_model=ReportDetail)
-def get_report(report_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_report(report_id: PathId, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     report = report_service.get_report_for_user(db, user, report_id)
     return report_detail(report, user.role)
 
 
 @router.get("/{report_id}/analysis", response_model=ReportDetail)
-def get_analysis(report_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_analysis(report_id: PathId, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return get_report(report_id, user, db)
 
 
 @router.post("/{report_id}/insights/refresh", response_model=ReportDetail)
-def refresh_insights(report_id: int, request: Request, user: User = Depends(require_roles(DOCTOR)),
+def refresh_insights(report_id: PathId, request: Request, user: User = Depends(require_roles(DOCTOR)),
                      db: Session = Depends(get_db)):
     """The doctor asks for the suggestions to be generated again (for example after an AI key was added)."""
     report = report_service.get_report_for_user(db, user, report_id)
@@ -115,7 +116,7 @@ def refresh_insights(report_id: int, request: Request, user: User = Depends(requ
 
 
 @router.delete("/{report_id}")
-def delete_report(report_id: int, request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_report(report_id: PathId, request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Delete a report that was uploaded by mistake (wrong patient or wrong file). The action is written to the audit log."""
     report = report_service.get_report_for_user(db, user, report_id)
     if not report_service.can_delete(user, report):
@@ -128,7 +129,7 @@ def delete_report(report_id: int, request: Request, user: User = Depends(get_cur
 
 
 @router.get("/{report_id}/file")
-def download_file(report_id: int, request: Request, user: User = Depends(get_current_user),
+def download_file(report_id: PathId, request: Request, user: User = Depends(get_current_user),
                   db: Session = Depends(get_db)):
     """The original file is private: it is only served to authorized users through this endpoint."""
     report = report_service.get_report_for_user(db, user, report_id)

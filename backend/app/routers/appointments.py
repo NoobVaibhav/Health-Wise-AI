@@ -14,6 +14,8 @@ from app.database.models import Appointment, Department, Doctor, Patient, User
 from app.schemas.appointment import STATUSES, AppointmentCreate, AppointmentOut, AppointmentUpdate
 from app.services import audit_service
 from app.services.serializers import appointment_out
+from app.utils.validators import PathId, QueryId, one_of
+STATUS_FILTER = one_of("SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", name="status")
 
 router = APIRouter(prefix="/api/appointments", tags=["appointments"])
 
@@ -53,7 +55,7 @@ def create_appointment(data: AppointmentCreate, request: Request, user: User = D
 
 
 @router.get("", response_model=list[AppointmentOut])
-def list_appointments(day: date | None = None, status_filter: str | None = None, patient_id: int | None = None,
+def list_appointments(day: date | None = None, status_filter: STATUS_FILTER = None, patient_id: QueryId = None,
                       user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     query = select(Appointment)
     if user.role == PATIENT:
@@ -74,7 +76,7 @@ def list_appointments(day: date | None = None, status_filter: str | None = None,
 
 
 @router.put("/{appointment_id}", response_model=AppointmentOut)
-def update_appointment(appointment_id: int, data: AppointmentUpdate, request: Request,
+def update_appointment(appointment_id: PathId, data: AppointmentUpdate, request: Request,
                        user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     appointment = db.get(Appointment, appointment_id)
     if appointment is None:

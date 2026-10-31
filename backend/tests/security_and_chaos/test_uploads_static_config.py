@@ -151,7 +151,6 @@ def test_errors_never_show_a_stack_trace_or_a_file_path(client, world):
         assert "Traceback" not in r.text and "site-packages" not in r.text and "D:\\" not in r.text and ".py" not in r.text, r.text[:200]
 
 
-@bust("D-01")
 def test_a_huge_request_body_is_refused_before_it_is_read_into_memory(client):
     """No limit on the size of a JSON body: a 30 MB login request is read and parsed in full."""
     body = b'{"email":"a@b.co","password":"' + b"x" * 30_000_000 + b'"}'
@@ -159,7 +158,6 @@ def test_a_huge_request_body_is_refused_before_it_is_read_into_memory(client):
     assert r.status_code in (413, 422), r.status_code
 
 
-@bust("J-01")
 def test_deeply_nested_json_is_a_client_error_not_a_crash(client, world):
     quiet = TestClient(app, raise_server_exceptions=False)
     for depth in (1000, 100_000):

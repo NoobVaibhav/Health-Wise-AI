@@ -1,4 +1,5 @@
 """Login, current user, password change, and one-time creation of the first administrator."""
+import math
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -7,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.permissions import get_current_user
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import create_access_token, hash_password, is_current_hash, verify_password
 from app.database.connection import get_db
 from app.database.models import AuditLog, User, utcnow
 from app.schemas.auth import (
@@ -15,6 +16,7 @@ from app.schemas.auth import (
 )
 from app.services import audit_service, user_service
 from app.services.profile_service import avatar_version
+from app.utils.validators import NO_NAME_IN_PASSWORD, password_has_email_name
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -43,24 +45,36 @@ def register_first_admin(data: FirstAdminRequest, request: Request, db: Session 
 
 
 LOCK_MINUTES = 15
-MAX_FAILS_PER_EMAIL = 5
-MAX_FAILS_PER_IP = 30
+MAX_FAILS_PER_EMAIL_AND_IP = 5       # one person typing a wrong password again and again from one place
+MAX_FAILS_PER_EMAIL = 30             # the same account attacked from many places
+MAX_FAILS_PER_IP = 30                # one place trying many accounts
 
 
-def _too_many_failures(db: Session, email: str, ip: str | None) -> bool:
-    """Brute-force guard: counts recent failed logins in the audit log (so it survives restarts and several workers)."""
+def minutes_until_unlocked(db: Session, email: str, ip: str | None) -> int:
+    """0 when the login may be tried, else the number of minutes to wait. Counts recent failed logins in the audit log (so it survives restarts
+    and several workers). The lock is per e-mail AND address: somebody else typing wrong passwords for your e-mail from another place cannot lock YOU out."""
     since = utcnow() - timedelta(minutes=LOCK_MINUTES)
-    base = select(func.count(AuditLog.id)).where(AuditLog.action == audit_service.LOGIN_FAILED, AuditLog.timestamp >= since)
-    if (db.scalar(base.where(AuditLog.details == email)) or 0) >= MAX_FAILS_PER_EMAIL:
-        return True
-    return bool(ip) and (db.scalar(base.where(AuditLog.ip_address == ip)) or 0) >= MAX_FAILS_PER_IP
+    base = select(AuditLog.timestamp).where(AuditLog.action == audit_service.LOGIN_FAILED, AuditLog.timestamp >= since)
+    checks = [(base.where(AuditLog.details == email, AuditLog.ip_address == ip) if ip else base.where(AuditLog.details == email), MAX_FAILS_PER_EMAIL_AND_IP),
+              (base.where(AuditLog.details == email), MAX_FAILS_PER_EMAIL)]
+    if ip:
+        checks.append((base.where(AuditLog.ip_address == ip), MAX_FAILS_PER_IP))
+    wait = 0
+    for query, limit in checks:
+        times = sorted(db.scalars(query.order_by(AuditLog.timestamp)))
+        if len(times) >= limit:
+            unlock = times[len(times) - limit] + timedelta(minutes=LOCK_MINUTES)       # when the failure that made it "too many" leaves the window
+            wait = max(wait, math.ceil((unlock - utcnow()).total_seconds() / 60))
+    return max(wait, 1) if wait > 0 else 0
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     email = data.email.lower()
-    if _too_many_failures(db, email, request.client.host if request.client else None):
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, f"Too many failed attempts. Please wait {LOCK_MINUTES} minutes and try again.")
+    wait = minutes_until_unlocked(db, email, request.client.host if request.client else None)
+    if wait:
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, f"Too many failed attempts. Please try again in {wait} minute{'s' if wait != 1 else ''}.",
+                            headers={"Retry-After": str(wait * 60)})
     user = db.scalar(select(User).where(User.email == email))
     # Same message for unknown email and wrong password, so attackers cannot find out which emails exist.
     if not user or not verify_password(data.password, user.password_hash):
@@ -69,6 +83,9 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect email or password.")
     if not user.is_active:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This account has been deactivated. Please contact the admin.")
+    if not is_current_hash(user.password_hash):          # an older password record: save it again in the stronger form
+        user.password_hash = hash_password(data.password)
+        db.commit()
     audit_service.log_action(db, user, audit_service.LOGIN, "user", user.id, request)
     return TokenResponse(access_token=create_access_token(user.id, user.password_hash), user=user_out(user))
 
@@ -87,6 +104,8 @@ def change_password(data: ChangePasswordRequest, request: Request, user: User = 
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The new password must be different from the current one.")
     if data.new_password == get_settings().default_password:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Please choose your own password, not the starting password.")
+    if password_has_email_name(data.new_password, user.email):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT if hasattr(status, "HTTP_422_UNPROCESSABLE_CONTENT") else 422, NO_NAME_IN_PASSWORD)
     user.password_hash = hash_password(data.new_password)
     user.must_change_password = False
     db.commit()

@@ -94,16 +94,18 @@ def test_brute_force_is_stopped_and_the_attacker_cannot_tell_which_emails_exist(
     assert known.json() == exists.json() and known.status_code == exists.status_code == 401
 
 
-@bust("A-01")
 def test_the_lockout_cannot_be_used_to_lock_the_real_owner_out_from_anywhere(client, world):
-    """Locking is per email: anyone can lock a victim out by sending wrong passwords. The correct password of the owner must still get in
-    (or the lock must be per source). Today it does not."""
+    """The lock is per e-mail AND source address: a stranger sending wrong passwords from his own place does not lock the owner out (was A-01)."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    stranger = TestClient(app, client=("203.0.113.9", 4000))
     for i in range(12):
-        client.post("/api/auth/login", json={"email": "anjali@hospital.example.com", "password": f"wrong{i}"})
-    assert client.post("/api/auth/login", json={"email": "anjali@hospital.example.com", "password": PASSWORD}).status_code == 200
+        stranger.post("/api/auth/login", json={"email": "anjali@hospital.example.com", "password": f"wrong{i}"})
+    assert stranger.post("/api/auth/login", json={"email": "anjali@hospital.example.com", "password": PASSWORD}).status_code == 429
+    owner = TestClient(app, client=("198.51.100.1", 4000))
+    assert owner.post("/api/auth/login", json={"email": "anjali@hospital.example.com", "password": PASSWORD}).status_code == 200
 
 
-@bust("A-02")
 def test_two_passwords_that_share_their_first_72_bytes_are_not_the_same_password(client, world):
     long_pw = "A1" + "x" * 70
     assert client.post("/api/auth/change-password", headers=world.employee, json={"current_password": PASSWORD, "new_password": long_pw + "-original"}).status_code == 200
@@ -111,10 +113,9 @@ def test_two_passwords_that_share_their_first_72_bytes_are_not_the_same_password
     assert r.status_code == 401
 
 
-@bust("A-03")
 def test_an_absurdly_long_password_is_refused_before_it_reaches_the_hasher(client, world):
     r = client.post("/api/auth/login", json={"email": "priya@hospital.example.com", "password": "p" * 2_000_000})
-    assert r.status_code == 422
+    assert r.status_code in (413, 422)         # too big for the request limit, or over the 128 characters allowed for a password
 
 
 def test_extra_fields_cannot_make_an_account_more_powerful(client, world):
@@ -150,7 +151,7 @@ def test_two_people_registering_at_the_same_moment_cannot_both_become_the_first_
     def go(i):
         c = TestClient(app)
         barrier.wait()
-        results.append(c.post("/api/auth/register", json={"email": f"race{i}@example.com", "full_name": f"Racer {i}", "password": PASSWORD}).status_code)
+        results.append(c.post("/api/auth/register", json={"email": f"race{i}@example.com", "full_name": f"Racer {chr(65 + i)}", "password": PASSWORD}).status_code)
 
     threads = [threading.Thread(target=go, args=(i,)) for i in range(6)]
     [t.start() for t in threads]

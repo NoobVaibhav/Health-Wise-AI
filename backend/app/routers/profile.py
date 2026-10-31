@@ -8,6 +8,7 @@ from app.database.connection import get_db
 from app.database.models import User
 from app.schemas.profile import ProfileOut, ProfileUpdate
 from app.services import audit_service, profile_service
+from app.utils.validators import PathId
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
@@ -42,7 +43,7 @@ def delete_avatar(request: Request, user: User = Depends(get_current_user), db: 
 
 
 @router.get("/avatar/{user_id}")
-def get_avatar(user_id: int, viewer: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_avatar(user_id: PathId, viewer: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """The picture file. Sent only to people allowed to see it, and only through this authorised call."""
     target = db.get(User, user_id)
     if target is None:

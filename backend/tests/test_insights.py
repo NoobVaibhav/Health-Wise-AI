@@ -215,7 +215,7 @@ def test_refresh_insights_is_doctor_only(client, world):
     assert client.post(url, headers=world.doctor).status_code == 200
     for who in (world.patient, world.employee, world.pharmacy, world.admin, world.other_doctor):
         assert client.post(url, headers=who).status_code == 403
-    logs = client.get("/api/admin/audit-logs?limit=500", headers=world.admin).json()
+    logs = client.get("/api/admin/audit-logs?limit=200", headers=world.admin).json()
     assert "INSIGHTS_REFRESHED" in {l["action"] for l in logs}
 
 

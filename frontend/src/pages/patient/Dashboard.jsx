@@ -32,10 +32,11 @@ export default function PatientDashboard() {
       </Hero>
 
       <QuickActions items={[
+        { to: "/patient/appointments", icon: CalendarClock, label: "Appointments", hint: a ? `Next: ${fmtDateTime(a.scheduled_at)}` : "None booked" },
         { to: "/patient/reports", icon: FileText, label: "My Reports", hint: "Lab results explained" },
         { to: "/patient/prescriptions", icon: Pill, label: "My Medicines", hint: `${d.active_prescriptions.length} active` },
         { to: "/patient/history", icon: History, label: "My Timeline", hint: "Everything in order" },
-        { to: "/patient/appointments", icon: CalendarClock, label: "Appointments", hint: a ? `Next: ${fmtDateTime(a.scheduled_at)}` : "None booked" },
+        
       ]} />
 
       {r && (

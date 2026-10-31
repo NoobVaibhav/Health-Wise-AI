@@ -2,6 +2,7 @@
 Also holds report comparison and trend charts for one patient."""
 import json
 
+import re
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -16,6 +17,7 @@ from app.schemas.patient import PatientBasic, PatientCreate, PatientCreated, Pat
 from app.services import audit_service, report_service, user_service
 from app.services.comparison_engine import compare_reports
 from app.services.serializers import patient_basic, patient_for_role, report_list_item
+from app.utils.validators import PathId, SearchText
 
 router = APIRouter(prefix="/api/patients", tags=["patients"])
 reception = require_roles(EMPLOYEE, ADMIN)
@@ -30,7 +32,7 @@ def register_patient(data: PatientCreate, request: Request, user: User = Depends
 
 
 @router.get("", response_model=list[PatientBasic])
-def list_patients(q: str | None = None, user: User = Depends(require_roles(ADMIN, EMPLOYEE, DOCTOR)),
+def list_patients(q: SearchText = None, user: User = Depends(require_roles(ADMIN, EMPLOYEE, DOCTOR)),
                   db: Session = Depends(get_db)):
     """Search by name, patient id, phone or email. Doctors only get their own authorized patients."""
     query = select(Patient).join(User, Patient.user_id == User.id).order_by(User.full_name)
@@ -45,13 +47,13 @@ def list_patients(q: str | None = None, user: User = Depends(require_roles(ADMIN
 
 
 @router.get("/{patient_id}", response_model=PatientFull | PatientBasic)
-def get_patient(patient_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_patient(patient_id: PathId, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     patient = get_accessible_patient(db, user, patient_id, clinical=False)
     return patient_for_role(patient, user.role)
 
 
 @router.put("/{patient_id}", response_model=PatientBasic)
-def update_patient(patient_id: int, data: PatientUpdate, request: Request, user: User = Depends(reception),
+def update_patient(patient_id: PathId, data: PatientUpdate, request: Request, user: User = Depends(reception),
                    db: Session = Depends(get_db)):
     patient = get_accessible_patient(db, user, patient_id, clinical=False)
     changes = data.model_dump(exclude_unset=True)
@@ -61,6 +63,10 @@ def update_patient(patient_id: int, data: PatientUpdate, request: Request, user:
     if "full_name" in changes and changes["full_name"]:
         patient.user.full_name = changes.pop("full_name").strip()
     changes.pop("full_name", None)
+    own = re.sub(r"\D", "", (changes.get("phone") if "phone" in changes else patient.phone) or "")[-10:]
+    contact = re.sub(r"\D", "", (changes.get("emergency_contact") if "emergency_contact" in changes else patient.emergency_contact) or "")[-10:]
+    if len(own) >= 10 and own == contact:        # the same rule as when a patient is created: the contact is somebody else
+        raise HTTPException(422, "The emergency contact must be a different person: it has the patient's own phone number.")
     # Reception staff may update basic details only. Clinical fields are ignored here.
     for clinical_field in ("blood_group", "allergies", "medical_history_text", "current_medications"):
         changes.pop(clinical_field, None)
@@ -81,7 +87,7 @@ def _comparable_reports(db: Session, user: User, patient: Patient) -> list[Healt
 
 
 @router.get("/{patient_id}/comparison")
-def compare(patient_id: int, previous: int | None = None, latest: int | None = None,
+def compare(patient_id: PathId, previous: int | None = None, latest: int | None = None,
             user: User = Depends(require_roles(DOCTOR, PATIENT)), db: Session = Depends(get_db)):
     """Compare two reports of one patient (default: the two newest)."""
     patient = get_accessible_patient(db, user, patient_id)
@@ -117,7 +123,7 @@ def compare(patient_id: int, previous: int | None = None, latest: int | None = N
 
 
 @router.get("/{patient_id}/trends")
-def trend_parameters(patient_id: int, user: User = Depends(require_roles(DOCTOR, PATIENT)),
+def trend_parameters(patient_id: PathId, user: User = Depends(require_roles(DOCTOR, PATIENT)),
                      db: Session = Depends(get_db)):
     patient = get_accessible_patient(db, user, patient_id)
     counts: dict[str, int] = {}
@@ -128,7 +134,7 @@ def trend_parameters(patient_id: int, user: User = Depends(require_roles(DOCTOR,
 
 
 @router.get("/{patient_id}/trends/{parameter_name}")
-def parameter_trend(patient_id: int, parameter_name: str, user: User = Depends(require_roles(DOCTOR, PATIENT)),
+def parameter_trend(patient_id: PathId, parameter_name: str, user: User = Depends(require_roles(DOCTOR, PATIENT)),
                     db: Session = Depends(get_db)):
     patient = get_accessible_patient(db, user, patient_id)
     points, unit = [], None

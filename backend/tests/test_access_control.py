@@ -72,8 +72,8 @@ def test_admin_has_no_clinical_access(client, world):
 
 def test_employee_cannot_change_clinical_fields(client, world):
     changed = client.put(f"/api/patients/{world.patient_id}", headers=world.employee, json={
-        "phone": "1111111111", "allergies": "Changed!", "current_medications": "Changed!"})
-    assert changed.status_code == 200 and changed.json()["phone"] == "1111111111"
+        "phone": "9111111111", "allergies": "Changed!", "current_medications": "Changed!"})
+    assert changed.status_code == 200 and changed.json()["phone"] == "9111111111"
     clinical = client.get(f"/api/patients/{world.patient_id}", headers=world.doctor).json()
     assert clinical["allergies"] == "None known" and clinical["current_medications"] is None
 

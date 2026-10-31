@@ -1,30 +1,53 @@
+import re
 from datetime import date
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, model_validator
+
+from app.utils.validators import (
+    Address, BloodGroup, DateOfBirth, Email, Gender, OptionalPhone, PersonName, Password, PositiveId, check_password, normalise_phone, opt_text, password_has_email_name,
+    NO_NAME_IN_PASSWORD,
+)
+
+
+def _digits(value: str | None) -> str:
+    return re.sub(r"\D", "", value or "")[-10:]
 
 
 class PatientFields(BaseModel):
-    date_of_birth: date | None = None
-    gender: str | None = Field(default=None, max_length=30)
-    phone: str | None = Field(default=None, max_length=30)
-    address: str | None = Field(default=None, max_length=300)
-    emergency_contact: str | None = Field(default=None, max_length=150)
+    date_of_birth: DateOfBirth = None
+    gender: Gender = None
+    phone: OptionalPhone = None
+    address: Address = None
+    emergency_contact: opt_text(150) = None
     # voluntary clinical details
-    blood_group: str | None = Field(default=None, max_length=10)
-    allergies: str | None = Field(default=None, max_length=1000)
-    medical_history_text: str | None = Field(default=None, max_length=3000)
-    current_medications: str | None = Field(default=None, max_length=1000)
-    assigned_doctor_id: int | None = None
+    blood_group: BloodGroup = None
+    allergies: opt_text(1000, multiline=True) = None
+    medical_history_text: opt_text(3000, multiline=True) = None
+    current_medications: opt_text(1000, multiline=True) = None
+    assigned_doctor_id: PositiveId | None = None
+
+    @model_validator(mode="after")
+    def emergency_contact_is_someone_else(self):
+        """The emergency contact is a person to call when the patient cannot answer: it must not be the patient's own number."""
+        if self.phone and self.emergency_contact and len(_digits(self.phone)) >= 10 and _digits(self.phone) == _digits(self.emergency_contact):
+            raise ValueError("The emergency contact must be a different person: it has the patient's own phone number.")
+        return self
 
 
 class PatientCreate(PatientFields):
-    email: EmailStr
-    full_name: str = Field(min_length=2, max_length=150)
-    password: str | None = Field(default=None, min_length=8, max_length=128)  # generated when empty
+    email: Email
+    full_name: PersonName
+    password: Password | None = None  # generated when empty
+
+    @model_validator(mode="after")
+    def not_the_email(self):
+        if self.password and password_has_email_name(self.password, self.email):
+            raise ValueError(NO_NAME_IN_PASSWORD)
+        return self
 
 
 class PatientUpdate(PatientFields):
-    full_name: str | None = Field(default=None, min_length=2, max_length=150)
+    full_name: PersonName | None = None
 
 
 class PatientBasic(BaseModel):
