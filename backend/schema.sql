@@ -152,6 +152,22 @@ CREATE TABLE patients (
 
 CREATE UNIQUE INDEX ix_patients_patient_code ON patients (patient_code);
 
+CREATE TABLE trainees (
+	id SERIAL NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	department_id INTEGER, 
+	trainee_type VARCHAR(15) NOT NULL, 
+	year_branch VARCHAR(120), 
+	supervisor_id INTEGER, 
+	phone VARCHAR(30), 
+	PRIMARY KEY (id), 
+	UNIQUE (user_id), 
+	FOREIGN KEY(user_id) REFERENCES users (id), 
+	FOREIGN KEY(department_id) REFERENCES departments (id), 
+	FOREIGN KEY(supervisor_id) REFERENCES doctors (id)
+);
+
+
 CREATE TABLE appointments (
 	id SERIAL NOT NULL, 
 	patient_id INTEGER NOT NULL, 
@@ -458,6 +474,28 @@ CREATE TABLE summary_reviews (
 CREATE INDEX ix_summary_reviews_item_key ON summary_reviews (item_key);
 CREATE INDEX ix_summary_reviews_patient_id ON summary_reviews (patient_id);
 
+CREATE TABLE trainee_histories (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	trainee_id INTEGER NOT NULL, 
+	status VARCHAR(15) NOT NULL, 
+	data_json TEXT, 
+	doctor_notes TEXT, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	completed_at TIMESTAMP WITHOUT TIME ZONE, 
+	verified_by INTEGER, 
+	verified_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(trainee_id) REFERENCES trainees (id), 
+	FOREIGN KEY(verified_by) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_trainee_histories_patient_id ON trainee_histories (patient_id);
+CREATE INDEX ix_trainee_histories_status ON trainee_histories (status);
+CREATE INDEX ix_trainee_histories_trainee_id ON trainee_histories (trainee_id);
+
 CREATE TABLE doctor_notes (
 	id SERIAL NOT NULL, 
 	patient_id INTEGER NOT NULL, 
@@ -587,6 +625,38 @@ CREATE TABLE prescriptions (
 CREATE INDEX ix_prescriptions_doctor_id ON prescriptions (doctor_id);
 CREATE INDEX ix_prescriptions_patient_id ON prescriptions (patient_id);
 
+CREATE TABLE referrals (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	trainee_id INTEGER NOT NULL, 
+	doctor_id INTEGER NOT NULL, 
+	history_id INTEGER NOT NULL, 
+	reason VARCHAR(300) NOT NULL, 
+	urgent BOOLEAN NOT NULL, 
+	status VARCHAR(15) NOT NULL, 
+	suggested_department_id INTEGER, 
+	overridden BOOLEAN NOT NULL, 
+	appointment_id INTEGER, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	seen_at TIMESTAMP WITHOUT TIME ZONE, 
+	completed_at TIMESTAMP WITHOUT TIME ZONE, 
+	supervisor_reviewed_at TIMESTAMP WITHOUT TIME ZONE, 
+	supervisor_note VARCHAR(500), 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(trainee_id) REFERENCES trainees (id), 
+	FOREIGN KEY(doctor_id) REFERENCES doctors (id), 
+	FOREIGN KEY(history_id) REFERENCES trainee_histories (id), 
+	FOREIGN KEY(suggested_department_id) REFERENCES departments (id), 
+	FOREIGN KEY(appointment_id) REFERENCES appointments (id)
+);
+
+CREATE INDEX ix_referrals_doctor_id ON referrals (doctor_id);
+CREATE INDEX ix_referrals_history_id ON referrals (history_id);
+CREATE INDEX ix_referrals_patient_id ON referrals (patient_id);
+CREATE INDEX ix_referrals_status ON referrals (status);
+CREATE INDEX ix_referrals_trainee_id ON referrals (trainee_id);
+
 CREATE TABLE report_comparisons (
 	id SERIAL NOT NULL, 
 	patient_id INTEGER NOT NULL, 
@@ -641,6 +711,19 @@ CREATE TABLE surgery_records (
 
 CREATE INDEX ix_surgery_records_admission_id ON surgery_records (admission_id);
 CREATE INDEX ix_surgery_records_patient_id ON surgery_records (patient_id);
+
+CREATE TABLE trainee_history_revisions (
+	id SERIAL NOT NULL, 
+	history_id INTEGER NOT NULL, 
+	changed_by INTEGER, 
+	data_json TEXT, 
+	changed_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(history_id) REFERENCES trainee_histories (id), 
+	FOREIGN KEY(changed_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_trainee_history_revisions_history_id ON trainee_history_revisions (history_id);
 
 CREATE TABLE lab_test_orders (
 	id SERIAL NOT NULL, 

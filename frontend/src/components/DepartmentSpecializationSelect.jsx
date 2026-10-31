@@ -7,7 +7,7 @@ import { FormField } from "./FormField";
 import { Select } from "./ui";
 
 export default function DepartmentSpecializationSelect({
-  departmentId, specializationId, onChange, departmentRequired = false, disabled = false, departmentError, specializationError, legacyText, idPrefix = "",
+  departmentId, specializationId, onChange, departmentRequired = false, disabled = false, departmentError, specializationError, legacyText, idPrefix = "", showSpecialization = true,
 }) {
   const [departments, setDepartments] = useState(null);
   const [departmentsProblem, setDepartmentsProblem] = useState("");
@@ -24,7 +24,7 @@ export default function DepartmentSpecializationSelect({
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     setSpecializationsProblem("");
-    if (!departmentId) { setSpecializations(null); setLoading(false); return undefined; }
+    if (!departmentId || !showSpecialization) { setSpecializations(null); setLoading(false); return undefined; }
     let current = true;                                              // an older answer must not replace a newer one
     setLoading(true);
     getSpecializations(Number(departmentId))
@@ -32,7 +32,7 @@ export default function DepartmentSpecializationSelect({
       .catch((err) => { if (current) setSpecializationsProblem(getErrorMessage(err)); })       // the chosen value stays
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; };
-  }, [departmentId, attempt]);
+  }, [departmentId, attempt, showSpecialization]);
 
   const departmentName = `${idPrefix}department_id`;
   const specializationName = `${idPrefix}specialization_id`;
@@ -51,7 +51,7 @@ export default function DepartmentSpecializationSelect({
       </FormField>
       {departmentsProblem && <button type="button" onClick={loadDepartments} className="-mt-2 text-sm font-semibold text-sky-700 underline">Try again</button>}
 
-      <FormField label="Specialization" name={specializationName} error={specializationError || specializationsProblem}
+      {showSpecialization && <FormField label="Specialization" name={specializationName} error={specializationError || specializationsProblem}
         hint={empty ? "No specializations for this department yet" : !departmentId ? "Choose a department first" : legacyText && !specializationId ? `Current (old entry): ${legacyText}. Choose one from the list to replace it.` : undefined}>
         <Select disabled={disabled || !departmentId || loading} value={specializationId || ""}
           onChange={(e) => onChange({ department_id: departmentId || "", specialization_id: e.target.value })}>
@@ -59,8 +59,8 @@ export default function DepartmentSpecializationSelect({
           {missingChosen && <option value={specializationId}>(current choice, no longer listed)</option>}
           {options.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </Select>
-      </FormField>
-      {specializationsProblem && <button type="button" onClick={() => setAttempt((n) => n + 1)} className="-mt-2 text-sm font-semibold text-sky-700 underline">Try again</button>}
+      </FormField>}
+      {showSpecialization && specializationsProblem && <button type="button" onClick={() => setAttempt((n) => n + 1)} className="-mt-2 text-sm font-semibold text-sky-700 underline">Try again</button>}
     </>
   );
 }

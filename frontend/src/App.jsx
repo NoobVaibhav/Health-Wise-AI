@@ -44,6 +44,11 @@ import PatientPrescriptions from "./pages/patient/Prescriptions";
 
 import TestOrders from "./pages/lab/TestOrders";
 import LabWorklist from "./pages/lab/Worklist";
+import TraineeDashboard from "./pages/trainee/Dashboard";
+import TraineeTakeHistory from "./pages/trainee/TakeHistory";
+import TraineeSelectDoctor from "./pages/trainee/SelectDoctor";
+import TraineeReferrals from "./pages/trainee/MyReferrals";
+import DoctorReferrals from "./pages/doctor/Referrals";
 import PharmacyDashboard from "./pages/pharmacy/Dashboard";
 import Billing from "./pages/pharmacy/Billing";
 import Bills from "./pages/pharmacy/Bills";
@@ -78,6 +83,7 @@ export default function App() {
             <Route path="employees" element={<StaffManager kind="employees" />} />
             <Route path="pharmacy-staff" element={<StaffManager kind="pharmacy-staff" />} />
             <Route path="lab-staff" element={<StaffManager kind="lab-staff" />} />
+            <Route path="trainees" element={<StaffManager kind="trainees" />} />
             <Route path="profile" element={<Profile />} />
             <Route path="patients" element={<PatientsList />} />
             <Route path="appointments" element={<Appointments />} />
@@ -95,6 +101,7 @@ export default function App() {
             <Route path="appointments" element={<Appointments />} />
             <Route path="reports" element={<ReportsList base="/doctor/reports" pendingOnly title="Reports to Review" subtitle="Reports waiting for your review" />} />
             <Route path="reports/:id" element={<ReportReview />} />
+            <Route path="referrals" element={<DoctorReferrals />} />
             <Route path="notes" element={<DoctorNotes />} />
             <Route path="recommendations" element={<DoctorRecommendations />} />
             <Route path="prescriptions" element={<DoctorPrescriptions />} />
@@ -110,6 +117,15 @@ export default function App() {
             <Route path="reports" element={<ReportsList base="/employee/reports" title="Reports" subtitle="Upload status of reports. Clinical values are visible to the doctor and the patient." />} />
             <Route path="reports/:id" element={<ReportDetails />} />
             <Route path="tests" element={<TestOrders />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
+
+          <Route path="/trainee" element={<RoleRoute roles={["TRAINEE"]} />}>
+            <Route index element={<TraineeDashboard />} />
+            <Route path="take-history" element={<TraineeTakeHistory />} />
+            <Route path="take-history/:patientId" element={<TraineeTakeHistory />} />
+            <Route path="select-doctor/:historyId" element={<TraineeSelectDoctor />} />
+            <Route path="referrals" element={<TraineeReferrals />} />
             <Route path="profile" element={<Profile />} />
           </Route>
 

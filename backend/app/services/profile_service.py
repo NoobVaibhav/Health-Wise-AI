@@ -21,14 +21,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY
-from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, User
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, TRAINEE
+from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, Trainee, User
 from app.utils.validators import clean_text, normalise_phone
 from app.schemas.profile import ProfileField, ProfileOut, ProfileUpdate, ProfileUser
 
 ROLE_LABELS = {ADMIN: "Administrator", DOCTOR: "Doctor", EMPLOYEE: "Hospital employee", PATIENT: "Patient",
-               PHARMACY: "Pharmacy staff", LAB: "Laboratory staff"}
-PROFILE_MODEL = {DOCTOR: Doctor, EMPLOYEE: Employee, PATIENT: Patient, PHARMACY: PharmacyStaff, LAB: LabStaff}
+               PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", TRAINEE: "Intern / PG student"}
+PROFILE_MODEL = {DOCTOR: Doctor, EMPLOYEE: Employee, PATIENT: Patient, PHARMACY: PharmacyStaff, LAB: LabStaff, TRAINEE: Trainee}
 PHONE_RE = re.compile(r"^[0-9+\-() ]{7,20}$")
 
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
@@ -82,6 +82,13 @@ FIELDS: dict[str, list[Spec]] = {
         Spec("lab_name", "Laboratory name", help="Set by the hospital admin."),
         Spec("registration_number", "Registration number", editable=True, max_length=50),
         Spec("address", "Address", kind="textarea", editable=True, max_length=300),
+    ],
+    TRAINEE: [
+        Spec("phone", "Phone", editable=True, max_length=20),
+        Spec("trainee_type", "Role", help="Set by the hospital admin.", getter=lambda t: "Intern" if t.trainee_type == "INTERN" else "PG student"),
+        Spec("year_branch", "Year and branch", help="Set by the hospital admin."),
+        Spec("department", "Department", help="Set by the hospital admin.", getter=lambda t: t.department.name if t.department else None),
+        Spec("supervisor", "Supervising doctor", help="Set by the hospital admin.", getter=lambda t: t.supervisor.user.full_name if t.supervisor else None),
     ],
     PATIENT: [
         Spec("patient_code", "Patient ID"),

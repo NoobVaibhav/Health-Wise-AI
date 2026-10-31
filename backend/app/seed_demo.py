@@ -8,7 +8,7 @@ from datetime import date, timedelta
 
 from sqlalchemy import select
 
-from app.core.permissions import DOCTOR, EMPLOYEE, LAB, PHARMACY
+from app.core.permissions import DOCTOR, EMPLOYEE, LAB, PHARMACY, TRAINEE
 from app.database.connection import SessionLocal, init_db
 from app.database.models import Department, Doctor, MedicineInventory, Specialization, User
 from app.schemas.auth import StaffCreate
@@ -47,6 +47,16 @@ def main() -> None:
             user_service.create_staff(db, LAB, StaffCreate(
                 email="lab@healthwise.demo.com", full_name="City Lab Technician", password=DEMO_PASSWORD,
                 lab_name="City Diagnostic Lab"))
+        anjali = db.scalar(select(Doctor).join(User, Doctor.user_id == User.id).where(User.email == "anjali.sharma@healthwise.demo.com"))
+        if not exists("intern@healthwise.demo.com"):
+            user_service.create_staff(db, TRAINEE, StaffCreate(
+                email="intern@healthwise.demo.com", full_name="Neha Kulkarni", password=DEMO_PASSWORD,
+                department_id=department.id, trainee_type="INTERN", supervisor_id=anjali.id if anjali else None))
+        if not exists("pg.student@healthwise.demo.com"):
+            user_service.create_staff(db, TRAINEE, StaffCreate(
+                email="pg.student@healthwise.demo.com", full_name="Arjun Deshmukh", password=DEMO_PASSWORD,
+                department_id=department.id, trainee_type="PG_STUDENT", year_branch="MD Medicine, Year 2",
+                supervisor_id=anjali.id if anjali else None))
         if not exists("rahul.patil@healthwise.demo.com"):
             doctor = db.scalar(select(Doctor).join(User, Doctor.user_id == User.id)
                                .where(User.email == "anjali.sharma@healthwise.demo.com"))
@@ -65,7 +75,8 @@ def main() -> None:
     print("Demo accounts ready (password for all: %s)" % DEMO_PASSWORD)
     for role, email in (("Admin", "admin@healthwise.demo.com"), ("Doctor", "anjali.sharma@healthwise.demo.com"),
                         ("Employee", "priya.joshi@healthwise.demo.com"), ("Patient", "rahul.patil@healthwise.demo.com"),
-                        ("Pharmacy", "pharmacy@healthwise.demo.com"), ("Lab", "lab@healthwise.demo.com")):
+                        ("Pharmacy", "pharmacy@healthwise.demo.com"), ("Lab", "lab@healthwise.demo.com"),
+                        ("Intern", "intern@healthwise.demo.com"), ("PG student", "pg.student@healthwise.demo.com")):
         print(f"  {role:9s} {email}")
 
 

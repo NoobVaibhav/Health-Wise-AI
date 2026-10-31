@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import decode_token, password_fingerprint
 from app.database.connection import get_db
-from app.database.models import Appointment, Doctor, HealthReport, Patient, User
+from app.database.models import Appointment, Doctor, HealthReport, Patient, Referral, Trainee, User
 
 ADMIN = "ADMIN"
 DOCTOR = "DOCTOR"
@@ -20,7 +20,8 @@ EMPLOYEE = "EMPLOYEE"
 PATIENT = "PATIENT"
 PHARMACY = "PHARMACY"
 LAB = "LAB"   # laboratory staff: sees the tests doctors advise, never medicines or reports
-ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB)
+TRAINEE = "TRAINEE"   # intern or PG student: takes histories and refers patients, never prescribes or orders tests
+ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB, TRAINEE)
 
 FORBIDDEN_MESSAGE = "You do not have permission to access this information."
 
@@ -99,7 +100,16 @@ def doctor_can_access_patient(db: Session, doctor: Doctor, patient: Patient) -> 
             HealthReport.patient_id == patient.id, HealthReport.assigned_doctor_id == doctor.id
         ).limit(1)
     )
-    return has_report is not None
+    if has_report is not None:
+        return True
+    return db.scalar(select(Referral.id).where(Referral.patient_id == patient.id, Referral.doctor_id == doctor.id).limit(1)) is not None   # referred by a trainee
+
+
+def get_trainee_profile(db: Session, user: User) -> Trainee:
+    trainee = db.scalar(select(Trainee).where(Trainee.user_id == user.id))
+    if trainee is None:
+        raise forbidden()
+    return trainee
 
 
 def get_accessible_patient(db: Session, user: User, patient_id: int, clinical: bool = True) -> Patient:
@@ -132,4 +142,5 @@ def doctor_patient_ids(db: Session, doctor: Doctor) -> set[int]:
     ids.update(db.scalars(select(Patient.id).where(Patient.assigned_doctor_id == doctor.id)))
     ids.update(db.scalars(select(Appointment.patient_id).where(Appointment.doctor_id == doctor.id)))
     ids.update(db.scalars(select(HealthReport.patient_id).where(HealthReport.assigned_doctor_id == doctor.id)))
+    ids.update(db.scalars(select(Referral.patient_id).where(Referral.doctor_id == doctor.id)))
     return ids

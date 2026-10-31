@@ -2,12 +2,14 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { createStaff } from "../../services/adminApi";
+import { listDoctors } from "../../services/doctorApi";
+import useFetch from "../../hooks/useFetch";
 import DepartmentSpecializationSelect from "../../components/DepartmentSpecializationSelect";
 import PeopleList from "../../components/PeopleList";
 import AccountCreatedDialog from "../../components/AccountCreatedDialog";
 import { useToast } from "../../components/Toast";
 import { getErrorMessage } from "../../services/api";
-import { Button, Input, Modal } from "../../components/ui";
+import { Button, Input, Modal, Select } from "../../components/ui";
 import { FormField, PasswordInput } from "../../components/FormField";
 import useValidation from "../../hooks/useValidation";
 import * as v from "../../utils/validators";
@@ -18,6 +20,7 @@ const KINDS = {
   employees: { role: "EMPLOYEE", title: "Employees", single: "employee" },
   "pharmacy-staff": { role: "PHARMACY", title: "Pharmacy Staff", single: "pharmacy staff member" },
   "lab-staff": { role: "LAB", title: "Laboratory Staff", single: "laboratory staff member" },
+  trainees: { role: "TRAINEE", title: "Interns & PG Students", single: "trainee" },
 };
 
 export default function StaffManager({ kind }) {
@@ -46,16 +49,21 @@ const STAFF_RULES = {
   password: (value, all) => (value ? v.password(value, { email: all.email }) : ""),         // empty = the starting password is used
   phone: (value) => v.phone(value),
   specialization_id: () => "",
-  department_id: (value, all) => (all.kind === "doctors" && !value ? "Please choose a department." : ""),
+  department_id: (value, all) => ((all.kind === "doctors" || all.kind === "trainees") && !value ? "Please choose a department." : ""),
+  trainee_type: (value, all) => (all.kind === "trainees" && !value ? "Please choose Intern or PG student." : ""),
+  year_branch: (value, all) => (all.kind === "trainees" && all.trainee_type === "PG_STUDENT" ? (!String(value || "").trim() ? "Please enter the year and branch, for example MD Medicine, Year 2." : v.text(value, { max: 120 })) : ""),
+  supervisor_id: () => "",
   designation: (value) => v.text(value, { max: 100 }),
   pharmacy_name: (value) => v.text(value, { max: 150 }),
   lab_name: (value) => v.text(value, { max: 150 }),
 };
 
 function CreateModal({ kind, cfg, onClose, onCreated }) {
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", department_id: "", specialization_id: "", designation: "", pharmacy_name: "", lab_name: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", department_id: "", specialization_id: "", trainee_type: "", year_branch: "", supervisor_id: "", designation: "", pharmacy_name: "", lab_name: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const { data: allDoctors } = useFetch(kind === "trainees" ? listDoctors : () => Promise.resolve([]), [kind]);
+  const supervisors = (allDoctors || []).filter((d) => form.department_id && String(d.department_id) === String(form.department_id));
   const check = useValidation(STAFF_RULES);
   const set = (k) => (e) => { setForm({ ...form, [k]: e.target.value }); check.clear(k); };
   const blur = (k) => () => check.check(k, form);
@@ -70,6 +78,8 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
       payload.email = payload.email.toLowerCase();
       if (payload.department_id) payload.department_id = Number(payload.department_id);
       if (payload.specialization_id) payload.specialization_id = Number(payload.specialization_id);
+      if (payload.supervisor_id) payload.supervisor_id = Number(payload.supervisor_id);
+      if (kind === "trainees" && payload.trainee_type !== "PG_STUDENT") payload.year_branch = null;
       onCreated(await createStaff(kind, payload));
       onClose();
     } catch (err) {
@@ -89,6 +99,25 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
           <DepartmentSpecializationSelect departmentRequired departmentId={form.department_id} specializationId={form.specialization_id}
             departmentError={check.errors.department_id} specializationError={check.errors.specialization_id}
             onChange={(next) => { setForm({ ...form, ...next }); check.clear("department_id"); check.clear("specialization_id"); }} />
+        </>)}
+        {kind === "trainees" && (<>
+          <FormField label="Type *" name="trainee_type" error={check.errors.trainee_type}>
+            <Select value={form.trainee_type} onChange={set("trainee_type")}>
+              <option value="">Choose Intern or PG Student</option><option value="INTERN">Intern</option><option value="PG_STUDENT">PG Student</option>
+            </Select>
+          </FormField>
+          <DepartmentSpecializationSelect departmentRequired showSpecialization={false} departmentId={form.department_id} specializationId=""
+            departmentError={check.errors.department_id} onChange={(next) => { setForm({ ...form, department_id: next.department_id, supervisor_id: "" }); check.clear("department_id"); }} />
+          {form.trainee_type === "PG_STUDENT" && (
+            <FormField label="Year and branch *" name="year_branch" error={check.errors.year_branch} hint="For example MD Medicine, Year 2">
+              <Input maxLength={120} value={form.year_branch} onChange={set("year_branch")} onBlur={blur("year_branch")} />
+            </FormField>)}
+          <FormField label="Supervising doctor" name="supervisor_id" error={check.errors.supervisor_id}
+            hint={!form.department_id ? "Choose a department first" : supervisors.length === 0 ? "No doctor in this department yet" : "Optional. The supervisor can approve or correct the trainee's referrals."}>
+            <Select disabled={!form.department_id} value={form.supervisor_id} onChange={set("supervisor_id")}>
+              <option value="">None</option>{supervisors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}
+            </Select>
+          </FormField>
         </>)}
         {kind === "employees" && <FormField label="Designation" name="designation" error={check.errors.designation}><Input placeholder="Receptionist, lab assistant ..." maxLength={100} value={form.designation} onChange={set("designation")} onBlur={blur("designation")} /></FormField>}
         {kind === "pharmacy-staff" && <FormField label="Pharmacy name" name="pharmacy_name" error={check.errors.pharmacy_name}><Input maxLength={150} value={form.pharmacy_name} onChange={set("pharmacy_name")} onBlur={blur("pharmacy_name")} /></FormField>}

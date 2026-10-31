@@ -1,4 +1,6 @@
 """Request schemas of the account endpoints. The input rules come from app/utils/validators.py (see docs/VALIDATION_RULES.md)."""
+from typing import Literal
+
 from pydantic import BaseModel, Field, model_validator
 
 from app.utils.validators import (
@@ -69,6 +71,10 @@ class StaffCreate(BaseModel):
     department_id: PositiveId | None = None
     specialization_id: PositiveId | None = None
     specialization: opt_text(120) = None         # old free text, still accepted when no specialization_id is sent
+    # trainee (intern or PG student); the department above is required for them
+    trainee_type: Literal["INTERN", "PG_STUDENT"] | None = None
+    year_branch: opt_text(120) = None
+    supervisor_id: PositiveId | None = None
     # employee
     designation: opt_text(100) = None
     # pharmacy

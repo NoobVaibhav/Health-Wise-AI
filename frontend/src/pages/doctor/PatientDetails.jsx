@@ -12,6 +12,7 @@ import { DoctorNoteCard, PrescriptionCard, RecommendationCard, ReportsTable } fr
 import { ComparisonView, TrendsView } from "../../components/PatientViews";
 import { HistoryEntryModal, NoteModal, PrescriptionModal, RecommendationModal } from "../../components/DoctorForms";
 import LabTestProgress from "../../components/LabTestProgress";
+import TraineeHistories from "../../components/TraineeHistories";
 import { Button, Tabs, fmtDate, inputClass } from "../../components/ui";
 import { ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 
@@ -45,6 +46,8 @@ export default function PatientDetails() {
           <Button variant="secondary" onClick={() => setModal("history")}><Plus size={15} className="mr-1 inline" /> Add history entry</Button>
         </div>
       </Section>
+
+      <TraineeHistories patientId={p.id} />
 
       <Tabs value={mainTab} onChange={setMainTab} tabs={[
         ["medical", "Medical history", <DoctorHistoryView patient={p} />],

@@ -3,7 +3,7 @@ import { Users as UsersIcon } from "lucide-react";
 import PeopleList from "../../components/PeopleList";
 import { Hint, PageTitle } from "../../components/Feedback";
 
-const ROLES = [["", "Everyone"], ["DOCTOR", "Doctors"], ["EMPLOYEE", "Employees"], ["PHARMACY", "Pharmacy staff"], ["LAB", "Laboratory staff"], ["PATIENT", "Patients"], ["ADMIN", "Admins"]];
+const ROLES = [["", "Everyone"], ["DOCTOR", "Doctors"], ["EMPLOYEE", "Employees"], ["PHARMACY", "Pharmacy staff"], ["LAB", "Laboratory staff"], ["TRAINEE", "Interns & PG students"], ["PATIENT", "Patients"], ["ADMIN", "Admins"]];
 
 export default function Users() {
   const [role, setRole] = useState("");

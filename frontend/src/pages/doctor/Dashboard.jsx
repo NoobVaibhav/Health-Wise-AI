@@ -33,6 +33,15 @@ export default function DoctorDashboard() {
         <HealthCard title="Follow-ups coming up" icon={ClipboardList} tone="violet" value={d.pending_follow_ups.length} sub="Tasks still open" />
       </div>
 
+      {d.trainee_referrals?.length > 0 && (
+        <Section title="Sent by interns and PG students" action={<Link to="/doctor/referrals" className="text-sm font-semibold text-brand-700 underline">See all</Link>}>
+          <ul className="divide-y">{d.trainee_referrals.map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+              <span><b>{r.patient_name}</b> · {r.reason} <span className="text-sm text-slate-500">· history taken by {r.taken_by}</span></span>
+              <span className="flex items-center gap-2">{r.urgent && <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">URGENT</span>}{r.history_status === "COMPLETE" && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">Pending your review</span>}</span>
+            </li>))}</ul>
+        </Section>)}
+
       <AttentionQueue items={d.attention_queue} />
 
       <QuickActions items={[

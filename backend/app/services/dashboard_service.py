@@ -106,7 +106,18 @@ def doctor_dashboard(db: Session, user: User) -> dict:
         "pending_follow_ups": [recommendation_out(f).model_dump(mode="json") for f in follow_ups],
         "recent_prescriptions": [prescription_out(p).model_dump(mode="json") for p in prescriptions],
         "recent_notes": [note_out(n).model_dump(mode="json") for n in notes],
+        "trainee_referrals": _referrals_for_doctor(db, doctor),
     }
+
+
+def _referrals_for_doctor(db: Session, doctor) -> list[dict]:
+    """Patients sent by interns or PG students, urgent and unseen first. Each says who took the history and that it waits for the doctor."""
+    from app.database.models import Referral, Trainee
+    from app.services.trainee_service import referral_out
+    rows = db.scalars(select(Referral).join(Trainee, Referral.trainee_id == Trainee.id).where(
+        (Referral.doctor_id == doctor.id) | (Trainee.supervisor_id == doctor.id), Referral.status != "COMPLETED").order_by(Referral.id.desc()).limit(50)).all()
+    rows.sort(key=lambda r: (not r.urgent, r.status != "SENT"))
+    return [{**referral_out(r), "mine": r.doctor_id == doctor.id} for r in rows[:10]]
 
 
 # ------------------------------------------------------------------ employee

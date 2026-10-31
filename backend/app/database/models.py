@@ -776,3 +776,80 @@ class AuditLog(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
 
     user: Mapped[User | None] = relationship()
+
+
+# ------------------------------------------------------------------ trainees (interns and PG students) and referrals
+class Trainee(Base):
+    """An intern or PG student. Not a doctor: takes histories and refers the patient to a doctor, never prescribes or orders tests."""
+    __tablename__ = "trainees"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
+    trainee_type: Mapped[str] = mapped_column(String(15), default="INTERN")          # INTERN / PG_STUDENT
+    year_branch: Mapped[str | None] = mapped_column(String(120))                      # PG only, e.g. "MD Medicine, Year 2"
+    supervisor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    phone: Mapped[str | None] = mapped_column(String(30))
+
+    user: Mapped[User] = relationship()
+    department: Mapped[Department | None] = relationship()
+    supervisor: Mapped["Doctor | None"] = relationship()
+
+
+class TraineeHistory(Base):
+    """A history taken by a trainee. It is NOT the patient's permanent record: a doctor reviews it first (DRAFT -> COMPLETE -> VERIFIED)."""
+    __tablename__ = "trainee_histories"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    trainee_id: Mapped[int] = mapped_column(ForeignKey("trainees.id"), index=True)
+    status: Mapped[str] = mapped_column(String(15), default="DRAFT", index=True)
+    data_json: Mapped[str | None] = mapped_column(Text)
+    doctor_notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    verified_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    patient: Mapped[Patient] = relationship()
+    trainee: Mapped[Trainee] = relationship()
+    verifier: Mapped["Doctor | None"] = relationship(foreign_keys=[verified_by])
+
+
+class TraineeHistoryRevision(Base):
+    """The earlier version of a trainee history, kept whenever it is changed after completion (by the trainee or by a doctor)."""
+    __tablename__ = "trainee_history_revisions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    history_id: Mapped[int] = mapped_column(ForeignKey("trainee_histories.id"), index=True)
+    changed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    data_json: Mapped[str | None] = mapped_column(Text)
+    changed_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Referral(Base):
+    """A trainee sends a patient, with the completed history, to a doctor."""
+    __tablename__ = "referrals"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    trainee_id: Mapped[int] = mapped_column(ForeignKey("trainees.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    history_id: Mapped[int] = mapped_column(ForeignKey("trainee_histories.id"), index=True)
+    reason: Mapped[str] = mapped_column(String(300))
+    urgent: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(String(15), default="SENT", index=True)     # SENT / SEEN / COMPLETED
+    suggested_department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
+    overridden: Mapped[bool] = mapped_column(Boolean, default=False)                  # the trainee chose a different department than suggested
+    appointment_id: Mapped[int | None] = mapped_column(ForeignKey("appointments.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    seen_at: Mapped[datetime | None] = mapped_column(DateTime)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    supervisor_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    supervisor_note: Mapped[str | None] = mapped_column(String(500))
+
+    patient: Mapped[Patient] = relationship()
+    trainee: Mapped[Trainee] = relationship()
+    doctor: Mapped[Doctor] = relationship()
+    history: Mapped[TraineeHistory] = relationship()
