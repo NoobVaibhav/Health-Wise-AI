@@ -60,7 +60,7 @@ FIELDS: dict[str, list[Spec]] = {
     ADMIN: [],
     DOCTOR: [
         Spec("phone", "Phone", editable=True, max_length=20),
-        Spec("specialization", "Specialization", help="Set by the hospital admin."),
+        Spec("specialization", "Specialization", help="Set by the hospital admin.", getter=lambda d: d.specialization_name),
         Spec("department", "Department", help="Set by the hospital admin.", getter=lambda d: d.department.name if d.department else None),
         Spec("qualification", "Qualification (for example MBBS, MD)", editable=True),
         Spec("registration_number", "Medical registration number", editable=True, max_length=50),

@@ -1,13 +1,13 @@
 // One reusable page for creating and listing doctors, employees, pharmacy staff and laboratory staff (admin only).
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import useFetch from "../../hooks/useFetch";
-import { createStaff, listDepartments } from "../../services/adminApi";
+import { createStaff } from "../../services/adminApi";
+import DepartmentSpecializationSelect from "../../components/DepartmentSpecializationSelect";
 import PeopleList from "../../components/PeopleList";
 import AccountCreatedDialog from "../../components/AccountCreatedDialog";
 import { useToast } from "../../components/Toast";
 import { getErrorMessage } from "../../services/api";
-import { Button, Field, Input, Modal, Select } from "../../components/ui";
+import { Button, Input, Modal } from "../../components/ui";
 import { FormField, PasswordInput } from "../../components/FormField";
 import useValidation from "../../hooks/useValidation";
 import * as v from "../../utils/validators";
@@ -45,15 +45,15 @@ const STAFF_RULES = {
   email: (value) => v.email(value),
   password: (value, all) => (value ? v.password(value, { email: all.email }) : ""),         // empty = the starting password is used
   phone: (value) => v.phone(value),
-  specialization: (value) => v.text(value, { max: 120 }),
+  specialization_id: () => "",
+  department_id: (value, all) => (all.kind === "doctors" && !value ? "Please choose a department." : ""),
   designation: (value) => v.text(value, { max: 100 }),
   pharmacy_name: (value) => v.text(value, { max: 150 }),
   lab_name: (value) => v.text(value, { max: 150 }),
 };
 
 function CreateModal({ kind, cfg, onClose, onCreated }) {
-  const { data: departments } = useFetch(listDepartments, []);
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", department_id: "", specialization: "", designation: "", pharmacy_name: "", lab_name: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", department_id: "", specialization_id: "", designation: "", pharmacy_name: "", lab_name: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const check = useValidation(STAFF_RULES);
@@ -62,13 +62,14 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
   const submit = async (e) => {
     e.preventDefault();
     if (busy) return;
-    if (!check.validateAll(form)) return;
+    if (!check.validateAll({ ...form, kind })) return;
     setBusy(true);
     setError("");
     try {
       const payload = Object.fromEntries(Object.entries(form).map(([k, val]) => [k, String(val).trim() === "" ? null : (typeof val === "string" ? val.trim() : val)]));
       payload.email = payload.email.toLowerCase();
       if (payload.department_id) payload.department_id = Number(payload.department_id);
+      if (payload.specialization_id) payload.specialization_id = Number(payload.specialization_id);
       onCreated(await createStaff(kind, payload));
       onClose();
     } catch (err) {
@@ -85,8 +86,9 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
         </FormField>
         <FormField label="Phone" name="phone" error={check.errors.phone} hint="For example 98765 43210 or +91 98765 43210"><Input type="tel" inputMode="tel" autoComplete="off" maxLength={20} value={form.phone} onChange={set("phone")} onBlur={blur("phone")} /></FormField>
         {kind === "doctors" && (<>
-          <Field label="Department"><Select value={form.department_id} onChange={set("department_id")}><option value="">None</option>{(departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
-          <FormField label="Specialization" name="specialization" error={check.errors.specialization}><Input maxLength={120} value={form.specialization} onChange={set("specialization")} onBlur={blur("specialization")} /></FormField>
+          <DepartmentSpecializationSelect departmentRequired departmentId={form.department_id} specializationId={form.specialization_id}
+            departmentError={check.errors.department_id} specializationError={check.errors.specialization_id}
+            onChange={(next) => { setForm({ ...form, ...next }); check.clear("department_id"); check.clear("specialization_id"); }} />
         </>)}
         {kind === "employees" && <FormField label="Designation" name="designation" error={check.errors.designation}><Input placeholder="Receptionist, lab assistant ..." maxLength={100} value={form.designation} onChange={set("designation")} onBlur={blur("designation")} /></FormField>}
         {kind === "pharmacy-staff" && <FormField label="Pharmacy name" name="pharmacy_name" error={check.errors.pharmacy_name}><Input maxLength={150} value={form.pharmacy_name} onChange={set("pharmacy_name")} onBlur={blur("pharmacy_name")} /></FormField>}

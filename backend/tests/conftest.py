@@ -53,8 +53,8 @@ def world(client) -> World:
     assert r.status_code == 201, r.text
     w.admin = headers(r.json()["access_token"])
 
-    dep = client.post("/api/admin/departments", json={"name": "General Medicine"}, headers=w.admin)
-    w.department_id = dep.json()["id"]
+    # the default department list is seeded at start-up, so "General Medicine" already exists
+    w.department_id = next(d["id"] for d in client.get("/api/catalog/departments", headers=w.admin).json() if d["name"] == "General Medicine")
 
     def staff(path, email, name, **extra):
         res = client.post(f"/api/admin/{path}", headers=w.admin,

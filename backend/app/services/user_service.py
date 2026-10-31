@@ -13,6 +13,7 @@ from app.database.models import (
     AuditLog, Department, Doctor, Employee, HistoryRevision, LabStaff, Patient, PatientAssistantConversation, PharmacyStaff, User,
 )
 from app.schemas.auth import StaffCreate
+from app.services import catalog_service
 from app.schemas.patient import PatientCreate
 
 
@@ -50,12 +51,16 @@ def create_admin(db: Session, email: str, full_name: str, password: str) -> User
 
 def create_staff(db: Session, role: str, data: StaffCreate) -> tuple[User, str | None]:
     """Create a doctor, employee or pharmacy staff account."""
-    if role == DOCTOR and data.department_id and not db.get(Department, data.department_id):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Department not found.")
+    if role == DOCTOR:
+        catalog_service.check_choice(db, data.department_id, data.specialization_id)
     user, temporary = _new_user(db, data.email, data.full_name, role, data.password)
     if role == DOCTOR:
-        db.add(Doctor(user_id=user.id, department_id=data.department_id, specialization=data.specialization,
-                      phone=data.phone))
+        doctor = Doctor(user_id=user.id, department_id=data.department_id, specialization_id=data.specialization_id,
+                        specialization=None if data.specialization_id else data.specialization, phone=data.phone)
+        db.add(doctor)
+        if not data.specialization_id:
+            db.flush()
+            catalog_service.backfill_doctors(db)         # old-style free text that matches a listed specialization gets its id
     elif role == EMPLOYEE:
         db.add(Employee(user_id=user.id, designation=data.designation, phone=data.phone))
     elif role == PHARMACY:

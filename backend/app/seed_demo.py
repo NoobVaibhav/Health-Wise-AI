@@ -10,10 +10,10 @@ from sqlalchemy import select
 
 from app.core.permissions import DOCTOR, EMPLOYEE, LAB, PHARMACY
 from app.database.connection import SessionLocal, init_db
-from app.database.models import Department, Doctor, MedicineInventory, User
+from app.database.models import Department, Doctor, MedicineInventory, Specialization, User
 from app.schemas.auth import StaffCreate
 from app.schemas.patient import PatientCreate
-from app.services import user_service
+from app.services import catalog_service, user_service
 
 DEMO_PASSWORD = "Demo@12345"  # demo accounts only. Change/remove them before any real use.
 
@@ -27,16 +27,14 @@ def main() -> None:
         if not exists("admin@healthwise.demo.com"):
             user_service.create_admin(db, "admin@healthwise.demo.com", "Hospital Admin", DEMO_PASSWORD)
 
+        catalog_service.ensure_catalog(db)
         department = db.scalar(select(Department).where(Department.name == "General Medicine"))
-        if department is None:
-            department = Department(name="General Medicine")
-            db.add(department)
-            db.commit()
+        general = db.scalar(select(Specialization).where(Specialization.department_id == department.id, Specialization.name == "General Physician"))
 
         if not exists("anjali.sharma@healthwise.demo.com"):
             user_service.create_staff(db, DOCTOR, StaffCreate(
                 email="anjali.sharma@healthwise.demo.com", full_name="Dr. Anjali Sharma", password=DEMO_PASSWORD,
-                department_id=department.id, specialization="General Physician"))
+                department_id=department.id, specialization_id=general.id))
         if not exists("priya.joshi@healthwise.demo.com"):
             user_service.create_staff(db, EMPLOYEE, StaffCreate(
                 email="priya.joshi@healthwise.demo.com", full_name="Priya Joshi", password=DEMO_PASSWORD,

@@ -54,7 +54,7 @@ A test marked `@bust("ID")` (backend) asserts the SECURE behaviour and is an exp
 | B-05 | Medium | Deleting a user makes their whole audit trail anonymous | `...::test_deleting_a_user_does_not_make...` |
 | F-02 | Medium | Patient history drafts stay in `localStorage` after logout | `session.chaos.test.jsx` |
 | F-05 | Medium | No error boundary: 68 page/answer combinations end in a white screen | `errorboundary.chaos.test.js` + browser sweep |
-| S-03 | Medium | `schema.sql` lacks 19 of 37 tables and about 20 columns | `test_schema_and_ops.py::test_schema_sql...` |
+| S-03 | Medium | **Fixed**: `schema.sql` is now generated from the models (was missing 19 of 37 tables and about 20 columns) | `test_schema_and_ops.py::test_schema_sql...` |
 | X-01 | Medium | Birth dates in year 0001, 1800, 9999 and 2999 are accepted | `test_business_logic.py::...[dob-*]` |
 | T-04 | Low | "Not suspicious for malignancy" is flagged as suspicious and urgent | `[T-04-*]` |
 | O-03 | Low | Python packages are not pinned (`>=`) and pytest is a runtime requirement | `test_ops_findings.py::test_the_listed_python_packages...` |

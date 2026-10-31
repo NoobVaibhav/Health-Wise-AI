@@ -33,6 +33,8 @@ def init_db() -> None:
     from app.services.billing_service import backfill_barcodes
     with SessionLocal() as db:
         backfill_barcodes(db)
+        from app.services.catalog_service import ensure_catalog
+        ensure_catalog(db)
 
 
 def add_missing_columns(bind=None) -> None:

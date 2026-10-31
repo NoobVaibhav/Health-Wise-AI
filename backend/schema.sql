@@ -4,6 +4,7 @@
 CREATE TABLE departments (
 	id SERIAL NOT NULL, 
 	name VARCHAR(100) NOT NULL, 
+	is_active BOOLEAN, 
 	PRIMARY KEY (id), 
 	UNIQUE (name)
 );
@@ -15,11 +16,15 @@ CREATE TABLE medicine_inventory (
 	batch_number VARCHAR(50), 
 	quantity INTEGER NOT NULL, 
 	expiry_date DATE, 
+	manufacture_date DATE, 
 	manufacturer VARCHAR(150), 
 	unit_price FLOAT, 
+	barcode VARCHAR(64), 
+	gst_percent FLOAT, 
 	PRIMARY KEY (id)
 );
 
+CREATE INDEX ix_medicine_inventory_barcode ON medicine_inventory (barcode);
 CREATE INDEX ix_medicine_inventory_medicine_name ON medicine_inventory (medicine_name);
 
 CREATE TABLE users (
@@ -30,12 +35,13 @@ CREATE TABLE users (
 	role VARCHAR(20) NOT NULL, 
 	is_active BOOLEAN NOT NULL, 
 	must_change_password BOOLEAN NOT NULL, 
+	avatar_path VARCHAR(255), 
 	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
 	PRIMARY KEY (id)
 );
 
-CREATE INDEX ix_users_role ON users (role);
 CREATE UNIQUE INDEX ix_users_email ON users (email);
+CREATE INDEX ix_users_role ON users (role);
 
 CREATE TABLE audit_logs (
 	id SERIAL NOT NULL, 
@@ -54,24 +60,25 @@ CREATE INDEX ix_audit_logs_action ON audit_logs (action);
 CREATE INDEX ix_audit_logs_timestamp ON audit_logs (timestamp);
 CREATE INDEX ix_audit_logs_user_id ON audit_logs (user_id);
 
-CREATE TABLE doctors (
-	id SERIAL NOT NULL, 
-	user_id INTEGER NOT NULL, 
-	department_id INTEGER, 
-	specialization VARCHAR(120), 
-	phone VARCHAR(30), 
-	PRIMARY KEY (id), 
-	UNIQUE (user_id), 
-	FOREIGN KEY(user_id) REFERENCES users (id), 
-	FOREIGN KEY(department_id) REFERENCES departments (id)
-);
-
-
 CREATE TABLE employees (
 	id SERIAL NOT NULL, 
 	user_id INTEGER NOT NULL, 
 	designation VARCHAR(100), 
 	phone VARCHAR(30), 
+	address VARCHAR(300), 
+	PRIMARY KEY (id), 
+	UNIQUE (user_id), 
+	FOREIGN KEY(user_id) REFERENCES users (id)
+);
+
+
+CREATE TABLE lab_staff (
+	id SERIAL NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	lab_name VARCHAR(150), 
+	phone VARCHAR(30), 
+	registration_number VARCHAR(50), 
+	address VARCHAR(300), 
 	PRIMARY KEY (id), 
 	UNIQUE (user_id), 
 	FOREIGN KEY(user_id) REFERENCES users (id)
@@ -83,9 +90,42 @@ CREATE TABLE pharmacy_staff (
 	user_id INTEGER NOT NULL, 
 	pharmacy_name VARCHAR(150), 
 	phone VARCHAR(30), 
+	license_number VARCHAR(50), 
+	address VARCHAR(300), 
 	PRIMARY KEY (id), 
 	UNIQUE (user_id), 
 	FOREIGN KEY(user_id) REFERENCES users (id)
+);
+
+
+CREATE TABLE specializations (
+	id SERIAL NOT NULL, 
+	name VARCHAR(100) NOT NULL, 
+	name_key VARCHAR(100) NOT NULL, 
+	department_id INTEGER NOT NULL, 
+	is_active BOOLEAN, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_specialization_department_name UNIQUE (department_id, name_key), 
+	FOREIGN KEY(department_id) REFERENCES departments (id)
+);
+
+CREATE INDEX ix_specializations_department_id ON specializations (department_id);
+
+CREATE TABLE doctors (
+	id SERIAL NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	department_id INTEGER, 
+	specialization VARCHAR(120), 
+	specialization_id INTEGER, 
+	phone VARCHAR(30), 
+	qualification VARCHAR(150), 
+	registration_number VARCHAR(50), 
+	experience_years INTEGER, 
+	PRIMARY KEY (id), 
+	UNIQUE (user_id), 
+	FOREIGN KEY(user_id) REFERENCES users (id), 
+	FOREIGN KEY(department_id) REFERENCES departments (id), 
+	FOREIGN KEY(specialization_id) REFERENCES specializations (id)
 );
 
 
@@ -119,6 +159,9 @@ CREATE TABLE appointments (
 	department_id INTEGER, 
 	scheduled_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
 	reason VARCHAR(300), 
+	symptoms_json TEXT, 
+	duration VARCHAR(60), 
+	details TEXT, 
 	status VARCHAR(20) NOT NULL, 
 	created_by INTEGER, 
 	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
@@ -129,9 +172,128 @@ CREATE TABLE appointments (
 	FOREIGN KEY(created_by) REFERENCES users (id)
 );
 
+CREATE INDEX ix_appointments_doctor_id ON appointments (doctor_id);
 CREATE INDEX ix_appointments_patient_id ON appointments (patient_id);
 CREATE INDEX ix_appointments_scheduled_at ON appointments (scheduled_at);
-CREATE INDEX ix_appointments_doctor_id ON appointments (doctor_id);
+
+CREATE TABLE chronic_conditions (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	kind VARCHAR(15) NOT NULL, 
+	name VARCHAR(150) NOT NULL, 
+	diagnosis_type VARCHAR(60), 
+	duration_text VARCHAR(60), 
+	diagnosis_year INTEGER, 
+	control_status VARCHAR(20), 
+	details_json TEXT, 
+	notes TEXT, 
+	on_treatment BOOLEAN, 
+	source VARCHAR(20) NOT NULL, 
+	verified_by INTEGER, 
+	verified_at TIMESTAMP WITHOUT TIME ZONE, 
+	created_by INTEGER, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_by INTEGER, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	is_deleted BOOLEAN, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(verified_by) REFERENCES doctors (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id), 
+	FOREIGN KEY(updated_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_chronic_conditions_patient_id ON chronic_conditions (patient_id);
+
+CREATE TABLE clinical_assessments (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	doctor_id INTEGER NOT NULL, 
+	chief_complaint TEXT, 
+	history_of_present_illness TEXT, 
+	vitals_json TEXT, 
+	examination_json TEXT, 
+	provisional_diagnosis TEXT, 
+	investigations_advised TEXT, 
+	plan_type VARCHAR(20), 
+	plan_details TEXT, 
+	special_note TEXT, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(doctor_id) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_clinical_assessments_patient_id ON clinical_assessments (patient_id);
+
+CREATE TABLE clinical_summary_snapshots (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	generated_by INTEGER NOT NULL, 
+	kind VARCHAR(10) NOT NULL, 
+	model VARCHAR(80), 
+	content_json TEXT NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(generated_by) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_clinical_summary_snapshots_patient_id ON clinical_summary_snapshots (patient_id);
+
+CREATE TABLE emergency_events (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	recorded_by INTEGER NOT NULL, 
+	event_at TIMESTAMP WITHOUT TIME ZONE, 
+	arrival_method VARCHAR(40), 
+	chief_complaint TEXT, 
+	symptoms_json TEXT, 
+	onset_text VARCHAR(120), 
+	duration_text VARCHAR(120), 
+	vitals_json TEXT, 
+	recent_medication_changes TEXT, 
+	exam_findings TEXT, 
+	investigations_ordered TEXT, 
+	investigation_results TEXT, 
+	clinician_assessment TEXT, 
+	documented_cause TEXT, 
+	contributing_json TEXT, 
+	treatment_given TEXT, 
+	response_to_treatment TEXT, 
+	disposition VARCHAR(20), 
+	discharge_instructions TEXT, 
+	follow_up_recommendations TEXT, 
+	treating_clinician VARCHAR(150), 
+	source_report_ids_json TEXT, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(recorded_by) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_emergency_events_patient_id ON emergency_events (patient_id);
+
+CREATE TABLE follow_up_tasks (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	created_by INTEGER NOT NULL, 
+	title VARCHAR(200) NOT NULL, 
+	details TEXT, 
+	due_date DATE, 
+	source_type VARCHAR(30), 
+	source_id INTEGER, 
+	status VARCHAR(20) NOT NULL, 
+	completed_at TIMESTAMP WITHOUT TIME ZONE, 
+	outcome TEXT, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(created_by) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_follow_up_tasks_patient_id ON follow_up_tasks (patient_id);
 
 CREATE TABLE health_reports (
 	id SERIAL NOT NULL, 
@@ -151,6 +313,8 @@ CREATE TABLE health_reports (
 	extracted_text TEXT, 
 	processing_method VARCHAR(20), 
 	ai_summary TEXT, 
+	report_type VARCHAR(30), 
+	insights_json TEXT, 
 	PRIMARY KEY (id), 
 	FOREIGN KEY(patient_id) REFERENCES patients (id), 
 	FOREIGN KEY(uploaded_by) REFERENCES users (id), 
@@ -160,6 +324,79 @@ CREATE TABLE health_reports (
 
 CREATE INDEX ix_health_reports_assigned_doctor_id ON health_reports (assigned_doctor_id);
 CREATE INDEX ix_health_reports_patient_id ON health_reports (patient_id);
+
+CREATE TABLE history_revisions (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	entity_type VARCHAR(20) NOT NULL, 
+	entity_id INTEGER NOT NULL, 
+	action VARCHAR(12) NOT NULL, 
+	before_json TEXT, 
+	changed_by INTEGER, 
+	changed_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(changed_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_history_revisions_entity_id ON history_revisions (entity_id);
+CREATE INDEX ix_history_revisions_entity_type ON history_revisions (entity_type);
+CREATE INDEX ix_history_revisions_patient_id ON history_revisions (patient_id);
+
+CREATE TABLE hospital_admissions (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	hospital_name VARCHAR(200), 
+	admitted_at TIMESTAMP WITHOUT TIME ZONE, 
+	admitted_date_text VARCHAR(40), 
+	discharged_at TIMESTAMP WITHOUT TIME ZONE, 
+	admission_type VARCHAR(15), 
+	main_complaint TEXT, 
+	secondary_complaints TEXT, 
+	provisional_diagnosis TEXT, 
+	final_diagnosis TEXT, 
+	reason TEXT, 
+	referred_by VARCHAR(200), 
+	symptoms TEXT, 
+	history_of_present_illness TEXT, 
+	preexisting_conditions TEXT, 
+	vitals_json TEXT, 
+	exam_findings TEXT, 
+	investigations TEXT, 
+	complications TEXT, 
+	treatment_given TEXT, 
+	medications_json TEXT, 
+	iv_fluids_oxygen TEXT, 
+	procedures_supportive TEXT, 
+	medication_changes TEXT, 
+	response_to_treatment TEXT, 
+	stay_complications TEXT, 
+	discharge_condition TEXT, 
+	treatment_completed TEXT, 
+	discharge_medications_json TEXT, 
+	discharge_instructions TEXT, 
+	wound_rehab_instructions TEXT, 
+	followup_date DATE, 
+	specialist_review VARCHAR(200), 
+	recovery_status TEXT, 
+	remaining_symptoms TEXT, 
+	readmission_notes TEXT, 
+	source VARCHAR(20) NOT NULL, 
+	verified_by INTEGER, 
+	verified_at TIMESTAMP WITHOUT TIME ZONE, 
+	created_by INTEGER, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_by INTEGER, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	is_deleted BOOLEAN, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(verified_by) REFERENCES doctors (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id), 
+	FOREIGN KEY(updated_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_hospital_admissions_patient_id ON hospital_admissions (patient_id);
 
 CREATE TABLE medical_history (
 	id SERIAL NOT NULL, 
@@ -175,6 +412,51 @@ CREATE TABLE medical_history (
 );
 
 CREATE INDEX ix_medical_history_patient_id ON medical_history (patient_id);
+
+CREATE TABLE patient_assistant_conversations (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	title VARCHAR(120) NOT NULL, 
+	language VARCHAR(5) NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id)
+);
+
+CREATE INDEX ix_patient_assistant_conversations_patient_id ON patient_assistant_conversations (patient_id);
+CREATE INDEX ix_patient_assistant_conversations_updated_at ON patient_assistant_conversations (updated_at);
+
+CREATE TABLE patient_history (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	height_cm FLOAT, 
+	weight_kg FLOAT, 
+	data_json TEXT, 
+	updated_by INTEGER, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(updated_by) REFERENCES users (id)
+);
+
+CREATE UNIQUE INDEX ix_patient_history_patient_id ON patient_history (patient_id);
+
+CREATE TABLE summary_reviews (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	doctor_id INTEGER NOT NULL, 
+	item_key VARCHAR(80) NOT NULL, 
+	action VARCHAR(20) NOT NULL, 
+	text TEXT, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(doctor_id) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_summary_reviews_item_key ON summary_reviews (item_key);
+CREATE INDEX ix_summary_reviews_patient_id ON summary_reviews (patient_id);
 
 CREATE TABLE doctor_notes (
 	id SERIAL NOT NULL, 
@@ -210,6 +492,21 @@ CREATE TABLE doctor_recommendations (
 
 CREATE INDEX ix_doctor_recommendations_patient_id ON doctor_recommendations (patient_id);
 
+CREATE TABLE emergency_timeline_entries (
+	id SERIAL NOT NULL, 
+	event_id INTEGER NOT NULL, 
+	occurred_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	kind VARCHAR(30) NOT NULL, 
+	text TEXT NOT NULL, 
+	recorded_by INTEGER, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(event_id) REFERENCES emergency_events (id), 
+	FOREIGN KEY(recorded_by) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_emergency_timeline_entries_event_id ON emergency_timeline_entries (event_id);
+
 CREATE TABLE health_parameters (
 	id SERIAL NOT NULL, 
 	report_id INTEGER NOT NULL, 
@@ -227,8 +524,48 @@ CREATE TABLE health_parameters (
 	FOREIGN KEY(report_id) REFERENCES health_reports (id)
 );
 
-CREATE INDEX ix_health_parameters_report_id ON health_parameters (report_id);
 CREATE INDEX ix_health_parameters_normalized_name ON health_parameters (normalized_name);
+CREATE INDEX ix_health_parameters_report_id ON health_parameters (report_id);
+
+CREATE TABLE patient_assistant_messages (
+	id SERIAL NOT NULL, 
+	conversation_id INTEGER NOT NULL, 
+	role VARCHAR(10) NOT NULL, 
+	text TEXT NOT NULL, 
+	meta_json TEXT, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(conversation_id) REFERENCES patient_assistant_conversations (id)
+);
+
+CREATE INDEX ix_patient_assistant_messages_conversation_id ON patient_assistant_messages (conversation_id);
+
+CREATE TABLE patient_medications (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	name VARCHAR(200) NOT NULL, 
+	dose VARCHAR(100), 
+	frequency VARCHAR(100), 
+	reason VARCHAR(200), 
+	since VARCHAR(60), 
+	notes VARCHAR(300), 
+	is_current BOOLEAN NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	route VARCHAR(40), 
+	prescriber VARCHAR(150), 
+	adherence VARCHAR(20), 
+	condition_id INTEGER, 
+	source VARCHAR(20), 
+	verified_by INTEGER, 
+	verified_at TIMESTAMP WITHOUT TIME ZONE, 
+	is_deleted BOOLEAN, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(condition_id) REFERENCES chronic_conditions (id), 
+	FOREIGN KEY(verified_by) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_patient_medications_patient_id ON patient_medications (patient_id);
 
 CREATE TABLE prescriptions (
 	id SERIAL NOT NULL, 
@@ -239,6 +576,7 @@ CREATE TABLE prescriptions (
 	clinical_indication VARCHAR(300), 
 	status VARCHAR(25) NOT NULL, 
 	notes TEXT, 
+	tests_advised TEXT, 
 	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
 	FOREIGN KEY(patient_id) REFERENCES patients (id), 
@@ -264,6 +602,96 @@ CREATE TABLE report_comparisons (
 
 CREATE INDEX ix_report_comparisons_patient_id ON report_comparisons (patient_id);
 
+CREATE TABLE surgery_records (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	admission_id INTEGER, 
+	procedure_name VARCHAR(200) NOT NULL, 
+	reason TEXT, 
+	body_site VARCHAR(150), 
+	operation_date DATE, 
+	operation_year INTEGER, 
+	surgeon VARCHAR(150), 
+	hospital VARCHAR(200), 
+	anesthesia VARCHAR(100), 
+	findings TEXT, 
+	implant_used BOOLEAN, 
+	implant_type VARCHAR(100), 
+	implant_material VARCHAR(150), 
+	implant_serial VARCHAR(100), 
+	postop_xray TEXT, 
+	postop_treatment TEXT, 
+	postop_complications TEXT, 
+	recovery_progress TEXT, 
+	source VARCHAR(20) NOT NULL, 
+	verified_by INTEGER, 
+	verified_at TIMESTAMP WITHOUT TIME ZONE, 
+	created_by INTEGER, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_by INTEGER, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	is_deleted BOOLEAN, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(admission_id) REFERENCES hospital_admissions (id), 
+	FOREIGN KEY(verified_by) REFERENCES doctors (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id), 
+	FOREIGN KEY(updated_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_surgery_records_admission_id ON surgery_records (admission_id);
+CREATE INDEX ix_surgery_records_patient_id ON surgery_records (patient_id);
+
+CREATE TABLE lab_test_orders (
+	id SERIAL NOT NULL, 
+	prescription_id INTEGER NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	doctor_id INTEGER NOT NULL, 
+	test_name VARCHAR(200) NOT NULL, 
+	status VARCHAR(20) NOT NULL, 
+	urgent BOOLEAN, 
+	sample_type VARCHAR(40), 
+	sample_code VARCHAR(30), 
+	collected_at TIMESTAMP WITHOUT TIME ZONE, 
+	collected_by INTEGER, 
+	started_at TIMESTAMP WITHOUT TIME ZONE, 
+	completed_at TIMESTAMP WITHOUT TIME ZONE, 
+	completed_by INTEGER, 
+	report_id INTEGER, 
+	note TEXT, 
+	rejection_reason TEXT, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_by INTEGER, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_lab_order_test UNIQUE (prescription_id, test_name), 
+	FOREIGN KEY(prescription_id) REFERENCES prescriptions (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(doctor_id) REFERENCES doctors (id), 
+	UNIQUE (sample_code), 
+	FOREIGN KEY(collected_by) REFERENCES users (id), 
+	FOREIGN KEY(completed_by) REFERENCES users (id), 
+	FOREIGN KEY(report_id) REFERENCES health_reports (id), 
+	FOREIGN KEY(updated_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_lab_test_orders_patient_id ON lab_test_orders (patient_id);
+CREATE INDEX ix_lab_test_orders_prescription_id ON lab_test_orders (prescription_id);
+CREATE INDEX ix_lab_test_orders_status ON lab_test_orders (status);
+
+CREATE TABLE patient_assistant_evidence (
+	id SERIAL NOT NULL, 
+	message_id INTEGER NOT NULL, 
+	source_type VARCHAR(20) NOT NULL, 
+	source_id INTEGER, 
+	label VARCHAR(200) NOT NULL, 
+	record_date VARCHAR(20), 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(message_id) REFERENCES patient_assistant_messages (id)
+);
+
+CREATE INDEX ix_patient_assistant_evidence_message_id ON patient_assistant_evidence (message_id);
+
 CREATE TABLE prescription_items (
 	id SERIAL NOT NULL, 
 	prescription_id INTEGER NOT NULL, 
@@ -279,6 +707,27 @@ CREATE TABLE prescription_items (
 );
 
 CREATE INDEX ix_prescription_items_prescription_id ON prescription_items (prescription_id);
+
+CREATE TABLE sales (
+	id SERIAL NOT NULL, 
+	bill_number VARCHAR(30) NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	pharmacy_staff_id INTEGER NOT NULL, 
+	prescription_id INTEGER, 
+	customer_name VARCHAR(150), 
+	customer_phone VARCHAR(30), 
+	payment_method VARCHAR(10) NOT NULL, 
+	subtotal FLOAT NOT NULL, 
+	discount FLOAT NOT NULL, 
+	tax FLOAT NOT NULL, 
+	total FLOAT NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(pharmacy_staff_id) REFERENCES pharmacy_staff (id), 
+	FOREIGN KEY(prescription_id) REFERENCES prescriptions (id)
+);
+
+CREATE UNIQUE INDEX ix_sales_bill_number ON sales (bill_number);
+CREATE INDEX ix_sales_created_at ON sales (created_at);
 
 CREATE TABLE medicine_dispensing (
 	id SERIAL NOT NULL, 
@@ -297,3 +746,26 @@ CREATE TABLE medicine_dispensing (
 );
 
 CREATE INDEX ix_medicine_dispensing_prescription_id ON medicine_dispensing (prescription_id);
+
+CREATE TABLE sale_items (
+	id SERIAL NOT NULL, 
+	sale_id INTEGER NOT NULL, 
+	inventory_id INTEGER, 
+	prescription_item_id INTEGER, 
+	medicine_name VARCHAR(200) NOT NULL, 
+	batch_number VARCHAR(50), 
+	expiry_date DATE, 
+	quantity INTEGER NOT NULL, 
+	unit_price FLOAT NOT NULL, 
+	gst_percent FLOAT NOT NULL, 
+	line_total FLOAT NOT NULL, 
+	tax_amount FLOAT NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(sale_id) REFERENCES sales (id), 
+	FOREIGN KEY(inventory_id) REFERENCES medicine_inventory (id), 
+	FOREIGN KEY(prescription_item_id) REFERENCES prescription_items (id)
+);
+
+CREATE INDEX ix_sale_items_prescription_item_id ON sale_items (prescription_item_id);
+CREATE INDEX ix_sale_items_sale_id ON sale_items (sale_id);
+

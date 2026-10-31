@@ -13,7 +13,7 @@ from app.database.models import (
 from app.services.user_service import age_from_dob
 from app.routers.auth import user_out
 from app.schemas.auth import CreatedUserResponse, DepartmentCreate, StaffCreate, UserOut, UserUpdate
-from app.services import audit_service, dashboard_service, user_service
+from app.services import audit_service, catalog_service, dashboard_service, user_service
 from app.utils.validators import Limit, PathId, SearchText, one_of
 ROLE_FILTER = one_of("ADMIN", "DOCTOR", "EMPLOYEE", "PATIENT", "PHARMACY", "LAB", name="role")
 
@@ -58,10 +58,12 @@ def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(adm
     for u in users:
         details: list[list[str]] = []
         phone = None
+        extra: dict = {}
         if u.id in doctors:
             d = doctors[u.id]
             phone = d.phone
-            details = [["Specialization", d.specialization], ["Department", d.department.name if d.department else None]]
+            details = [["Specialization", d.specialization_name], ["Department", d.department.name if d.department else None]]
+            extra = {"department_id": d.department_id, "specialization_id": d.specialization_id, "legacy_specialization": d.specialization if not d.specialization_id else None}
         elif u.id in employees:
             e = employees[u.id]
             phone = e.phone
@@ -84,7 +86,7 @@ def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(adm
             "id": u.id, "full_name": u.full_name, "email": u.email, "role": u.role, "is_active": u.is_active,
             "created_at": u.created_at.isoformat(), "last_login": last_login[u.id].isoformat() if u.id in last_login else None,
             "phone": phone, "details": [[label, value] for label, value in details if value],
-            "has_avatar": bool(u.avatar_path), "avatar_version": avatar_version(u),
+            "has_avatar": bool(u.avatar_path), "avatar_version": avatar_version(u), **extra,
         })
     return result
 
@@ -131,6 +133,15 @@ def update_user(user_id: PathId, data: UserUpdate, request: Request, admin: User
         user.is_active = data.is_active
     if data.full_name:
         user.full_name = data.full_name.strip()
+    if "department_id" in data.model_fields_set or "specialization_id" in data.model_fields_set:
+        doctor = db.scalar(select(Doctor).where(Doctor.user_id == user.id))
+        if doctor is None:
+            raise HTTPException(422, "Only a doctor has a department and a specialization.")
+        catalog_service.check_choice(db, data.department_id, data.specialization_id, doctor)
+        doctor.department_id = data.department_id
+        doctor.specialization_id = data.specialization_id
+        if data.specialization_id:
+            doctor.specialization = None
     db.commit()
     audit_service.log_action(db, admin, audit_service.USER_CHANGED, "user", user.id, request,
                              f"active={user.is_active}")
@@ -160,7 +171,7 @@ def delete_user(user_id: PathId, request: Request, admin: User = Depends(admin_o
 
 @router.get("/departments")
 def list_departments(_: User = Depends(require_roles(ADMIN, EMPLOYEE, DOCTOR)), db: Session = Depends(get_db)):
-    return [{"id": d.id, "name": d.name} for d in db.scalars(select(Department).order_by(Department.name))]
+    return [{"id": d.id, "name": d.name} for d in db.scalars(select(Department).where(Department.is_active.is_not(False)).order_by(Department.name))]
 
 
 @router.post("/departments", status_code=status.HTTP_201_CREATED)

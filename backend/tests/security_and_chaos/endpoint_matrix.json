@@ -1108,6 +1108,152 @@
  },
  {
   "method": "GET",
+  "path": "/api/catalog/departments",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "LAB",
+   "PATIENT",
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/catalog/specializations",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "LAB",
+   "PATIENT",
+   "PHARMACY"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 200,
+   "PHARMACY": 200,
+   "LAB": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/catalog/departments",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/catalog/departments/{department_id}",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PATCH",
+  "path": "/api/catalog/departments/{department_id}",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/catalog/specializations",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/catalog/specializations/{specialization_id}",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PATCH",
+  "path": "/api/catalog/specializations/{specialization_id}",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
   "path": "/api/lab/test-orders",
   "public": false,
   "roles": [

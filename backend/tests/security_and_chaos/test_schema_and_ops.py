@@ -21,7 +21,6 @@ def schema_tables():
     return tables
 
 
-@bust("S-03")
 def test_schema_sql_for_postgresql_has_every_table_and_column_of_the_models():
     """schema.sql is what a PostgreSQL deployment is told to load. It lacks 19 of the 37 tables and about 20 columns (insights, lab, past history,
     clinical intelligence, assistant, billing sales ...), so an application started on it fails on the first request that needs one."""

@@ -220,7 +220,7 @@ def prescription_out(rx: Prescription, include_tests: bool = True) -> Prescripti
         valid_until=rx.prescription_date + timedelta(days=PRESCRIPTION_VALID_DAYS),
         clinical_indication=rx.clinical_indication, notes=rx.notes, status=effective_status(rx), items=items,
         tests=tests_of(rx) if include_tests else [],
-        doctor_info=DoctorInfo(qualification=rx.doctor.qualification, specialization=rx.doctor.specialization,
+        doctor_info=DoctorInfo(qualification=rx.doctor.qualification, specialization=rx.doctor.specialization_name,
                                department=rx.doctor.department.name if rx.doctor.department else None, registration_number=rx.doctor.registration_number),
         patient_info=PatientInfo(age=age_from_dob(rx.patient.date_of_birth), gender=rx.patient.gender,
                                  phone=rx.patient.phone if include_tests else None, allergies=rx.patient.allergies if include_tests else None),

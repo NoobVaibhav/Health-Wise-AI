@@ -67,7 +67,8 @@ class StaffCreate(BaseModel):
     phone: OptionalPhone = None
     # doctor
     department_id: PositiveId | None = None
-    specialization: opt_text(120) = None
+    specialization_id: PositiveId | None = None
+    specialization: opt_text(120) = None         # old free text, still accepted when no specialization_id is sent
     # employee
     designation: opt_text(100) = None
     # pharmacy
@@ -90,6 +91,8 @@ class CreatedUserResponse(BaseModel):
 class UserUpdate(BaseModel):
     is_active: bool | None = None
     full_name: PersonName | None = None
+    department_id: PositiveId | None = None         # doctors only; sent together with specialization_id
+    specialization_id: PositiveId | None = None
 
 
 class DepartmentCreate(BaseModel):

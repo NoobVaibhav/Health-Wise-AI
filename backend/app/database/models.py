@@ -37,6 +37,21 @@ class Department(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), unique=True)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)     # nullable so old databases can add the column
+
+
+class Specialization(Base):
+    """A medical specialization inside one department (for example Cardiology -> Interventional Cardiologist)."""
+    __tablename__ = "specializations"
+    __table_args__ = (UniqueConstraint("department_id", "name_key", name="uq_specialization_department_name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+    name_key: Mapped[str] = mapped_column(String(100))                        # lower-cased name, so duplicates are found ignoring case
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"), index=True)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+
+    department: Mapped["Department"] = relationship()
 
 
 class Patient(Base):
@@ -68,7 +83,8 @@ class Doctor(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
     department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
-    specialization: Mapped[str | None] = mapped_column(String(120))
+    specialization: Mapped[str | None] = mapped_column(String(120))        # legacy free text, kept for old rows ("Other (legacy)")
+    specialization_id: Mapped[int | None] = mapped_column(ForeignKey("specializations.id"))
     phone: Mapped[str | None] = mapped_column(String(30))
     qualification: Mapped[str | None] = mapped_column(String(150))
     registration_number: Mapped[str | None] = mapped_column(String(50))
@@ -76,6 +92,12 @@ class Doctor(Base):
 
     user: Mapped[User] = relationship()
     department: Mapped[Department | None] = relationship()
+    specialization_ref: Mapped["Specialization | None"] = relationship()
+
+    @property
+    def specialization_name(self) -> str | None:
+        """The chosen specialization, else the old free text."""
+        return self.specialization_ref.name if self.specialization_ref else (self.specialization or None)
 
 
 class Employee(Base):

@@ -61,6 +61,8 @@ class DoctorOut(BaseModel):
     id: int
     full_name: str
     specialization: str | None
+    specialization_id: int | None = None
+    specialization_name: str | None = None
     department_id: int | None
     department_name: str | None
     is_active: bool

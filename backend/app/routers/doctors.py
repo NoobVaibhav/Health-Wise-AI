@@ -55,7 +55,8 @@ def _authorized_patient_and_report(db: Session, doctor: Doctor, patient_id: int,
 @directory.get("", response_model=list[DoctorOut])
 def list_doctors(_: User = Depends(require_roles(ADMIN, EMPLOYEE, PATIENT, DOCTOR)), db: Session = Depends(get_db)):
     rows = db.scalars(select(Doctor).join(User, Doctor.user_id == User.id).order_by(User.full_name)).all()
-    return [DoctorOut(id=d.id, full_name=d.user.full_name, specialization=d.specialization,
+    return [DoctorOut(id=d.id, full_name=d.user.full_name, specialization=d.specialization_name,
+                      specialization_id=d.specialization_id, specialization_name=d.specialization_name,
                       department_id=d.department_id, department_name=d.department.name if d.department else None,
                       is_active=d.user.is_active) for d in rows if d.user.is_active]
 

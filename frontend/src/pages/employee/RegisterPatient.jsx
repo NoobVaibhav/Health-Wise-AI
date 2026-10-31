@@ -12,6 +12,7 @@ import { FormField } from "../../components/FormField";
 import useValidation from "../../hooks/useValidation";
 import * as v from "../../utils/validators";
 import { ErrorBox, PageTitle } from "../../components/Feedback";
+import DoctorSelect from "../../components/DoctorSelect";
 
 const RULES = {
   full_name: (value) => v.personName(value),
@@ -93,8 +94,7 @@ export default function RegisterPatient() {
             </div>
             <div className="sm:col-span-2">
               <label htmlFor="assigned_doctor_id" className="block text-sm font-semibold text-slate-700">Assigned doctor</label>
-              <div className="mt-1.5"><Select id="assigned_doctor_id" value={form.assigned_doctor_id} onChange={set("assigned_doctor_id")}>
-                <option value="">Choose later</option>{(doctors || []).map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}</Select></div>
+              <div className="mt-1.5"><DoctorSelect id="assigned_doctor_id" doctors={doctors} value={form.assigned_doctor_id} onChange={set("assigned_doctor_id")} emptyLabel="Choose later" showSpecialization={false} /></div>
               <p className="mt-1 text-xs text-slate-500">The doctor who will review this patient's reports</p>
             </div>
           </div>

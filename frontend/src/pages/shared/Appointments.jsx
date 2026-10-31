@@ -13,6 +13,7 @@ import { Button, Field, Input, Modal, Select, Textarea } from "../../components/
 import { Chips } from "../../components/historyKit";
 import { EmptyState, ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 import { useToast } from "../../components/Toast";
+import DoctorSelect from "../../components/DoctorSelect";
 
 const SUBTITLE = {
   DOCTOR: "Your patients' appointments with you", PATIENT: "Your upcoming and past visits",
@@ -108,10 +109,7 @@ function NewAppointment({ role, onClose, onSaved }) {
       <form onSubmit={submit} className="space-y-4">
         {role !== "PATIENT" && <Field label="Who is it for?"><PatientPicker value={patient} onChange={setPatient} /></Field>}
         <Field label="Which doctor?">
-          <Select required value={form.doctor_id} onChange={set("doctor_id")}>
-            <option value="">Choose a doctor</option>
-            {(doctors || []).map((d) => <option key={d.id} value={d.id}>{d.full_name}{d.specialization ? ` (${d.specialization})` : ""}</option>)}
-          </Select>
+          <DoctorSelect required doctors={doctors} value={form.doctor_id} onChange={set("doctor_id")} />
         </Field>
         <Field label="Date and time"><Input type="datetime-local" required value={form.scheduled_at} onChange={set("scheduled_at")} /></Field>
         <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-4">

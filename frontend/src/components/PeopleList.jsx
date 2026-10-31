@@ -1,6 +1,6 @@
 // Cards for people (doctors, employees, pharmacy staff, patients, admins) with an activate/deactivate button.
 import { useState } from "react";
-import { AlertTriangle, Search, Trash2, UserCheck, UserX } from "lucide-react";
+import { AlertTriangle, Pencil, Search, Trash2, UserCheck, UserX } from "lucide-react";
 import useFetch from "../hooks/useFetch";
 import { useAuth } from "../context/AuthContext";
 import { checkDeleteUser, deleteUser, listPeople, updateUser } from "../services/adminApi";
@@ -9,6 +9,7 @@ import { PersonCard, timeAgo } from "./DataViews";
 import { StatusPill } from "./StatusBadge";
 import { EmptyState, ErrorBox, Loading } from "./Feedback";
 import { Button, Modal, inputClass } from "./ui";
+import EditDoctorDialog from "./EditDoctorDialog";
 import { useToast } from "./Toast";
 
 export default function PeopleList({ role, reloadKey, emptyHint }) {
@@ -19,6 +20,7 @@ export default function PeopleList({ role, reloadKey, emptyHint }) {
 
   const [removing, setRemoving] = useState(null);      // { person, check } : the person the admin may delete, and why not if not
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(null);       // a doctor whose department and specialization the admin is changing
 
   const askDelete = async (p) => {
     try { setRemoving({ person: p, check: await checkDeleteUser(p.id) }); } catch (e) { toast(getErrorMessage(e), "error"); }
@@ -53,6 +55,7 @@ export default function PeopleList({ role, reloadKey, emptyHint }) {
               facts={[...p.details, ...(p.phone ? [["Phone", p.phone]] : []), ["Last login", timeAgo(p.last_login)]]}
               actions={p.id !== me.id && (
                 <div className="flex flex-wrap gap-2">
+                  {p.role === "DOCTOR" && <Button variant="secondary" onClick={() => setEditing(p)} aria-label={`Edit department of ${p.full_name}`}><Pencil size={15} className="mr-1.5 inline" /> Edit</Button>}
                   <Button variant={p.is_active ? "secondary" : "soft"} onClick={() => toggle(p)}>
                     {p.is_active ? <><UserX size={15} className="mr-1.5 inline" /> Deactivate</> : <><UserCheck size={15} className="mr-1.5 inline" /> Activate</>}
                   </Button>
@@ -61,6 +64,8 @@ export default function PeopleList({ role, reloadKey, emptyHint }) {
           ))}
         </div>
       )}
+
+      {editing && <EditDoctorDialog person={editing} onClose={() => setEditing(null)} onSaved={() => { toast(`${editing.full_name} was updated`); reload(); }} />}
 
       {removing && (
         <Modal title={`Delete ${removing.person.full_name}?`} onClose={() => setRemoving(null)}>
