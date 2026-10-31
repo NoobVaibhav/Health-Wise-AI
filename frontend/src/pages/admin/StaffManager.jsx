@@ -20,6 +20,7 @@ const KINDS = {
   employees: { role: "EMPLOYEE", title: "Employees", single: "employee" },
   "pharmacy-staff": { role: "PHARMACY", title: "Pharmacy Staff", single: "pharmacy staff member" },
   "lab-staff": { role: "LAB", title: "Laboratory Staff", single: "laboratory staff member" },
+  nurses: { role: "NURSE", title: "Nurses", single: "nurse" },
   trainees: { role: "TRAINEE", title: "Interns & PG Students", single: "trainee" },
 };
 
@@ -119,7 +120,7 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
             </Select>
           </FormField>
         </>)}
-        {kind === "employees" && <FormField label="Designation" name="designation" error={check.errors.designation}><Input placeholder="Receptionist, lab assistant ..." maxLength={100} value={form.designation} onChange={set("designation")} onBlur={blur("designation")} /></FormField>}
+        {(kind === "employees" || kind === "nurses") && <FormField label="Designation" name="designation" error={check.errors.designation}><Input placeholder={kind === "nurses" ? "Staff nurse, ICU nurse, ward staff ..." : "Receptionist, lab assistant ..."} maxLength={100} value={form.designation} onChange={set("designation")} onBlur={blur("designation")} /></FormField>}
         {kind === "pharmacy-staff" && <FormField label="Pharmacy name" name="pharmacy_name" error={check.errors.pharmacy_name}><Input maxLength={150} value={form.pharmacy_name} onChange={set("pharmacy_name")} onBlur={blur("pharmacy_name")} /></FormField>}
         {kind === "lab-staff" && <FormField label="Laboratory name" name="lab_name" error={check.errors.lab_name}><Input maxLength={150} value={form.lab_name} onChange={set("lab_name")} onBlur={blur("lab_name")} /></FormField>}
         {error && <ErrorBox message={error} />}

@@ -10,6 +10,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -26,6 +27,7 @@
    "PHARMACY": 422,
    "LAB": 422,
    "TRAINEE": 422,
+   "NURSE": 422,
    "EMPLOYEE": 422,
    "ADMIN": 422,
    "DOCTOR": 422
@@ -42,6 +44,7 @@
    "PHARMACY": 422,
    "LAB": 422,
    "TRAINEE": 422,
+   "NURSE": 422,
    "EMPLOYEE": 422,
    "ADMIN": 422,
    "DOCTOR": 422
@@ -58,6 +61,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -74,6 +78,7 @@
    "PHARMACY": 422,
    "LAB": 422,
    "TRAINEE": 422,
+   "NURSE": 422,
    "EMPLOYEE": 422,
    "ADMIN": 422,
    "DOCTOR": 422
@@ -92,6 +97,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -110,6 +116,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -128,6 +135,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -146,6 +154,26 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/admin/nurses",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -164,6 +192,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -182,6 +211,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -200,6 +230,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -218,6 +249,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -236,6 +268,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -254,6 +287,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -272,6 +306,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 409,
    "DOCTOR": 403
@@ -292,6 +327,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -310,6 +346,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -328,6 +365,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -347,6 +385,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 422,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -367,6 +406,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -383,6 +423,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -402,6 +443,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -421,6 +463,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -440,6 +483,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -459,6 +503,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -477,6 +522,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -495,6 +541,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -513,6 +560,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -531,6 +579,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -549,6 +598,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -567,6 +617,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -585,6 +636,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -603,6 +655,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -621,6 +674,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -639,6 +693,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -658,6 +713,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 422,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -674,6 +730,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -690,6 +747,7 @@
    "PHARMACY": 404,
    "LAB": 404,
    "TRAINEE": 404,
+   "NURSE": 404,
    "EMPLOYEE": 404,
    "ADMIN": 404,
    "DOCTOR": 404
@@ -706,6 +764,7 @@
    "PHARMACY": 404,
    "LAB": 404,
    "TRAINEE": 404,
+   "NURSE": 404,
    "EMPLOYEE": 404,
    "ADMIN": 404,
    "DOCTOR": 404
@@ -724,6 +783,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -740,6 +800,7 @@
    "PHARMACY": 404,
    "LAB": 404,
    "TRAINEE": 404,
+   "NURSE": 404,
    "EMPLOYEE": 404,
    "ADMIN": 404,
    "DOCTOR": 404
@@ -756,6 +817,7 @@
    "PHARMACY": 404,
    "LAB": 404,
    "TRAINEE": 404,
+   "NURSE": 404,
    "EMPLOYEE": 404,
    "ADMIN": 404,
    "DOCTOR": 404
@@ -772,6 +834,7 @@
    "PHARMACY": 422,
    "LAB": 422,
    "TRAINEE": 422,
+   "NURSE": 422,
    "EMPLOYEE": 422,
    "ADMIN": 422,
    "DOCTOR": 422
@@ -788,6 +851,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -804,6 +868,7 @@
    "PHARMACY": 404,
    "LAB": 404,
    "TRAINEE": 404,
+   "NURSE": 404,
    "EMPLOYEE": 404,
    "ADMIN": 404,
    "DOCTOR": 404
@@ -822,6 +887,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -842,6 +908,7 @@
    "PHARMACY": 200,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -862,6 +929,7 @@
    "PHARMACY": 404,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -880,6 +948,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -898,6 +967,7 @@
    "PHARMACY": 200,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -916,6 +986,7 @@
    "PHARMACY": 200,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -934,6 +1005,7 @@
    "PHARMACY": 422,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -952,6 +1024,7 @@
    "PHARMACY": 200,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -970,6 +1043,7 @@
    "PHARMACY": 200,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -988,6 +1062,7 @@
    "PHARMACY": 422,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1006,6 +1081,7 @@
    "PHARMACY": 404,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1024,6 +1100,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1042,6 +1119,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1060,6 +1138,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1078,6 +1157,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1096,6 +1176,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1114,6 +1195,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1132,6 +1214,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1148,6 +1231,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -1167,6 +1251,7 @@
    "PHARMACY": 200,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -1185,6 +1270,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -1199,6 +1285,7 @@
    "DOCTOR",
    "EMPLOYEE",
    "LAB",
+   "NURSE",
    "PATIENT",
    "PHARMACY",
    "TRAINEE"
@@ -1209,6 +1296,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -1223,6 +1311,7 @@
    "DOCTOR",
    "EMPLOYEE",
    "LAB",
+   "NURSE",
    "PATIENT",
    "PHARMACY",
    "TRAINEE"
@@ -1233,6 +1322,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -1251,6 +1341,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -1269,6 +1360,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -1287,6 +1379,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -1305,6 +1398,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -1323,6 +1417,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -1341,6 +1436,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -1360,6 +1456,7 @@
    "PHARMACY": 403,
    "LAB": 200,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1378,6 +1475,7 @@
    "PHARMACY": 403,
    "LAB": 200,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1397,6 +1495,7 @@
    "PHARMACY": 403,
    "LAB": 200,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1415,6 +1514,7 @@
    "PHARMACY": 403,
    "LAB": 422,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1433,6 +1533,7 @@
    "PHARMACY": 403,
    "LAB": 422,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1451,6 +1552,7 @@
    "PHARMACY": 403,
    "LAB": 422,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1469,6 +1571,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1487,6 +1590,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -1505,6 +1609,7 @@
    "PHARMACY": 422,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1523,6 +1628,7 @@
    "PHARMACY": 422,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1541,6 +1647,7 @@
    "PHARMACY": 422,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1559,6 +1666,7 @@
    "PHARMACY": 404,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1577,6 +1685,7 @@
    "PHARMACY": 404,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1595,6 +1704,7 @@
    "PHARMACY": 200,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1613,6 +1723,7 @@
    "PHARMACY": 200,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1631,6 +1742,7 @@
    "PHARMACY": 404,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1647,6 +1759,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -1663,6 +1776,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -1679,6 +1793,7 @@
    "PHARMACY": 422,
    "LAB": 422,
    "TRAINEE": 422,
+   "NURSE": 422,
    "EMPLOYEE": 422,
    "ADMIN": 422,
    "DOCTOR": 422
@@ -1695,6 +1810,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -1711,6 +1827,7 @@
    "PHARMACY": 404,
    "LAB": 404,
    "TRAINEE": 404,
+   "NURSE": 404,
    "EMPLOYEE": 404,
    "ADMIN": 404,
    "DOCTOR": 404
@@ -1729,6 +1846,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1745,6 +1863,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -1763,6 +1882,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -1781,6 +1901,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -1799,6 +1920,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -1817,6 +1939,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 201
@@ -1835,6 +1958,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -1853,6 +1977,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -1871,6 +1996,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -1889,6 +2015,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -1907,6 +2034,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -1925,6 +2053,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -1943,6 +2072,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -1961,6 +2091,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -1979,6 +2110,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -1997,6 +2129,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2015,6 +2148,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2033,6 +2167,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -2051,6 +2186,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -2069,6 +2205,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2087,6 +2224,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2105,6 +2243,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -2123,6 +2262,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 503
@@ -2141,6 +2281,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -2159,6 +2300,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -2177,6 +2319,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -2195,6 +2338,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -2213,6 +2357,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -2231,6 +2376,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -2249,6 +2395,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -2267,6 +2414,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -2285,6 +2433,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 422
@@ -2303,6 +2452,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2321,6 +2471,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2339,6 +2490,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2357,6 +2509,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2375,6 +2528,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2393,6 +2547,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2411,6 +2566,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2429,6 +2585,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 200,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2447,6 +2604,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 200,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2465,6 +2623,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 200,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2483,6 +2642,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 422,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2501,6 +2661,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 404,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2519,6 +2680,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 422,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2537,6 +2699,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 404,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2555,6 +2718,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 404,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2573,6 +2737,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 200,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2591,6 +2756,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 422,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2609,6 +2775,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 200,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 403
@@ -2627,6 +2794,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -2645,6 +2813,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -2663,6 +2832,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
@@ -2681,6 +2851,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2699,6 +2870,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2717,6 +2889,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2735,6 +2908,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2753,6 +2927,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2771,6 +2946,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 404
@@ -2785,6 +2961,7 @@
    "DOCTOR",
    "EMPLOYEE",
    "LAB",
+   "NURSE",
    "PHARMACY",
    "TRAINEE"
   ],
@@ -2794,6 +2971,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -2812,6 +2990,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -2826,6 +3005,7 @@
    "DOCTOR",
    "EMPLOYEE",
    "LAB",
+   "NURSE",
    "PHARMACY",
    "TRAINEE"
   ],
@@ -2835,6 +3015,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -2853,6 +3034,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -2871,6 +3053,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -2885,6 +3068,7 @@
    "DOCTOR",
    "EMPLOYEE",
    "LAB",
+   "NURSE",
    "PHARMACY",
    "TRAINEE"
   ],
@@ -2894,6 +3078,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -2912,6 +3097,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -2925,6 +3111,7 @@
    "ADMIN",
    "DOCTOR",
    "EMPLOYEE",
+   "NURSE",
    "PHARMACY"
   ],
   "results": {
@@ -2933,6 +3120,7 @@
    "PHARMACY": 200,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -2951,6 +3139,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -2969,6 +3158,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 404,
    "DOCTOR": 403
@@ -2987,6 +3177,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -3005,6 +3196,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -3023,6 +3215,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -3039,6 +3232,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -3057,6 +3251,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -3075,6 +3270,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -3086,7 +3282,8 @@
   "public": false,
   "roles": [
    "ADMIN",
-   "DOCTOR"
+   "DOCTOR",
+   "NURSE"
   ],
   "results": {
    "none": 401,
@@ -3094,6 +3291,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 422,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 422
@@ -3105,7 +3303,8 @@
   "public": false,
   "roles": [
    "ADMIN",
-   "DOCTOR"
+   "DOCTOR",
+   "NURSE"
   ],
   "results": {
    "none": 401,
@@ -3113,6 +3312,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 422,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 422
@@ -3131,6 +3331,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -3149,6 +3350,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 404,
    "DOCTOR": 403
@@ -3168,6 +3370,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -3186,6 +3389,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -3204,6 +3408,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 403,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -3220,6 +3425,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -3239,6 +3445,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 422,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -3258,6 +3465,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 404,
    "ADMIN": 404,
    "DOCTOR": 403
@@ -3277,6 +3485,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 403
@@ -3296,6 +3505,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 422,
    "ADMIN": 422,
    "DOCTOR": 403
@@ -3315,9 +3525,1291 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 404,
    "ADMIN": 404,
    "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/check-in",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "EMPLOYEE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/walk-in",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "EMPLOYEE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/opd/queue",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/queue/next",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/queue/{token_id}/call",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/queue/{token_id}/{outcome}",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "EMPLOYEE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 404,
+   "ADMIN": 404,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/opd/templates",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/templates",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/opd/templates/{template_id}",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/opd/encounters/{encounter_id}",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 404,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/opd/encounters/{encounter_id}/consultation",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/encounters/{encounter_id}/sign",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/consultations/{consultation_id}/addenda",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/encounters/{encounter_id}/vitals",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/encounters/{encounter_id}/diagnoses",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/diagnoses/{diagnosis_id}/withdraw",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/encounters/{encounter_id}/orders",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/opd/orders/{order_id}/status",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/nursing/dashboard",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 200,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/nursing/admissions/{admission_id}/chart",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 404,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/nursing/admissions/{admission_id}/vitals",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/nursing/admissions/{admission_id}/notes",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/nursing/admissions/{admission_id}/intake-output",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/nursing/mar/{entry_id}/act",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/nursing/alerts",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 200,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/nursing/alerts/{alert_id}/ack",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 404,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/nursing/escalation-rules",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 200,
+   "EMPLOYEE": 403,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/nursing/escalation-rules",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/nursing/escalation-rules/{rule_id}",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/emergency/visits",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/emergency/board",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/emergency/visits/{visit_id}",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 404,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/emergency/visits/{visit_id}/triage",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/emergency/visits/{visit_id}/assign",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/emergency/visits/{visit_id}/timeline",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/emergency/visits/{visit_id}/orders",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/emergency/visits/{visit_id}/disposition",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/ipd/wards",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/ipd/bed-counts",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/wards",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/ipd/wards/{ward_id}",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/wards/{ward_id}/beds",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/beds/{bed_id}/status",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/admissions",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/ipd/admissions",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 200,
+   "EMPLOYEE": 200,
+   "ADMIN": 200,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/ipd/admissions/{admission_id}",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 404,
+   "EMPLOYEE": 404,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/admissions/{admission_id}/bed",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR",
+   "EMPLOYEE",
+   "NURSE"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/ipd/staff-options",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/admissions/{admission_id}/staff",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/admissions/{admission_id}/staff/{staff_id}/end",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/admissions/{admission_id}/notes",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/admissions/{admission_id}/medication-orders",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/medication-orders/{order_id}/stop",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/admissions/{admission_id}/orders",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "PUT",
+  "path": "/api/ipd/admissions/{admission_id}/discharge-summary",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/admissions/{admission_id}/discharge-summary/approve",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/ipd/admissions/{admission_id}/discharge",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 404,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/referral-requests",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/referral-requests",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/referral-requests/{request_id}",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/referral-requests/{request_id}/accept",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/referral-requests/{request_id}/decline",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/referral-requests/{request_id}/complete",
+  "public": false,
+  "roles": [
+   "ADMIN",
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "TRAINEE": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
   }
  },
  {
@@ -3336,6 +4828,7 @@
    "PHARMACY": 403,
    "LAB": 403,
    "TRAINEE": 403,
+   "NURSE": 403,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200
@@ -3352,6 +4845,7 @@
    "PHARMACY": 200,
    "LAB": 200,
    "TRAINEE": 200,
+   "NURSE": 200,
    "EMPLOYEE": 200,
    "ADMIN": 200,
    "DOCTOR": 200

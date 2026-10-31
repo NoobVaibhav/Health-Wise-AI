@@ -100,7 +100,7 @@ function QuantityHint({ item, onUse }) {
 
 const EMPTY_ITEM ={ medicine_name: "", dosage: "", frequency: "", duration: "", quantity: 1, instructions: "" };
 
-export function PrescriptionModal({ patientId, reportId, onClose, onSaved }) {
+export function PrescriptionModal({ patientId, reportId, encounterId, onClose, onSaved }) {
   const [items, setItems] = useState([{ ...EMPTY_ITEM }]);
   const [indication, setIndication] = useState("");
   const [notes, setNotes] = useState("");
@@ -133,7 +133,7 @@ export function PrescriptionModal({ patientId, reportId, onClose, onSaved }) {
   };
   const { submit, error, busy } = useSubmit(
     () => createPrescription({
-      patient_id: patientId, report_id: reportId || null, clinical_indication: indication || null, notes: notes || null, tests,
+      patient_id: patientId, report_id: reportId || null, encounter_id: encounterId || null, clinical_indication: indication || null, notes: notes || null, tests,
       items: items.map(({ qtyManual, ...it }) => ({ ...it, quantity: Number(it.quantity), instructions: it.instructions || null })),
     }),
     () => { onSaved(); onClose(); }, "Prescription created");

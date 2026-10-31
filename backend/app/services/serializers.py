@@ -158,7 +158,7 @@ def appointment_out(a: Appointment, role: str | None = None) -> AppointmentOut:
         patient_code=a.patient.patient_code, doctor_id=a.doctor_id, doctor_name=a.doctor.user.full_name,
         department_name=a.department.name if a.department else (
             a.doctor.department.name if a.doctor.department else None),
-        scheduled_at=a.scheduled_at, reason=a.reason, status=a.status,
+        scheduled_at=a.scheduled_at, reason=a.reason, status=a.status, encounter_id=a.encounter_id,
         symptoms=json.loads(a.symptoms_json) if problem and a.symptoms_json else [],
         duration=a.duration if problem else None, details=a.details if problem else None,
     )

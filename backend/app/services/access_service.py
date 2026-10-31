@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, TRAINEE, forbidden, get_current_user
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PATIENT, PHARMACY, TRAINEE, forbidden, get_current_user
 from app.database.connection import get_db
 from app.database.models import Permission, Role, RolePermission, User, UserRole
 
@@ -28,19 +28,42 @@ PERMISSIONS: dict[str, str] = {
     "breakglass.use": "Open a patient's record in an emergency with a written reason",
     "breakglass.review": "Review emergency (break-glass) access",
     "audit.view": "Read the audit log",
+    # Phase 3: clinical workflows
+    "opd.checkin": "Check in appointments and walk-in patients and give tokens",
+    "opd.queue": "See the OPD queue",
+    "consult.write": "Write and sign consultations",
+    "orders.write": "Order tests, scans, procedures, diets and nursing tasks",
+    "vitals.record": "Record vital signs",
+    "nursing.chart": "Write nursing notes, give medicines (MAR), record intake and output, handover",
+    "alert.ack": "Acknowledge clinical alerts",
+    "ed.register": "Register an emergency patient (also an unknown one)",
+    "ed.triage": "Triage emergency patients",
+    "ed.treat": "Assess, treat and decide the outcome of emergency patients",
+    "ipd.admit": "Admit a patient and assign doctors",
+    "ipd.bed": "Assign, transfer and release beds; see the bed board",
+    "ipd.notes": "Write progress notes and medication orders for inpatients",
+    "discharge.write": "Prepare a discharge summary",
+    "discharge.approve": "Approve a discharge summary and discharge the patient",
+    "referral.request": "Refer a patient to another department",
+    "referral.respond": "Accept or decline a referral and write the consult note",
+    "ward.manage": "Add wards and beds",
+    "template.manage": "Change consultation templates",
+    "escalation.manage": "Change the alert thresholds",
 }
 ALL = list(PERMISSIONS)
+DOCTOR_PERMISSIONS = ["hospital.view", "service.view", "breakglass.use", "opd.queue", "consult.write", "orders.write", "vitals.record", "alert.ack", "ed.register", "ed.triage", "ed.treat",
+                      "ipd.admit", "ipd.bed", "ipd.notes", "discharge.write", "discharge.approve", "referral.request", "referral.respond"]
 
 # code -> (name, description, permissions)
 ROLES: dict[str, tuple[str, str, list[str]]] = {
     "SUPER_ADMIN": ("Super Admin", "The first administrator: everything, including roles", ALL),
     "HOSPITAL_ADMIN": ("Hospital Admin", "Runs the hospital system", ALL),
-    "BRANCH_ADMIN": ("Branch Admin", "Runs one branch", ["hospital.view", "service.view", "patient.register", "patient.search", "consent.manage", "insurance.manage", "abha.manage", "audit.view"]),
-    "RECEPTIONIST": ("Receptionist", "Registers patients and books appointments", ["hospital.view", "service.view", "patient.register", "patient.search", "consent.manage", "insurance.manage", "abha.manage"]),
-    "DOCTOR": ("Doctor", "Treats patients", ["hospital.view", "service.view", "breakglass.use"]),
-    "SPECIALIST_DOCTOR": ("Specialist Doctor", "A doctor with a specialization", ["hospital.view", "service.view", "breakglass.use"]),
+    "BRANCH_ADMIN": ("Branch Admin", "Runs one branch", ["ipd.bed", "opd.queue", "hospital.view", "service.view", "patient.register", "patient.search", "consent.manage", "insurance.manage", "abha.manage", "audit.view"]),
+    "RECEPTIONIST": ("Receptionist", "Registers patients and books appointments", ["opd.checkin", "opd.queue", "ed.register", "ipd.bed", "hospital.view", "service.view", "patient.register", "patient.search", "consent.manage", "insurance.manage", "abha.manage"]),
+    "DOCTOR": ("Doctor", "Treats patients", DOCTOR_PERMISSIONS),
+    "SPECIALIST_DOCTOR": ("Specialist Doctor", "A doctor with a specialization", DOCTOR_PERMISSIONS),
     "TRAINEE": ("Intern / PG Student", "Takes histories and refers patients", ["hospital.view"]),
-    "NURSE": ("Nurse", "Nursing care", ["hospital.view", "service.view", "breakglass.use"]),
+    "NURSE": ("Nurse", "Nursing care", ["hospital.view", "service.view", "breakglass.use", "opd.queue", "ed.register", "ed.triage", "vitals.record", "nursing.chart", "alert.ack", "ipd.bed"]),
     "LAB_TECHNICIAN": ("Lab Technician", "Laboratory work", ["hospital.view"]),
     "PATHOLOGIST": ("Pathologist", "Approves laboratory results", ["hospital.view"]),
     "RADIOLOGY_TECHNICIAN": ("Radiology Technician", "Takes the scans", ["hospital.view"]),
@@ -51,8 +74,8 @@ ROLES: dict[str, tuple[str, str, list[str]]] = {
     "ACCOUNTANT": ("Accountant", "Accounts and reports", ["hospital.view", "service.view"]),
     "INSURANCE_EXECUTIVE": ("Insurance/TPA Executive", "Insurance and claims", ["hospital.view", "patient.search", "insurance.manage"]),
     "OT_STAFF": ("OT Staff", "Operation theatre", ["hospital.view"]),
-    "ICU_STAFF": ("ICU Staff", "Intensive care", ["hospital.view", "breakglass.use"]),
-    "WARD_STAFF": ("Ward Staff", "Wards", ["hospital.view"]),
+    "ICU_STAFF": ("ICU Staff", "Intensive care", ["hospital.view", "breakglass.use", "vitals.record", "nursing.chart", "alert.ack", "ipd.bed"]),
+    "WARD_STAFF": ("Ward Staff", "Wards", ["hospital.view", "vitals.record", "nursing.chart", "alert.ack", "ipd.bed"]),
     "BLOOD_BANK_STAFF": ("Blood Bank Staff", "Blood bank", ["hospital.view"]),
     "INVENTORY_MANAGER": ("Inventory Manager", "Stores and purchases", ["hospital.view", "service.view"]),
     "HR_MANAGER": ("HR Manager", "Staff, rosters, attendance", ["hospital.view"]),
@@ -61,19 +84,25 @@ ROLES: dict[str, tuple[str, str, list[str]]] = {
 }
 
 # the login role -> the hospital role it means
-BASE_ROLE = {ADMIN: "HOSPITAL_ADMIN", DOCTOR: "DOCTOR", EMPLOYEE: "RECEPTIONIST", PATIENT: "PATIENT", PHARMACY: "PHARMACIST", LAB: "LAB_TECHNICIAN", TRAINEE: "TRAINEE"}
+BASE_ROLE = {ADMIN: "HOSPITAL_ADMIN", DOCTOR: "DOCTOR", EMPLOYEE: "RECEPTIONIST", PATIENT: "PATIENT", PHARMACY: "PHARMACIST", LAB: "LAB_TECHNICIAN", TRAINEE: "TRAINEE", NURSE: "NURSE"}
 
 
 def seed_access(db: Session) -> None:
     """Start-up, safe to repeat: adds the permissions and roles that are missing and, for a role created now, its default permissions.
     A role that exists is never changed (the administrator may have edited it)."""
     have = {p.code: p for p in db.scalars(select(Permission))}
+    created = []
     for code, description in PERMISSIONS.items():
         if code not in have:
             have[code] = Permission(code=code, description=description)
             db.add(have[code])
+            created.append(code)
     db.flush()
     roles = {r.code: r for r in db.scalars(select(Role))}
+    for code in created:                  # a permission added by a newer version goes (once) to the roles that are meant to have it, also roles that already exist
+        for role_code, (_, _, permissions) in ROLES.items():
+            if code in permissions and role_code in roles:
+                db.add(RolePermission(role_id=roles[role_code].id, permission_id=have[code].id))
     for code, (name, description, permissions) in ROLES.items():
         if code in roles:
             continue

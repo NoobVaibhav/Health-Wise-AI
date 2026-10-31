@@ -14,7 +14,9 @@ from app.core.security import decode_token, password_fingerprint
 from app.database.connection import get_db
 from datetime import datetime, timezone
 
-from app.database.models import Appointment, BreakGlassGrant, Doctor, HealthReport, Patient, Referral, Trainee, User
+from app.database.models import (
+    Admission, AdmissionStaff, Appointment, BreakGlassGrant, Doctor, EdVisit, Encounter, HealthReport, Nurse, Patient, Referral, ReferralRequest, Trainee, User,
+)
 
 ADMIN = "ADMIN"
 DOCTOR = "DOCTOR"
@@ -22,8 +24,9 @@ EMPLOYEE = "EMPLOYEE"
 PATIENT = "PATIENT"
 PHARMACY = "PHARMACY"
 LAB = "LAB"   # laboratory staff: sees the tests doctors advise, never medicines or reports
+NURSE = "NURSE"   # nurses: vitals, nursing notes, medication administration, intake and output
 TRAINEE = "TRAINEE"   # intern or PG student: takes histories and refers patients, never prescribes or orders tests
-ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB, TRAINEE)
+ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB, TRAINEE, NURSE)
 
 FORBIDDEN_MESSAGE = "You do not have permission to access this information."
 
@@ -79,6 +82,13 @@ def get_doctor_profile(db: Session, user: User) -> Doctor:
     return doctor
 
 
+def get_nurse_profile(db: Session, user: User) -> Nurse:
+    nurse = db.scalar(select(Nurse).where(Nurse.user_id == user.id))
+    if nurse is None:
+        raise forbidden()
+    return nurse
+
+
 def get_patient_profile(db: Session, user: User) -> Patient:
     patient = db.scalar(select(Patient).where(Patient.user_id == user.id))
     if patient is None:
@@ -92,6 +102,30 @@ def has_break_glass(db: Session, user_id: int, patient_id: int) -> bool:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     return db.scalar(select(BreakGlassGrant.id).where(BreakGlassGrant.user_id == user_id, BreakGlassGrant.patient_id == patient_id,
                                                       BreakGlassGrant.expires_at > now).limit(1)) is not None
+
+
+def care_team_patient_ids(db: Session, doctor: Doctor, only_patient: int | None = None) -> set[int]:
+    """Patients the doctor looks after through the clinical workflows: an open visit or an emergency visit assigned to them, an admission as attending or
+    consulting doctor, and a referral from another department that names them (a request sent only to a department opens the records once somebody accepts it)."""
+    def narrow(query, column):
+        return query.where(column == only_patient) if only_patient else query
+
+    ids: set[int] = set()
+    ids.update(db.scalars(narrow(select(Encounter.patient_id).where(Encounter.attending_doctor_id == doctor.id), Encounter.patient_id)))
+    ids.update(db.scalars(narrow(select(EdVisit.patient_id).where(EdVisit.assigned_doctor_id == doctor.id), EdVisit.patient_id)))
+    ids.update(db.scalars(narrow(select(Admission.patient_id).where(Admission.attending_doctor_id == doctor.id), Admission.patient_id)))
+    ids.update(db.scalars(narrow(select(Admission.patient_id).join(AdmissionStaff, AdmissionStaff.admission_id == Admission.id).where(
+        AdmissionStaff.user_id == doctor.user_id, AdmissionStaff.kind == "CONSULTING_DOCTOR", AdmissionStaff.to_at.is_(None)), Admission.patient_id)))
+    open_status = ("REQUESTED", "ACCEPTED", "COMPLETED")
+    ids.update(db.scalars(narrow(select(ReferralRequest.patient_id).where(ReferralRequest.to_doctor_id == doctor.id, ReferralRequest.status.in_(open_status)), ReferralRequest.patient_id)))
+    return ids
+
+
+def nurse_can_access_patient(db: Session, patient: Patient) -> bool:
+    """A nurse works with patients who are in the hospital now: an inpatient, or an open emergency or OPD visit."""
+    if db.scalar(select(Admission.id).where(Admission.patient_id == patient.id, Admission.status == "ADMITTED").limit(1)):
+        return True
+    return db.scalar(select(Encounter.id).where(Encounter.patient_id == patient.id, Encounter.status == "OPEN").limit(1)) is not None
 
 
 def doctor_can_access_patient(db: Session, doctor: Doctor, patient: Patient) -> bool:
@@ -113,7 +147,9 @@ def doctor_can_access_patient(db: Session, doctor: Doctor, patient: Patient) -> 
     )
     if has_report is not None:
         return True
-    return db.scalar(select(Referral.id).where(Referral.patient_id == patient.id, Referral.doctor_id == doctor.id).limit(1)) is not None   # referred by a trainee
+    if db.scalar(select(Referral.id).where(Referral.patient_id == patient.id, Referral.doctor_id == doctor.id).limit(1)) is not None:   # referred by a trainee
+        return True
+    return patient.id in care_team_patient_ids(db, doctor, only_patient=patient.id)
 
 
 def get_trainee_profile(db: Session, user: User) -> Trainee:
@@ -139,6 +175,9 @@ def get_accessible_patient(db: Session, user: User, patient_id: int, clinical: b
     elif user.role == DOCTOR:
         if not doctor_can_access_patient(db, get_doctor_profile(db, user), patient):
             raise forbidden()
+    elif user.role == NURSE:
+        if not nurse_can_access_patient(db, patient):
+            raise forbidden()
     elif user.role in (ADMIN, EMPLOYEE):
         if clinical:
             raise forbidden()
@@ -154,4 +193,5 @@ def doctor_patient_ids(db: Session, doctor: Doctor) -> set[int]:
     ids.update(db.scalars(select(Appointment.patient_id).where(Appointment.doctor_id == doctor.id)))
     ids.update(db.scalars(select(HealthReport.patient_id).where(HealthReport.assigned_doctor_id == doctor.id)))
     ids.update(db.scalars(select(Referral.patient_id).where(Referral.doctor_id == doctor.id)))
+    ids.update(care_team_patient_ids(db, doctor))
     return ids

@@ -23,8 +23,15 @@ def create_prescription(db: Session, doctor: Doctor, data: PrescriptionCreate) -
         report = db.get(HealthReport, data.report_id)
         if report is None or report.patient_id != patient.id:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Report not found for this patient.")
+    if data.encounter_id is not None:
+        from app.database.models import Encounter
+        encounter = db.get(Encounter, data.encounter_id)
+        if encounter is None or encounter.patient_id != patient.id:
+            raise HTTPException(422, "The visit does not belong to this patient.")
+        if encounter.attending_doctor_id not in (None, doctor.id):
+            raise forbidden()
     rx = Prescription(
-        patient_id=patient.id, doctor_id=doctor.id, report_id=data.report_id, prescription_date=date.today(),
+        patient_id=patient.id, doctor_id=doctor.id, report_id=data.report_id, encounter_id=data.encounter_id, prescription_date=date.today(),
         clinical_indication=data.clinical_indication, notes=data.notes, status="ACTIVE",
         tests_advised="\n".join(data.tests) or None,
     )

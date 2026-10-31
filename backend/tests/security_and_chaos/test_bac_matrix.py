@@ -10,7 +10,7 @@ from tests.security_and_chaos._helpers import all_actors, fill, intended_roles, 
 OUT = pathlib.Path(__file__).with_name("endpoint_matrix.json")
 DOC = pathlib.Path(__file__).parents[3] / "docs" / "ENDPOINT_MATRIX.md"
 NEWLINE = chr(10)
-NAMES = ["none", "PATIENT", "PHARMACY", "LAB", "TRAINEE", "EMPLOYEE", "ADMIN", "DOCTOR"]
+NAMES = ["none", "PATIENT", "PHARMACY", "LAB", "TRAINEE", "NURSE", "EMPLOYEE", "ADMIN", "DOCTOR"]
 
 
 def test_every_endpoint_denies_the_roles_it_is_not_meant_for_and_never_crashes(client, world):

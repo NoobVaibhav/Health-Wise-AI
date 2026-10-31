@@ -49,7 +49,11 @@ def tokens(client, world):
     client.put(f"/api/trainee/histories/{history}", headers=intern, json={"data": {"chief_complaint": "Fever", "duration": "2 days", "allergies": "NONE"}})
     client.post(f"/api/trainee/histories/{history}/complete", headers=intern)
     client.post("/api/trainee/referrals", headers=intern, json={"history_id": history, "doctor_id": world.doctor_id, "reason": "Fever, so General Medicine"})
-    return [world.admin, world.doctor, world.employee, world.pharmacy, world.patient, login(client, "lab@hospital.example.com"), intern]
+    client.post("/api/admin/nurses", headers=world.admin, json={"email": "nurse@hospital.example.com", "full_name": "Nurse Person", "password": PASSWORD})
+    nurse = login(client, "nurse@hospital.example.com")
+    client.post("/api/opd/walk-in", headers=world.employee, json={"patient_id": world.patient_id, "doctor_id": world.doctor_id})        # an open visit, so id 1 exists for the clinical endpoints
+    client.post("/api/ipd/admissions", headers=world.doctor, json={"patient_id": world.patient_id, "diagnosis": "Fever"})
+    return [world.admin, world.doctor, world.employee, world.pharmacy, world.patient, login(client, "lab@hospital.example.com"), intern, nurse]
 
 
 @pytest.mark.slow

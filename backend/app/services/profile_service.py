@@ -21,14 +21,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, TRAINEE
-from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, Trainee, User
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, TRAINEE, NURSE
+from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, Trainee, Nurse, User
 from app.utils.validators import clean_text, normalise_phone
 from app.schemas.profile import ProfileField, ProfileOut, ProfileUpdate, ProfileUser
 
 ROLE_LABELS = {ADMIN: "Administrator", DOCTOR: "Doctor", EMPLOYEE: "Hospital employee", PATIENT: "Patient",
-               PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", TRAINEE: "Intern / PG student"}
-PROFILE_MODEL = {DOCTOR: Doctor, EMPLOYEE: Employee, PATIENT: Patient, PHARMACY: PharmacyStaff, LAB: LabStaff, TRAINEE: Trainee}
+               PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", TRAINEE: "Intern / PG student", NURSE: "Nurse"}
+PROFILE_MODEL = {DOCTOR: Doctor, EMPLOYEE: Employee, PATIENT: Patient, PHARMACY: PharmacyStaff, LAB: LabStaff, TRAINEE: Trainee, NURSE: Nurse}
 PHONE_RE = re.compile(r"^[0-9+\-() ]{7,20}$")
 
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
@@ -82,6 +82,11 @@ FIELDS: dict[str, list[Spec]] = {
         Spec("lab_name", "Laboratory name", help="Set by the hospital admin."),
         Spec("registration_number", "Registration number", editable=True, max_length=50),
         Spec("address", "Address", kind="textarea", editable=True, max_length=300),
+    ],
+    NURSE: [
+        Spec("phone", "Phone", editable=True, max_length=20),
+        Spec("designation", "Job title", help="Set by the hospital admin."),
+        Spec("registration_number", "Nursing registration number", editable=True, max_length=50),
     ],
     TRAINEE: [
         Spec("phone", "Phone", editable=True, max_length=20),

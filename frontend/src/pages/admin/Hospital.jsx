@@ -11,6 +11,7 @@ import { Section } from "../../components/HealthCard";
 import { Button, Field, Input, Select, Tabs, fmtUtc } from "../../components/ui";
 import { ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 import { useToast } from "../../components/Toast";
+import { TemplatesTab, ThresholdsTab, WardsTab } from "./ClinicalSetup";
 
 const CATEGORIES = ["CONSULTATION", "PROCEDURE", "LAB", "RADIOLOGY", "BED", "NURSING", "OT", "PHARMACY", "OTHER"];
 
@@ -179,7 +180,7 @@ export default function Hospital() {
   return (
     <div className="mx-auto max-w-5xl space-y-5">
       <PageTitle title="Hospital" subtitle="Profile, branches, settings, price list, roles and emergency access" />
-      <Tabs tabs={[["profile", "Profile", <Profile />], ["branches", "Branches", <Branches />], ["settings", "Settings", <Settings />], ["prices", "Price list", <Prices />], ["roles", "Roles", <Roles />], ["glass", "Emergency access", <EmergencyAccess />]]} />
+      <Tabs tabs={[["profile", "Profile", <Profile />], ["branches", "Branches", <Branches />], ["settings", "Settings", <Settings />], ["prices", "Price list", <Prices />], ["roles", "Roles", <Roles />], ["wards", "Wards and beds", <WardsTab />], ["templates", "Consultation forms", <TemplatesTab />], ["thresholds", "Alert thresholds", <ThresholdsTab />], ["glass", "Emergency access", <EmergencyAccess />]]} />
     </div>
   );
 }

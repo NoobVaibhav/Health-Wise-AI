@@ -183,3 +183,11 @@ def pharmacy_dashboard(db: Session) -> dict:
         "expiring_soon": [{"id": i.id, "medicine_name": i.medicine_name, "quantity": i.quantity,
                            "expiry_date": i.expiry_date.isoformat()} for i in expiring],
     }
+
+
+def nurse_dashboard(db: Session) -> dict:
+    """Real counts for the nurse (the full worklist is /api/nursing/dashboard): inpatients, open alerts, and emergency patients waiting."""
+    from app.database.models import Admission, ClinicalAlert, EdVisit
+    return {"inpatients": db.scalar(select(func.count(Admission.id)).where(Admission.status == "ADMITTED")) or 0,
+            "open_alerts": db.scalar(select(func.count(ClinicalAlert.id)).where(ClinicalAlert.status == "OPEN")) or 0,
+            "emergency_patients": db.scalar(select(func.count(EdVisit.id)).where(EdVisit.status != "DISPOSED")) or 0}

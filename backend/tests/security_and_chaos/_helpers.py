@@ -46,10 +46,10 @@ def intended_roles(route: APIRoute):
 def operations():
     """Every (route, method) of the application: the routers are read directly because newer FastAPI wraps included routers."""
     from app.routers import (admin, appointments, auth, billing, catalog, clinical_intel, dashboard, doctors, employees, health_history, lab, patient_assistant, patient_portal,
-                             patients, pharmacy, prescriptions, profile, reports, trainee, referrals, hospital, access, patient_registry)
+                             patients, pharmacy, prescriptions, profile, reports, trainee, referrals, hospital, access, patient_registry, opd, nursing, emergency, ipd, referral_requests)
     from app.main import health_check
     routers = [m.router for m in (auth, admin, patients, doctors, employees, reports, appointments, prescriptions, pharmacy, patient_portal, dashboard, catalog, lab,
-                                  billing, profile, health_history, clinical_intel, patient_assistant, trainee, referrals, hospital, access, patient_registry)] + [doctors.directory]
+                                  billing, profile, health_history, clinical_intel, patient_assistant, trainee, referrals, hospital, access, patient_registry, opd, nursing, emergency, ipd, referral_requests)] + [doctors.directory]
     for router in routers:
         for route in router.routes:
             if isinstance(route, APIRoute):
@@ -69,5 +69,6 @@ def all_actors(client, world):
     client.post("/api/admin/lab-staff", headers=world.admin, json={"email": "lab@hospital.example.com", "full_name": "Lab Person", "password": PASSWORD})
     client.post("/api/admin/trainees", headers=world.admin, json={"email": "intern@hospital.example.com", "full_name": "Intern Person", "password": PASSWORD,
                                                                 "department_id": world.department_id, "trainee_type": "INTERN"})
+    client.post("/api/admin/nurses", headers=world.admin, json={"email": "nurse@hospital.example.com", "full_name": "Nurse Person", "password": PASSWORD})
     return {"none": {}, "ADMIN": world.admin, "DOCTOR": world.doctor, "EMPLOYEE": world.employee, "PATIENT": world.patient, "PHARMACY": world.pharmacy,
-            "LAB": login(client, "lab@hospital.example.com"), "TRAINEE": login(client, "intern@hospital.example.com")}
+            "LAB": login(client, "lab@hospital.example.com"), "TRAINEE": login(client, "intern@hospital.example.com"), "NURSE": login(client, "nurse@hospital.example.com")}

@@ -8,9 +8,9 @@ from datetime import date, timedelta
 
 from sqlalchemy import select
 
-from app.core.permissions import DOCTOR, EMPLOYEE, LAB, PHARMACY, TRAINEE
+from app.core.permissions import DOCTOR, EMPLOYEE, LAB, NURSE, PHARMACY, TRAINEE
 from app.database.connection import SessionLocal, init_db
-from app.database.models import Department, Doctor, MedicineInventory, ServiceCatalog, Specialization, User
+from app.database.models import Department, Doctor, MedicineInventory, Bed, ServiceCatalog, Specialization, User, Ward
 from app.schemas.auth import StaffCreate
 from app.schemas.patient import PatientCreate
 from app.services import catalog_service, user_service
@@ -48,6 +48,18 @@ def main() -> None:
                 email="lab@healthwise.demo.com", full_name="City Lab Technician", password=DEMO_PASSWORD,
                 lab_name="City Diagnostic Lab"))
         anjali = db.scalar(select(Doctor).join(User, Doctor.user_id == User.id).where(User.email == "anjali.sharma@healthwise.demo.com"))
+        if not exists("nurse@healthwise.demo.com"):
+            user_service.create_staff(db, NURSE, StaffCreate(email="nurse@healthwise.demo.com", full_name="Meera Pawar", password=DEMO_PASSWORD, designation="Staff nurse"))
+        if db.scalar(select(Ward.id).limit(1)) is None:                      # a small demo ward layout (the real one is entered by the administrator)
+            from app.services import hospital_service
+            branch = hospital_service.default_branch(db)
+            for name, kind, codes in (("General Ward", "GENERAL", ("G1", "G2", "G3", "G4")), ("ICU", "ICU", ("I1", "I2")), ("Private Rooms", "PRIVATE", ("P1", "P2"))):
+                ward = Ward(branch_id=branch.id, name=name, ward_type=kind, is_active=True)
+                db.add(ward)
+                db.flush()
+                for code in codes:
+                    db.add(Bed(ward_id=ward.id, code=code, status="AVAILABLE", is_active=True))
+            db.commit()
         if not exists("intern@healthwise.demo.com"):
             user_service.create_staff(db, TRAINEE, StaffCreate(
                 email="intern@healthwise.demo.com", full_name="Neha Kulkarni", password=DEMO_PASSWORD,
@@ -82,7 +94,7 @@ def main() -> None:
     for role, email in (("Admin", "admin@healthwise.demo.com"), ("Doctor", "anjali.sharma@healthwise.demo.com"),
                         ("Employee", "priya.joshi@healthwise.demo.com"), ("Patient", "rahul.patil@healthwise.demo.com"),
                         ("Pharmacy", "pharmacy@healthwise.demo.com"), ("Lab", "lab@healthwise.demo.com"),
-                        ("Intern", "intern@healthwise.demo.com"), ("PG student", "pg.student@healthwise.demo.com")):
+                        ("Nurse", "nurse@healthwise.demo.com"), ("Intern", "intern@healthwise.demo.com"), ("PG student", "pg.student@healthwise.demo.com")):
         print(f"  {role:9s} {email}")
 
 

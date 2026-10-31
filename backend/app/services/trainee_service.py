@@ -188,6 +188,14 @@ def create_referral(db: Session, trainee: Trainee, h: TraineeHistory, doctor: Do
                         overridden=suggested_department_id is not None and suggested_department_id != doctor.department_id,
                         appointment_id=appointment.id if appointment else None)
     db.add(referral)
+    db.flush()
+    from app.services import encounter_service as enc
+    from app.database.models import Encounter
+    visit = db.scalar(select(Encounter).where(Encounter.patient_id == patient.id, Encounter.attending_doctor_id == doctor.id, Encounter.type == "OPD", Encounter.status == "OPEN"))
+    if visit is None:                                      # the referred patient is now in the doctor's OPD queue (an urgent referral first)
+        visit = enc.open_encounter(db, patient, "OPD", doctor=doctor, department_id=doctor.department_id, source="TRAINEE_REFERRAL", user=user, appointment=appointment)
+        enc.issue_token(db, visit, doctor, urgent)
+    referral.encounter_id = visit.id
     db.commit()
     db.refresh(referral)
     return referral

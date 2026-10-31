@@ -30,6 +30,7 @@ class PrescriptionItemCreate(BaseModel):
 class PrescriptionCreate(BaseModel):
     patient_id: PositiveId
     report_id: PositiveId | None = None
+    encounter_id: PositiveId | None = None        # the visit this prescription belongs to (OPD consultation)
     clinical_indication: opt_text(300) = None
     notes: opt_text(2000, multiline=True) = None
     items: list[PrescriptionItemCreate] = Field(min_length=1, max_length=30)

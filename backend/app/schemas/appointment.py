@@ -63,6 +63,7 @@ class AppointmentOut(BaseModel):
     scheduled_at: datetime
     reason: str | None
     status: str
+    encounter_id: int | None = None          # set once the patient is checked in
     # the patient's own description of the problem: only the patient and the doctor get it
     symptoms: list[str] = []
     duration: str | None = None

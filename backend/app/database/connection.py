@@ -41,6 +41,9 @@ def init_db() -> None:
         access_service.seed_access(db)
         db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_patients_uhid ON patients (uhid)"))   # an old database got the column without the unique rule
         registry_service.backfill_uhids(db)
+        from app.services import encounter_service
+        encounter_service.seed_rules(db)
+        encounter_service.seed_templates(db)
 
 
 def add_missing_columns(bind=None) -> None:

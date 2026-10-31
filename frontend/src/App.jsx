@@ -51,6 +51,14 @@ import TraineeReferrals from "./pages/trainee/MyReferrals";
 import DoctorReferrals from "./pages/doctor/Referrals";
 import EmergencyAccess from "./pages/doctor/EmergencyAccess";
 import Hospital from "./pages/admin/Hospital";
+import OpdDesk from "./pages/employee/OpdDesk";
+import OpdQueue from "./pages/doctor/OpdQueue";
+import Consultation from "./pages/doctor/Consultation";
+import Inpatients, { InpatientDetail } from "./pages/doctor/Inpatients";
+import ReferralRequests from "./pages/doctor/ReferralRequests";
+import Emergency from "./pages/shared/Emergency";
+import Beds from "./pages/shared/Beds";
+import { NurseChart, NurseDashboard } from "./pages/nurse/Nurse";
 import PharmacyDashboard from "./pages/pharmacy/Dashboard";
 import Billing from "./pages/pharmacy/Billing";
 import Bills from "./pages/pharmacy/Bills";
@@ -86,6 +94,8 @@ export default function App() {
             <Route path="pharmacy-staff" element={<StaffManager kind="pharmacy-staff" />} />
             <Route path="lab-staff" element={<StaffManager kind="lab-staff" />} />
             <Route path="trainees" element={<StaffManager kind="trainees" />} />
+            <Route path="nurses" element={<StaffManager kind="nurses" />} />
+            <Route path="beds" element={<Beds />} />
             <Route path="profile" element={<Profile />} />
             <Route path="patients" element={<PatientsList />} />
             <Route path="appointments" element={<Appointments />} />
@@ -106,6 +116,13 @@ export default function App() {
             <Route path="reports/:id" element={<ReportReview />} />
             <Route path="referrals" element={<DoctorReferrals />} />
             <Route path="emergency-access" element={<EmergencyAccess />} />
+            <Route path="queue" element={<OpdQueue />} />
+            <Route path="consultation/:encounterId" element={<Consultation />} />
+            <Route path="inpatients" element={<Inpatients />} />
+            <Route path="inpatients/:id" element={<InpatientDetail />} />
+            <Route path="emergency" element={<Emergency />} />
+            <Route path="referral-requests" element={<ReferralRequests />} />
+            <Route path="beds" element={<Beds />} />
             <Route path="notes" element={<DoctorNotes />} />
             <Route path="recommendations" element={<DoctorRecommendations />} />
             <Route path="prescriptions" element={<DoctorPrescriptions />} />
@@ -115,12 +132,23 @@ export default function App() {
           <Route path="/employee" element={<RoleRoute roles={["EMPLOYEE"]} />}>
             <Route index element={<EmployeeDashboard />} />
             <Route path="patients" element={<PatientsList />} />
+            <Route path="opd" element={<OpdDesk />} />
+            <Route path="emergency" element={<Emergency />} />
+            <Route path="beds" element={<Beds />} />
             <Route path="register" element={<RegisterPatient />} />
             <Route path="upload" element={<UploadReport />} />
             <Route path="appointments" element={<Appointments />} />
             <Route path="reports" element={<ReportsList base="/employee/reports" title="Reports" subtitle="Upload status of reports. Clinical values are visible to the doctor and the patient." />} />
             <Route path="reports/:id" element={<ReportDetails />} />
             <Route path="tests" element={<TestOrders />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
+
+          <Route path="/nurse" element={<RoleRoute roles={["NURSE"]} />}>
+            <Route index element={<NurseDashboard />} />
+            <Route path="chart/:id" element={<NurseChart />} />
+            <Route path="emergency" element={<Emergency />} />
+            <Route path="beds" element={<Beds />} />
             <Route path="profile" element={<Profile />} />
           </Route>
 

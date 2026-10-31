@@ -7,7 +7,7 @@ Design notes (useful for the viva):
 """
 from datetime import date, datetime, timezone
 
-from sqlalchemy import UniqueConstraint, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Index, UniqueConstraint, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.connection import Base
@@ -158,6 +158,7 @@ class Appointment(Base):
     details: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="SCHEDULED")  # SCHEDULED/CONFIRMED/COMPLETED/CANCELLED
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"))      # set when the patient is checked in
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     patient: Mapped[Patient] = relationship()
@@ -289,6 +290,7 @@ class Prescription(Base):
     status: Mapped[str] = mapped_column(String(25), default="ACTIVE")  # ACTIVE/PARTIALLY_DISPENSED/DISPENSED/CANCELLED/EXPIRED
     notes: Mapped[str | None] = mapped_column(Text)
     tests_advised: Mapped[str | None] = mapped_column(Text)  # tests the doctor wants done, one per line; NEVER shown to the pharmacy
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     patient: Mapped[Patient] = relationship()
@@ -847,6 +849,7 @@ class Referral(Base):
     suggested_department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
     overridden: Mapped[bool] = mapped_column(Boolean, default=False)                  # the trainee chose a different department than suggested
     appointment_id: Mapped[int | None] = mapped_column(ForeignKey("appointments.id"))
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"))      # the OPD visit made for the referred doctor
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     seen_at: Mapped[datetime | None] = mapped_column(DateTime)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime)
@@ -1028,3 +1031,481 @@ class PatientMerge(Base):
     reason: Mapped[str] = mapped_column(String(500))
     moved_json: Mapped[str | None] = mapped_column(Text)                     # {"table": rows moved}
     merged_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+# ------------------------------------------------------------------ Phase 3: encounters, OPD, consultation, nursing, emergency, IPD, discharge
+class Encounter(Base):
+    """One contact of a patient with the hospital: an OPD visit, an emergency visit or an admission. Everything clinical hangs on it."""
+    __tablename__ = "encounters"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"))
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
+    type: Mapped[str] = mapped_column(String(5), index=True)                       # OPD / ED / IPD
+    status: Mapped[str] = mapped_column(String(10), default="OPEN", index=True)    # OPEN / CLOSED / CANCELLED
+    source: Mapped[str | None] = mapped_column(String(25))                        # APPOINTMENT / WALK_IN / TRAINEE_REFERRAL / REFERRAL / EMERGENCY / ADMISSION
+    attending_doctor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"), index=True)
+    appointment_id: Mapped[int | None] = mapped_column(Integer)                  # no foreign key on purpose: appointments already point to encounters
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+    patient: Mapped[Patient] = relationship()
+    department: Mapped[Department | None] = relationship()
+    attending_doctor: Mapped["Doctor | None"] = relationship()
+    appointment: Mapped["Appointment | None"] = relationship(primaryjoin="foreign(Encounter.appointment_id) == Appointment.id", viewonly=True)
+
+
+class QueueToken(Base):
+    __tablename__ = "queue_tokens"
+    __table_args__ = (UniqueConstraint("doctor_id", "token_date", "number", name="uq_token_number"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    encounter_id: Mapped[int] = mapped_column(ForeignKey("encounters.id"), unique=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"))
+    token_date: Mapped[date] = mapped_column(Date, index=True)
+    number: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(15), default="WAITING", index=True)   # WAITING / CALLED / IN_CONSULTATION / DONE / NO_SHOW / CANCELLED
+    urgent: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    called_at: Mapped[datetime | None] = mapped_column(DateTime)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    encounter: Mapped[Encounter] = relationship()
+    doctor: Mapped["Doctor"] = relationship()
+
+
+class VitalSet(Base):
+    """One set of measurements, taken by a nurse, a doctor or at triage. Never edited: a mistake is answered by a new set."""
+    __tablename__ = "vital_sets"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"), index=True)
+    admission_id: Mapped[int | None] = mapped_column(ForeignKey("admissions.id"), index=True)
+    recorded_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    pulse: Mapped[int | None] = mapped_column(Integer)
+    bp_systolic: Mapped[int | None] = mapped_column(Integer)
+    bp_diastolic: Mapped[int | None] = mapped_column(Integer)
+    temperature_f: Mapped[float | None] = mapped_column(Float)
+    resp_rate: Mapped[int | None] = mapped_column(Integer)
+    spo2: Mapped[int | None] = mapped_column(Integer)
+    weight_kg: Mapped[float | None] = mapped_column(Float)
+    height_cm: Mapped[float | None] = mapped_column(Float)
+    pain_score: Mapped[int | None] = mapped_column(Integer)
+    gcs: Mapped[int | None] = mapped_column(Integer)
+    note: Mapped[str | None] = mapped_column(String(300))
+
+    recorder: Mapped["User | None"] = relationship()
+
+
+class ConsultationTemplate(Base):
+    """Extra fields a department wants on its consultation form (configured by the administrator, no code change)."""
+    __tablename__ = "consultation_templates"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"), index=True)   # empty = the default for every department
+    name: Mapped[str] = mapped_column(String(120))
+    fields_json: Mapped[str] = mapped_column(Text)                                              # [{"key","label","kind":"text|longtext|number|choice","options":[..]}]
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Consultation(Base):
+    """The doctor's record of one OPD (or emergency) consultation. A draft can be edited; a signed one only receives dated addenda."""
+    __tablename__ = "consultations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    encounter_id: Mapped[int] = mapped_column(ForeignKey("encounters.id"), unique=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    template_id: Mapped[int | None] = mapped_column(ForeignKey("consultation_templates.id"))
+    complaint: Mapped[str | None] = mapped_column(Text)
+    hpi: Mapped[str | None] = mapped_column(Text)
+    past_history: Mapped[str | None] = mapped_column(Text)
+    family_history: Mapped[str | None] = mapped_column(Text)
+    examination: Mapped[str | None] = mapped_column(Text)
+    assessment: Mapped[str | None] = mapped_column(Text)
+    plan: Mapped[str | None] = mapped_column(Text)
+    advice: Mapped[str | None] = mapped_column(Text)
+    follow_up_date: Mapped[date | None] = mapped_column(Date)
+    data_json: Mapped[str | None] = mapped_column(Text)                                          # the template fields
+    status: Mapped[str] = mapped_column(String(10), default="DRAFT", index=True)               # DRAFT / SIGNED
+    signed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    encounter: Mapped[Encounter] = relationship()
+    doctor: Mapped["Doctor"] = relationship()
+
+
+class ConsultationAddendum(Base):
+    __tablename__ = "consultation_addenda"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    consultation_id: Mapped[int] = mapped_column(ForeignKey("consultations.id"), index=True)
+    text: Mapped[str] = mapped_column(Text)
+    added_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    added_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Diagnosis(Base):
+    __tablename__ = "diagnoses"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    encounter_id: Mapped[int] = mapped_column(ForeignKey("encounters.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    text: Mapped[str] = mapped_column(String(300))
+    code: Mapped[str | None] = mapped_column(String(20))                                         # an ICD-10 code if the doctor wishes; not required
+    kind: Mapped[str] = mapped_column(String(12), default="PROVISIONAL")                       # PROVISIONAL / FINAL
+    added_by: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    added_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)                              # withdrawn, never deleted
+
+
+class ClinicalOrder(Base):
+    """An instruction of a doctor for one encounter: a test, a scan, a procedure, a diet, a nursing task."""
+    __tablename__ = "clinical_orders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    encounter_id: Mapped[int] = mapped_column(ForeignKey("encounters.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    admission_id: Mapped[int | None] = mapped_column(ForeignKey("admissions.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(12), index=True)                                   # LAB / RADIOLOGY / PROCEDURE / DIET / NURSING / OTHER
+    text: Mapped[str] = mapped_column(String(300))
+    priority: Mapped[str] = mapped_column(String(8), default="ROUTINE")                        # ROUTINE / URGENT / STAT
+    status: Mapped[str] = mapped_column(String(12), default="ORDERED", index=True)              # ORDERED / IN_PROGRESS / DONE / CANCELLED
+    ordered_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    ordered_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    completed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    note: Mapped[str | None] = mapped_column(String(300))
+
+
+class EncounterCharge(Base):
+    """A charge waiting to be invoiced (Phase 6 turns these into bills). The price comes from the price list at the moment it is created."""
+    __tablename__ = "encounter_charges"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    encounter_id: Mapped[int] = mapped_column(ForeignKey("encounters.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    service_id: Mapped[int | None] = mapped_column(ForeignKey("service_catalog.id"))
+    description: Mapped[str] = mapped_column(String(200))
+    amount: Mapped[float] = mapped_column(Float, default=0)
+    gst_percent: Mapped[float] = mapped_column(Float, default=0)
+    status: Mapped[str] = mapped_column(String(10), default="PENDING")                         # PENDING / INVOICED / CANCELLED
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Nurse(Base):
+    __tablename__ = "nurses"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"))
+    designation: Mapped[str | None] = mapped_column(String(100))                                 # staff nurse, ICU nurse, ward staff ...
+    registration_number: Mapped[str | None] = mapped_column(String(50))
+    phone: Mapped[str | None] = mapped_column(String(30))
+
+    user: Mapped[User] = relationship()
+
+
+class NursingNote(Base):
+    __tablename__ = "nursing_notes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admission_id: Mapped[int | None] = mapped_column(ForeignKey("admissions.id"), index=True)
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(12), default="NOTE")                              # NOTE / CARE_PLAN / HANDOVER
+    shift: Mapped[str | None] = mapped_column(String(10))                                       # MORNING / EVENING / NIGHT (handover)
+    text: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    author: Mapped[User] = relationship()
+
+
+class EscalationRule(Base):
+    """A plain threshold the hospital decides (no AI): when a measurement crosses it an alert is raised."""
+    __tablename__ = "escalation_rules"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    parameter: Mapped[str] = mapped_column(String(20), index=True)
+    comparison: Mapped[str] = mapped_column(String(2))                                          # LT / GT
+    threshold: Mapped[float] = mapped_column(Float)
+    level: Mapped[str] = mapped_column(String(8))                                               # WARNING / CRITICAL
+    message: Mapped[str] = mapped_column(String(200))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class ClinicalAlert(Base):
+    __tablename__ = "clinical_alerts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"))
+    admission_id: Mapped[int | None] = mapped_column(ForeignKey("admissions.id"), index=True)
+    vital_set_id: Mapped[int | None] = mapped_column(ForeignKey("vital_sets.id"))
+    rule_id: Mapped[int | None] = mapped_column(ForeignKey("escalation_rules.id"))
+    level: Mapped[str] = mapped_column(String(8), index=True)
+    message: Mapped[str] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(12), default="OPEN", index=True)                # OPEN / ACKNOWLEDGED
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    acknowledged_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime)
+    ack_note: Mapped[str | None] = mapped_column(String(300))
+
+    patient: Mapped[Patient] = relationship()
+
+
+class MedicationOrder(Base):
+    """A medicine ordered for an inpatient. Prescribed here, dispensed by the pharmacy, administered by a nurse (MarEntry): three different things."""
+    __tablename__ = "medication_orders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admission_id: Mapped[int] = mapped_column(ForeignKey("admissions.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    medicine_name: Mapped[str] = mapped_column(String(200))
+    dose: Mapped[str] = mapped_column(String(100))
+    route: Mapped[str | None] = mapped_column(String(40))
+    times: Mapped[str] = mapped_column(String(100))                                             # "08:00,14:00,20:00"
+    instructions: Mapped[str | None] = mapped_column(String(300))
+    start_date: Mapped[date] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(10), default="ACTIVE", index=True)              # ACTIVE / STOPPED
+    ordered_by: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    ordered_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    stopped_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    stopped_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class MarEntry(Base):
+    """One scheduled dose and what happened to it."""
+    __tablename__ = "mar_entries"
+    __table_args__ = (UniqueConstraint("medication_order_id", "scheduled_at", name="uq_mar_dose"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    medication_order_id: Mapped[int] = mapped_column(ForeignKey("medication_orders.id"), index=True)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    status: Mapped[str] = mapped_column(String(10), default="PENDING", index=True)             # PENDING / GIVEN / REFUSED / HELD
+    acted_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    acted_at: Mapped[datetime | None] = mapped_column(DateTime)
+    note: Mapped[str | None] = mapped_column(String(300))
+
+    order: Mapped[MedicationOrder] = relationship()
+
+
+class IntakeOutput(Base):
+    __tablename__ = "intake_output"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admission_id: Mapped[int] = mapped_column(ForeignKey("admissions.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(6))                                                # INTAKE / OUTPUT
+    item: Mapped[str] = mapped_column(String(100))
+    amount_ml: Mapped[int] = mapped_column(Integer)
+    recorded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class EdVisit(Base):
+    __tablename__ = "ed_visits"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    encounter_id: Mapped[int] = mapped_column(ForeignKey("encounters.id"), unique=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    arrival_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    arrival_mode: Mapped[str | None] = mapped_column(String(12))                                # WALK_IN / AMBULANCE / POLICE / REFERRED
+    chief_complaint: Mapped[str | None] = mapped_column(String(300))
+    triage_category: Mapped[int | None] = mapped_column(Integer, index=True)                     # 1 resuscitation ... 5 non-urgent
+    triaged_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    triaged_at: Mapped[datetime | None] = mapped_column(DateTime)
+    assigned_doctor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"), index=True)
+    status: Mapped[str] = mapped_column(String(12), default="WAITING", index=True)              # WAITING / TRIAGED / IN_TREATMENT / DISPOSED
+    disposition: Mapped[str | None] = mapped_column(String(12))                                 # DISCHARGE / ADMIT / ICU / TRANSFER / LAMA / DEATH
+    disposition_at: Mapped[datetime | None] = mapped_column(DateTime)
+    disposition_note: Mapped[str | None] = mapped_column(String(500))
+    admission_id: Mapped[int | None] = mapped_column(ForeignKey("admissions.id"))
+    unidentified: Mapped[bool] = mapped_column(Boolean, default=False)                          # an unknown patient, registered with a placeholder name
+
+    encounter: Mapped[Encounter] = relationship()
+    patient: Mapped[Patient] = relationship()
+
+
+class EdTimelineEntry(Base):
+    __tablename__ = "ed_timeline"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ed_visit_id: Mapped[int] = mapped_column(ForeignKey("ed_visits.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(12))                                               # ARRIVAL / TRIAGE / ASSESSMENT / ORDER / TREATMENT / NOTE / ALERT / DISPOSITION
+    text: Mapped[str] = mapped_column(String(500))
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    author: Mapped["User | None"] = relationship()
+
+
+class Ward(Base):
+    __tablename__ = "wards"
+    __table_args__ = (UniqueConstraint("branch_id", "name", name="uq_ward_name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    branch_id: Mapped[int] = mapped_column(ForeignKey("branches.id"))
+    name: Mapped[str] = mapped_column(String(100))
+    ward_type: Mapped[str] = mapped_column(String(14))      # GENERAL / PRIVATE / SEMI_PRIVATE / ICU / NICU / PICU / EMERGENCY / ISOLATION / RECOVERY
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Bed(Base):
+    __tablename__ = "beds"
+    __table_args__ = (UniqueConstraint("ward_id", "code", name="uq_bed_code"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ward_id: Mapped[int] = mapped_column(ForeignKey("wards.id"), index=True)
+    code: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(12), default="AVAILABLE", index=True)           # AVAILABLE / RESERVED / CLEANING / MAINTENANCE (occupied = an active assignment)
+    reserved_for_patient_id: Mapped[int | None] = mapped_column(ForeignKey("patients.id"))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    ward: Mapped[Ward] = relationship()
+
+
+class Admission(Base):
+    """A live inpatient stay (the older `hospital_admissions` table holds earlier stays at other hospitals)."""
+    __tablename__ = "admissions"
+    __table_args__ = (Index("uq_one_active_admission", "patient_id", unique=True, sqlite_where=text("status = 'ADMITTED'"), postgresql_where=text("status = 'ADMITTED'")),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admission_no: Mapped[str] = mapped_column(String(24), unique=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"))
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
+    encounter_id: Mapped[int] = mapped_column(ForeignKey("encounters.id"))                      # the IPD encounter of this stay
+    source_encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"))        # the OPD or emergency visit it came from
+    attending_doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    admitting_diagnosis: Mapped[str | None] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(12), default="ADMITTED", index=True)            # ADMITTED / DISCHARGED
+    admitted_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    expected_discharge: Mapped[date | None] = mapped_column(Date)
+    discharged_at: Mapped[datetime | None] = mapped_column(DateTime)
+    discharge_type: Mapped[str | None] = mapped_column(String(12))                             # NORMAL / LAMA / TRANSFER / DEATH
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+    patient: Mapped[Patient] = relationship()
+    attending_doctor: Mapped["Doctor"] = relationship()
+    department: Mapped[Department | None] = relationship()
+    encounter: Mapped[Encounter] = relationship(foreign_keys=[encounter_id])
+
+
+class AdmissionStaff(Base):
+    """A consulting doctor or a nurse assigned to an inpatient for a period."""
+    __tablename__ = "admission_staff"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admission_id: Mapped[int] = mapped_column(ForeignKey("admissions.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(16))                                                # CONSULTING_DOCTOR / NURSE
+    from_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    to_at: Mapped[datetime | None] = mapped_column(DateTime)
+    assigned_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+
+
+class BedAssignment(Base):
+    """Who lay in which bed and when. The two partial unique indexes are the database's guarantee: a bed has at most one active patient and
+    a patient at most one active bed, whatever any screen or API call tries."""
+    __tablename__ = "bed_assignments"
+    __table_args__ = (
+        Index("uq_bed_one_active", "bed_id", unique=True, sqlite_where=text("released_at IS NULL"), postgresql_where=text("released_at IS NULL")),
+        Index("uq_admission_one_bed", "admission_id", unique=True, sqlite_where=text("released_at IS NULL"), postgresql_where=text("released_at IS NULL")),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admission_id: Mapped[int] = mapped_column(ForeignKey("admissions.id"), index=True)
+    bed_id: Mapped[int] = mapped_column(ForeignKey("beds.id"), index=True)
+    assigned_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime)
+    assigned_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    reason: Mapped[str | None] = mapped_column(String(200))
+
+    bed: Mapped[Bed] = relationship()
+    admission: Mapped[Admission] = relationship()
+
+
+class ProgressNote(Base):
+    """A daily doctor's note. Never edited: a correction is a new note that points to the old one."""
+    __tablename__ = "progress_notes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admission_id: Mapped[int] = mapped_column(ForeignKey("admissions.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    note: Mapped[str] = mapped_column(Text)
+    corrects_id: Mapped[int | None] = mapped_column(ForeignKey("progress_notes.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    doctor: Mapped["Doctor"] = relationship()
+
+
+class DischargeSummary(Base):
+    __tablename__ = "discharge_summaries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admission_id: Mapped[int] = mapped_column(ForeignKey("admissions.id"), unique=True)
+    final_diagnosis: Mapped[str | None] = mapped_column(Text)
+    hospital_course: Mapped[str | None] = mapped_column(Text)
+    procedures: Mapped[str | None] = mapped_column(Text)
+    investigations_summary: Mapped[str | None] = mapped_column(Text)
+    discharge_medicines: Mapped[str | None] = mapped_column(Text)
+    follow_up: Mapped[str | None] = mapped_column(Text)
+    diet_advice: Mapped[str | None] = mapped_column(Text)
+    warning_signs: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(10), default="DRAFT")                            # DRAFT / APPROVED
+    prepared_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    approved_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class ReferralRequest(Base):
+    """Doctor A asks another department for an opinion. The doctor who accepts can see the patient's records while the request is open."""
+    __tablename__ = "referral_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    from_encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"))
+    from_doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    to_department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"), index=True)
+    to_doctor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"), index=True)
+    reason: Mapped[str] = mapped_column(String(500))
+    urgency: Mapped[str] = mapped_column(String(8), default="ROUTINE")
+    status: Mapped[str] = mapped_column(String(10), default="REQUESTED", index=True)            # REQUESTED / ACCEPTED / COMPLETED / DECLINED
+    response_note: Mapped[str | None] = mapped_column(Text)
+    consult_encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    responded_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    responded_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    patient: Mapped[Patient] = relationship()
+    from_doctor: Mapped["Doctor"] = relationship(foreign_keys=[from_doctor_id])
+    to_department: Mapped[Department] = relationship()
+
+
+class NumberCounter(Base):
+    """The last number of a numbered document (admission number ...) per kind, branch and year."""
+    __tablename__ = "number_counters"
+    __table_args__ = (UniqueConstraint("kind", "branch_id", "year", name="uq_number_counter"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kind: Mapped[str] = mapped_column(String(10))
+    branch_id: Mapped[int] = mapped_column(ForeignKey("branches.id"))
+    year: Mapped[int] = mapped_column(Integer)
+    last_number: Mapped[int] = mapped_column(Integer, default=0)
