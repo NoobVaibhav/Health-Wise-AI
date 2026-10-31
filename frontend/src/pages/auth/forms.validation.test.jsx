@@ -45,7 +45,7 @@ describe("Login form", () => {
     login.mockImplementation(() => new Promise((_, reject) => { finish = () => reject({ response: { status: 401, data: { detail: "Incorrect email or password." } } }); }));
     open(<Login />);
     await userEvent.type(screen.getByLabelText("Email"), "  Rahul.Patil@Example.COM ");
-    await userEvent.type(screen.getByPlaceholderText("Your password"), "wrong-pass1");
+    await userEvent.type(screen.getByLabelText("Password"), "wrong-pass1");
     await userEvent.click(screen.getByRole("button", { name: "Log in" }));
     expect(login).toHaveBeenCalledWith("rahul.patil@example.com", "wrong-pass1");
     const busy = screen.getByRole("button", { name: "Logging in..." });
@@ -55,7 +55,7 @@ describe("Login form", () => {
     finish();
     expect((await screen.findByRole("alert")).textContent).toBe("Incorrect email or password.");
     expect(screen.getByLabelText("Email").value).toBe("Rahul.Patil@Example.COM");            // nothing was cleared (an e-mail box trims the spaces itself)
-    expect(screen.getByPlaceholderText("Your password").value).toBe("wrong-pass1");
+    expect(screen.getByLabelText("Password").value).toBe("wrong-pass1");
   });
 
   it("uses the right input types for a browser's helpers", () => {
@@ -64,7 +64,7 @@ describe("Login form", () => {
     expect(email.getAttribute("type")).toBe("email");
     expect(email.getAttribute("autocomplete")).toBe("email");
     expect(email.getAttribute("maxlength")).toBe("254");
-    expect(screen.getByPlaceholderText("Your password").getAttribute("autocomplete")).toBe("current-password");
+    expect(screen.getByLabelText("Password").getAttribute("autocomplete")).toBe("current-password");
   });
 });
 

@@ -1,0 +1,80 @@
+/* ---------------------------------------------------------------------------------------------------------------------------------------------------
+   Sign-in pages (Login, Register, Change password). Every effect moves only transform or opacity (the one exception is the heartbeat line, which draws
+   itself with its dash offset: a tiny SVG path). Names start with hw- . With "reduce motion" on, the loops, the parallax and the shake are switched off
+   and only a plain fade stays. The art is paused while the tab is hidden (data-paused on the page root).
+--------------------------------------------------------------------------------------------------------------------------------------------------- */
+@keyframes hw-orb-a { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(40px, 30px, 0) scale(1.12); } }
+@keyframes hw-orb-b { 0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); } 50% { transform: translate3d(-50px, -26px, 0) scale(0.94); } }
+@keyframes hw-orb-c { 0%, 100% { transform: translate3d(0, 0, 0) scale(0.95); } 50% { transform: translate3d(26px, -40px, 0) scale(1.1); } }
+@keyframes hw-draw { 0% { stroke-dashoffset: 1; opacity: 0; } 8% { opacity: 1; } 55% { stroke-dashoffset: 0; opacity: 1; } 85% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes hw-ring { 0% { transform: scale(0.9); opacity: 0.55; } 100% { transform: scale(1.7); opacity: 0; } }
+@keyframes hw-logo-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes hw-rise { from { opacity: 0; transform: translate3d(0, 16px, 0); } to { opacity: 1; transform: none; } }
+@keyframes hw-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hw-float-a { 0%, 100% { transform: translate3d(0, 0, 0) rotate(-4deg); } 50% { transform: translate3d(0, -18px, 0) rotate(4deg); } }
+@keyframes hw-float-b { 0%, 100% { transform: translate3d(0, 0, 0) rotate(3deg); } 50% { transform: translate3d(10px, -12px, 0) rotate(-3deg); } }
+@keyframes hw-shake { 0%, 100% { transform: translate3d(0, 0, 0); } 15% { transform: translate3d(-9px, 0, 0); } 30% { transform: translate3d(8px, 0, 0); } 45% { transform: translate3d(-6px, 0, 0); } 60% { transform: translate3d(5px, 0, 0); } 80% { transform: translate3d(-2px, 0, 0); } }
+@keyframes hw-shine { from { transform: translate3d(-120%, 0, 0) skewX(-18deg); } to { transform: translate3d(320%, 0, 0) skewX(-18deg); } }
+@keyframes hw-beat { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.35); } 60% { transform: scale(0.95); } }
+@keyframes hw-check-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes hw-pop { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+
+.hw-orb-a { animation: hw-orb-a 22s ease-in-out infinite; }
+.hw-orb-b { animation: hw-orb-b 28s ease-in-out infinite; }
+.hw-orb-c { animation: hw-orb-c 25s ease-in-out infinite; }
+.hw-ecg-line { stroke-dasharray: 1; animation: hw-draw 6s ease-in-out infinite; }
+.hw-ring { animation: hw-ring 3.4s ease-out infinite; }
+.hw-logo-in { animation: hw-logo-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.hw-rise { animation: hw-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.hw-fade { animation: hw-fade 0.6s ease both; }
+.hw-d1 { animation-delay: 0.05s; } .hw-d2 { animation-delay: 0.12s; } .hw-d3 { animation-delay: 0.19s; } .hw-d4 { animation-delay: 0.26s; }
+.hw-d5 { animation-delay: 0.33s; } .hw-d6 { animation-delay: 0.4s; } .hw-d7 { animation-delay: 0.47s; } .hw-d8 { animation-delay: 0.54s; }
+.hw-float-a { animation: hw-float-a 9s ease-in-out infinite; }
+.hw-float-b { animation: hw-float-b 12s ease-in-out infinite; }
+.hw-shake { animation: hw-shake 0.5s ease-in-out; }
+.hw-beat { animation: hw-beat 0.9s ease-in-out infinite; }
+.hw-pop { animation: hw-pop 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.hw-check { stroke-dasharray: 1; animation: hw-check-draw 0.45s ease 0.1s both; }
+.hw-parallax { transform: translate3d(calc(var(--px, 0) * 18px), calc(var(--py, 0) * 14px), 0); transition: transform 0.25s ease-out; }
+.hw-parallax-deep { transform: translate3d(calc(var(--px, 0) * -30px), calc(var(--py, 0) * -22px), 0); transition: transform 0.25s ease-out; }
+[data-paused="true"] [class*="hw-orb"], [data-paused="true"] .hw-ecg-line, [data-paused="true"] .hw-ring, [data-paused="true"] .hw-float-a, [data-paused="true"] .hw-float-b { animation-play-state: paused; }
+
+/* the sign-in fields: a floating label, an icon that takes the brand colour on focus, and a glow ring that fades in (opacity only) */
+.hw-field { position: relative; }
+.hw-field::after { content: ""; position: absolute; inset: -3px; border-radius: 1.1rem; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.25), 0 8px 24px -8px rgba(8, 145, 178, 0.45); }
+.hw-field:focus-within::after { opacity: 1; }
+.hw-field[data-invalid="true"]::after { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2); }
+.hw-input { width: 100%; min-height: 3.5rem; border-radius: 1rem; border: 1.5px solid #cbd5e1; background: rgba(255, 255, 255, 0.9); padding: 1.35rem 3rem 0.45rem 2.9rem; font-size: 1rem; color: #0f172a; outline: none; }
+.hw-input:focus { border-color: #0891b2; }
+.hw-input[aria-invalid="true"] { border-color: #ef4444; }
+.hw-label { position: absolute; left: 2.9rem; top: 1.05rem; transform-origin: left top; color: #475569; font-size: 1rem; pointer-events: none; transition: transform 0.18s ease; transform: translate3d(0, -0.55rem, 0) scale(0.76); }
+.hw-input:placeholder-shown + .hw-label { transform: translate3d(0, 0, 0) scale(1); }
+.hw-input:focus + .hw-label { transform: translate3d(0, -0.55rem, 0) scale(0.76); color: #0e7490; }
+.hw-icon { position: absolute; left: 0.95rem; top: 1.05rem; color: #64748b; transition: color 0.2s ease; pointer-events: none; }
+.hw-field:focus-within .hw-icon { color: #0891b2; }
+.hw-eye { position: absolute; right: 0.35rem; top: 0.4rem; width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border-radius: 0.8rem; color: #64748b; }
+.hw-eye:hover { color: #0e7490; }
+.hw-eye:focus-visible { outline: 3px solid rgba(6, 182, 212, 0.55); }
+.hw-eye svg { grid-area: 1 / 1; transition: transform 0.25s ease, opacity 0.2s ease; }
+.hw-eye[aria-pressed="true"] .eye-open { transform: rotate(90deg) scale(0.6); opacity: 0; }
+.hw-eye[aria-pressed="false"] .eye-off { transform: rotate(-90deg) scale(0.6); opacity: 0; }
+
+/* the sign-in button: lifts on hover, a shine sweeps over it, presses down on click */
+.hw-btn { position: relative; overflow: hidden; display: inline-flex; width: 100%; min-height: 3.25rem; align-items: center; justify-content: center; gap: 0.6rem; border-radius: 1rem; border: 0; font-size: 1.05rem; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, #0891b2, #0e7490 55%, #155e75); box-shadow: 0 10px 24px -10px rgba(8, 145, 178, 0.8); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.hw-btn:hover:not(:disabled) { transform: translate3d(0, -2px, 0); box-shadow: 0 16px 30px -12px rgba(8, 145, 178, 0.9); }
+.hw-btn:active:not(:disabled) { transform: translate3d(0, 1px, 0) scale(0.99); }
+.hw-btn:focus-visible { outline: 3px solid rgba(6, 182, 212, 0.6); outline-offset: 3px; }
+.hw-btn:disabled { cursor: not-allowed; opacity: 0.85; }
+.hw-btn::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 28%; background: rgba(255, 255, 255, 0.35); transform: translate3d(-120%, 0, 0) skewX(-18deg); pointer-events: none; }
+.hw-btn:hover:not(:disabled)::after { animation: hw-shine 0.8s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="hw-orb"], .hw-ecg-line, .hw-ring, .hw-float-a, .hw-float-b, .hw-shake, .hw-beat, .hw-logo-in, .hw-rise { animation: none !important; }
+  .hw-rise, .hw-logo-in { opacity: 1; transform: none; }
+  .hw-fade, .hw-pop { animation: hw-fade 0.25s ease both !important; }
+  .hw-check { animation: none !important; stroke-dashoffset: 0; }
+  .hw-parallax, .hw-parallax-deep { transform: none; transition: none; }
+  .hw-btn, .hw-label, .hw-eye svg { transition: none; }
+  .hw-btn::after { animation: none !important; }
+}
