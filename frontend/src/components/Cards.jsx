@@ -76,18 +76,22 @@ export function RecommendationCard({ rec, showPatient }) {
   );
 }
 
-export function PrescriptionCard({ rx, showPatient }) {
+/** `actions`: buttons shown in the top-right corner of the card (for example Open and Print). */
+export function PrescriptionCard({ rx, showPatient, actions }) {
   return (
     <div className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-sm">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white"><Pill size={20} /></span>
-          <div>
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 basis-64 items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white"><Pill size={20} /></span>
+          <div className="min-w-0">
             <p className="font-extrabold text-slate-900">Prescription {rx.code}</p>
             <p className="text-sm text-slate-600">By {rx.doctor_name} on {fmtDate(rx.prescription_date)} - valid until {fmtDate(rx.valid_until)}</p>
           </div>
         </div>
-        <StatusPill value={rx.status} />
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <StatusPill value={rx.status} />
+          {actions}
+        </div>
       </div>
       {showPatient && <p className="mb-1 text-base font-semibold text-slate-800">Patient: {rx.patient_name} ({rx.patient_code})</p>}
       {rx.clinical_indication && <p className="mb-2 text-sm text-slate-600">Reason: {rx.clinical_indication}</p>}
