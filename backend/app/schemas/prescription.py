@@ -61,6 +61,30 @@ class PrescriptionItemOut(BaseModel):
     remaining_quantity: int
 
 
+class DoctorInfo(BaseModel):
+    """For the letterhead of the printed prescription. Anything that is not recorded stays empty (the sheet then shows nothing)."""
+    qualification: str | None = None
+    specialization: str | None = None
+    department: str | None = None
+    registration_number: str | None = None
+
+
+class PatientInfo(BaseModel):
+    """For the patient strip of the printed prescription. The pharmacy gets age and sex only (as before, it never sees a patient's phone or allergies)."""
+    age: int | None = None
+    gender: str | None = None
+    phone: str | None = None
+    allergies: str | None = None
+
+
+class HospitalInfo(BaseModel):
+    """From the settings (HOSPITAL_NAME, HOSPITAL_ADDRESS, HOSPITAL_PHONE, HOSPITAL_EMAIL). Empty until the hospital sets them."""
+    name: str | None = None
+    address: str | None = None
+    phone: str | None = None
+    email: str | None = None
+
+
 class PrescriptionOut(BaseModel):
     id: int
     code: str
@@ -79,3 +103,6 @@ class PrescriptionOut(BaseModel):
     tests: list[str] = []   # empty for the pharmacy, which never sees tests
     label: str = "Prescribed by a doctor"
     warnings: list[str] = []      # for the doctor who just wrote it: for example the same medicine twice
+    doctor_info: DoctorInfo = DoctorInfo()
+    patient_info: PatientInfo = PatientInfo()
+    hospital: HospitalInfo = HospitalInfo()

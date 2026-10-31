@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     default_password: str = "Welcome@123"
 
     # Patient assistant (chat + voice)
+    # The letterhead of printed prescriptions. Empty = not shown (nothing is invented).
+    hospital_name: str = ""
+    hospital_address: str = ""
+    hospital_phone: str = ""
+    hospital_email: str = ""
+
     emergency_number: str = "112"               # shown in emergency guidance
     assistant_retention_days: int = 90          # chats older than this are deleted
     assistant_rate_per_minute: int = 20         # messages per patient per minute

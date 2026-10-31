@@ -9,7 +9,7 @@ from app.database.models import (
 from app.schemas.appointment import AppointmentOut
 from app.schemas.doctor import NoteOut, RecommendationOut
 from app.schemas.patient import PatientBasic, PatientFull
-from app.schemas.prescription import PrescriptionItemOut, PrescriptionOut
+from app.schemas.prescription import DoctorInfo, HospitalInfo, PatientInfo, PrescriptionItemOut, PrescriptionOut
 from app.schemas.report import ParameterOut, ReportDetail, ReportListItem
 from app.services.analysis_engine import STATUS_LABELS
 from app.services.insight_service import (INSIGHTS_ENGINE, REPORT_TYPE_LABELS, LabItem, build_lab_insights, build_narrative_insights,
@@ -197,7 +197,13 @@ def tests_of(rx: Prescription) -> list[str]:
     return [line.strip() for line in (rx.tests_advised or "").splitlines() if line.strip()]
 
 
+def hospital_text(key: str) -> str | None:
+    from app.core.config import get_settings
+    return (getattr(get_settings(), key, "") or "").strip() or None
+
+
 def prescription_out(rx: Prescription, include_tests: bool = True) -> PrescriptionOut:
+    """include_tests=False is the restricted view (pharmacy, laboratory): no tests, and only age and sex of the patient."""
     items = []
     for it in rx.items:
         done = dispensed_quantity(it)
@@ -214,4 +220,10 @@ def prescription_out(rx: Prescription, include_tests: bool = True) -> Prescripti
         valid_until=rx.prescription_date + timedelta(days=PRESCRIPTION_VALID_DAYS),
         clinical_indication=rx.clinical_indication, notes=rx.notes, status=effective_status(rx), items=items,
         tests=tests_of(rx) if include_tests else [],
+        doctor_info=DoctorInfo(qualification=rx.doctor.qualification, specialization=rx.doctor.specialization,
+                               department=rx.doctor.department.name if rx.doctor.department else None, registration_number=rx.doctor.registration_number),
+        patient_info=PatientInfo(age=age_from_dob(rx.patient.date_of_birth), gender=rx.patient.gender,
+                                 phone=rx.patient.phone if include_tests else None, allergies=rx.patient.allergies if include_tests else None),
+        hospital=HospitalInfo(name=hospital_text("hospital_name"), address=hospital_text("hospital_address"),
+                              phone=hospital_text("hospital_phone"), email=hospital_text("hospital_email")),
     )

@@ -325,3 +325,20 @@ def test_patient_says_what_is_happening_when_booking(client, world):
     assert view["appointment_problem"]["symptoms"] == ["Giddiness", "Sweating"] and view["appointment_problem"]["duration"] == "1 day"
     # too long or too many symptoms are refused
     assert client.post("/api/appointments", headers=world.patient, json={**told, "scheduled_at": future(30), "details": "x" * 1001}).status_code == 422
+
+
+def test_a_prescription_carries_what_the_printed_sheet_needs_and_the_pharmacy_sees_no_more_than_before(client, world, monkeypatch):
+    from app.core.config import get_settings
+    monkeypatch.setattr(get_settings(), "hospital_name", "Test Hospital")
+    monkeypatch.setattr(get_settings(), "hospital_phone", "")
+    client.put(f"/api/patients/{world.patient_id}", headers=world.employee, json={"phone": "9876543210", "gender": "male", "date_of_birth": "1990-05-14"})
+    rx = client.post("/api/prescriptions", headers=world.doctor, json={"patient_id": world.patient_id, "clinical_indication": "Cough", "tests": ["Chest X-ray"], "items": [
+        {"medicine_name": "Tab. Test", "dosage": "5 mg", "frequency": "Twice a day", "duration": "5 days", "quantity": 10}]}).json()
+    mine = client.get(f"/api/prescriptions/{rx['id']}", headers=world.patient).json()
+    assert mine["hospital"]["name"] == "Test Hospital" and mine["hospital"]["phone"] is None and mine["tests"] == ["Chest X-ray"]
+    assert mine["patient_info"]["phone"] == "9876543210" and mine["patient_info"]["gender"] == "male" and mine["patient_info"]["age"] >= 30
+    assert mine["doctor_info"]["specialization"] == "Physician"
+    shop = client.get(f"/api/prescriptions/{rx['id']}", headers=world.pharmacy).json()
+    assert shop["tests"] == [] and shop["patient_info"]["phone"] is None and shop["patient_info"]["allergies"] is None and shop["patient_info"]["gender"] == "male"
+    listed = client.get("/api/pharmacy/prescriptions", headers=world.pharmacy).json()[0]
+    assert listed["tests"] == [] and listed["patient_info"]["phone"] is None
