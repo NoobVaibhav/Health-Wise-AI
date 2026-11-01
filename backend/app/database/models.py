@@ -1232,6 +1232,8 @@ class EncounterCharge(Base):
     amount: Mapped[float] = mapped_column(Float, default=0)
     gst_percent: Mapped[float] = mapped_column(Float, default=0)
     status: Mapped[str] = mapped_column(String(10), default="PENDING")                         # PENDING / INVOICED / CANCELLED
+    source_type: Mapped[str | None] = mapped_column(String(12))                                # LAB / RADIOLOGY / BED (made by "collect charges"), empty for a consultation or surgery
+    source_id: Mapped[int | None] = mapped_column(Integer)
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
@@ -1868,3 +1870,434 @@ class StockCount(Base):
     counted_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     decided_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     decided_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+# ------------------------------------------------------------------ Phase 5B: operation theatre
+class OperationTheatre(Base):
+    __tablename__ = "operation_theatres"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"))
+    name: Mapped[str] = mapped_column(String(80), unique=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Surgery(Base):
+    """One planned or done operation with its whole record: pre-op, consent, checklist, anaesthesia, operation note, events, recovery, consumables.
+    A theatre, a surgeon and an anaesthetist can never have two overlapping surgeries."""
+    __tablename__ = "surgeries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    admission_id: Mapped[int | None] = mapped_column(ForeignKey("admissions.id"), index=True)
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"))
+    theatre_id: Mapped[int] = mapped_column(ForeignKey("operation_theatres.id"), index=True)
+    service_id: Mapped[int | None] = mapped_column(ForeignKey("service_catalog.id"))             # the price-list entry that is charged when the surgery is completed
+    procedure: Mapped[str] = mapped_column(String(200))
+    priority: Mapped[str] = mapped_column(String(10), default="ELECTIVE")                         # ELECTIVE / URGENT / EMERGENCY
+    surgeon_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    anaesthetist_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"), index=True)
+    scheduled_start: Mapped[datetime] = mapped_column(DateTime, index=True)
+    scheduled_end: Mapped[datetime] = mapped_column(DateTime)
+    status: Mapped[str] = mapped_column(String(12), default="SCHEDULED", index=True)              # SCHEDULED / IN_PROGRESS / RECOVERY / COMPLETED / CANCELLED
+    cancel_reason: Mapped[str | None] = mapped_column(String(300))
+    # pre-operative assessment (the anaesthetist)
+    preop_fit: Mapped[bool | None] = mapped_column(Boolean)
+    preop_notes: Mapped[str | None] = mapped_column(Text)
+    preop_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    preop_at: Mapped[datetime | None] = mapped_column(DateTime)
+    # informed consent for THIS surgery
+    consent_given: Mapped[bool | None] = mapped_column(Boolean)
+    consent_by_name: Mapped[str | None] = mapped_column(String(150))                             # the patient, or the relative who signed
+    consent_note: Mapped[str | None] = mapped_column(String(300))
+    consent_recorded_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    consent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    # anaesthesia record (the anaesthetist)
+    anaesthesia_type: Mapped[str | None] = mapped_column(String(30))
+    anaesthesia_notes: Mapped[str | None] = mapped_column(Text)
+    anaesthesia_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    anaesthesia_at: Mapped[datetime | None] = mapped_column(DateTime)
+    # operation note (the surgeon); final = no more changes
+    op_findings: Mapped[str | None] = mapped_column(Text)
+    op_procedure_done: Mapped[str | None] = mapped_column(Text)
+    op_complications: Mapped[str | None] = mapped_column(Text)
+    op_blood_loss_ml: Mapped[int | None] = mapped_column(Integer)
+    op_note_final: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    op_note_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    op_note_at: Mapped[datetime | None] = mapped_column(DateTime)
+    # timeline
+    started_at: Mapped[datetime | None] = mapped_column(DateTime)
+    recovery_at: Mapped[datetime | None] = mapped_column(DateTime)
+    recovery_notes: Mapped[str | None] = mapped_column(Text)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    patient: Mapped[Patient] = relationship()
+    theatre: Mapped[OperationTheatre] = relationship()
+    surgeon: Mapped[Doctor] = relationship(foreign_keys=[surgeon_id])
+    anaesthetist: Mapped["Doctor | None"] = relationship(foreign_keys=[anaesthetist_id])
+    checklist: Mapped[list["SurgeryChecklistItem"]] = relationship(cascade="all, delete-orphan", order_by="SurgeryChecklistItem.id")
+    events: Mapped[list["SurgeryEvent"]] = relationship(cascade="all, delete-orphan", order_by="SurgeryEvent.id")
+    consumables: Mapped[list["SurgeryConsumable"]] = relationship(cascade="all, delete-orphan", order_by="SurgeryConsumable.id")
+
+
+class SurgeryChecklistItem(Base):
+    """One ticked item of the surgical safety checklist (sign-in, time-out, sign-out): who ticked it and when."""
+    __tablename__ = "surgery_checklist_items"
+    __table_args__ = (UniqueConstraint("surgery_id", "phase", "item", name="uq_surgery_checklist"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    surgery_id: Mapped[int] = mapped_column(ForeignKey("surgeries.id"), index=True)
+    phase: Mapped[str] = mapped_column(String(10))
+    item: Mapped[str] = mapped_column(String(60))
+    ticked_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    ticked_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class SurgeryEvent(Base):
+    """An intra-operative event with the time it happened, written by whoever was in theatre. Never edited."""
+    __tablename__ = "surgery_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    surgery_id: Mapped[int] = mapped_column(ForeignKey("surgeries.id"), index=True)
+    text: Mapped[str] = mapped_column(String(500))
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class SurgeryConsumable(Base):
+    __tablename__ = "surgery_consumables"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    surgery_id: Mapped[int] = mapped_column(ForeignKey("surgeries.id"), index=True)
+    inventory_item_id: Mapped[int] = mapped_column(ForeignKey("inventory_items.id"))
+    quantity: Mapped[int] = mapped_column(Integer)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+# ------------------------------------------------------------------ Phase 5C: blood bank
+class BloodDonor(Base):
+    __tablename__ = "blood_donors"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    donor_no: Mapped[str] = mapped_column(String(20), unique=True)
+    full_name: Mapped[str] = mapped_column(String(150), index=True)
+    gender: Mapped[str] = mapped_column(String(10))
+    date_of_birth: Mapped[date] = mapped_column(Date)
+    phone: Mapped[str | None] = mapped_column(String(30))
+    blood_group: Mapped[str] = mapped_column(String(3))                                       # A+ A- B+ B- AB+ AB- O+ O-
+    last_donation_date: Mapped[date | None] = mapped_column(Date)
+    deferred_until: Mapped[date | None] = mapped_column(Date)
+    deferral_reason: Mapped[str | None] = mapped_column(String(300))
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class BloodDonation(Base):
+    """One collection. Its units stay in quarantine until a second person records a CLEARED infection screening."""
+    __tablename__ = "blood_donations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    donor_id: Mapped[int] = mapped_column(ForeignKey("blood_donors.id"), index=True)
+    donated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    volume_ml: Mapped[int] = mapped_column(Integer)
+    haemoglobin: Mapped[float] = mapped_column(Float)
+    weight_kg: Mapped[float] = mapped_column(Float)
+    collected_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    screening: Mapped[str] = mapped_column(String(10), default="PENDING")                    # PENDING / CLEARED / REACTIVE
+    screening_note: Mapped[str | None] = mapped_column(String(300))
+    screened_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    screened_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    donor: Mapped[BloodDonor] = relationship()
+    units: Mapped[list["BloodUnit"]] = relationship(order_by="BloodUnit.id")
+
+
+class BloodUnit(Base):
+    __tablename__ = "blood_units"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    unit_number: Mapped[str] = mapped_column(String(24), unique=True)
+    donation_id: Mapped[int] = mapped_column(ForeignKey("blood_donations.id"), index=True)
+    blood_group: Mapped[str] = mapped_column(String(3), index=True)
+    component: Mapped[str] = mapped_column(String(12), index=True)                           # WHOLE_BLOOD / PRBC / FFP / PLATELETS
+    volume_ml: Mapped[int] = mapped_column(Integer)
+    collected_at: Mapped[datetime] = mapped_column(DateTime)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    status: Mapped[str] = mapped_column(String(12), default="QUARANTINE", index=True)        # QUARANTINE / AVAILABLE / RESERVED / ISSUED / TRANSFUSED / EXPIRED / DISCARDED
+    reserved_for: Mapped[int | None] = mapped_column(ForeignKey("blood_requests.id"))
+    discard_reason: Mapped[str | None] = mapped_column(String(300))
+
+    donation: Mapped[BloodDonation] = relationship(back_populates="units")
+
+
+class BloodRequest(Base):
+    __tablename__ = "blood_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    requested_by: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    component: Mapped[str] = mapped_column(String(12))
+    blood_group: Mapped[str | None] = mapped_column(String(3))                               # the patient's group; empty only in an emergency
+    units_requested: Mapped[int] = mapped_column(Integer)
+    urgency: Mapped[str] = mapped_column(String(10), default="ROUTINE")                      # ROUTINE / URGENT / EMERGENCY
+    indication: Mapped[str] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(12), default="PENDING", index=True)           # PENDING / CROSSMATCHED / ISSUED / COMPLETED / REJECTED / CANCELLED
+    decision_note: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    patient: Mapped[Patient] = relationship()
+    doctor: Mapped[Doctor] = relationship()
+
+
+class BloodCrossmatch(Base):
+    __tablename__ = "blood_crossmatches"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    request_id: Mapped[int] = mapped_column(ForeignKey("blood_requests.id"), index=True)
+    unit_id: Mapped[int] = mapped_column(ForeignKey("blood_units.id"), index=True)
+    result: Mapped[str] = mapped_column(String(12))                                          # COMPATIBLE / INCOMPATIBLE (the technician's test)
+    done_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    done_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class BloodIssue(Base):
+    """A unit leaving the blood bank. Issued by one person and verified by a different one before it can be transfused."""
+    __tablename__ = "blood_issues"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    request_id: Mapped[int] = mapped_column(ForeignKey("blood_requests.id"), index=True)
+    unit_id: Mapped[int] = mapped_column(ForeignKey("blood_units.id"), unique=True)
+    issued_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    issued_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    verified_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    returned_at: Mapped[datetime | None] = mapped_column(DateTime)
+    return_reason: Mapped[str | None] = mapped_column(String(300))
+
+    unit: Mapped[BloodUnit] = relationship()
+    request: Mapped[BloodRequest] = relationship()
+
+
+class Transfusion(Base):
+    """The transfusion at the bedside: started by a nurse, checked at the bedside by a second person, then given, and ended with the amount and any reaction."""
+    __tablename__ = "transfusions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    issue_id: Mapped[int] = mapped_column(ForeignKey("blood_issues.id"), unique=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    status: Mapped[str] = mapped_column(String(14), default="AWAITING_CHECK", index=True)    # AWAITING_CHECK / IN_PROGRESS / COMPLETED / STOPPED
+    started_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    verified_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime)
+    ended_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    volume_given_ml: Mapped[int | None] = mapped_column(Integer)
+    reaction: Mapped[bool | None] = mapped_column(Boolean)
+    reaction_note: Mapped[str | None] = mapped_column(String(500))
+
+    issue: Mapped[BloodIssue] = relationship()
+    patient: Mapped[Patient] = relationship()
+
+
+# ------------------------------------------------------------------ Phase 6: finance (invoices, payments, deposits, refunds, packages, insurance claims)
+class BillingPackage(Base):
+    """A priced bundle sold as one line (for example a delivery package). What it includes is text for the patient; the price and GST are what is charged."""
+    __tablename__ = "billing_packages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(150), unique=True)
+    price: Mapped[float] = mapped_column(Float)
+    gst_percent: Mapped[float] = mapped_column(Float, default=0)
+    inclusions: Mapped[str | None] = mapped_column(String(500))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Invoice(Base):
+    """A bill for one patient. A draft can be changed; a FINAL invoice is never edited (a mistake is cancelled with a reason and issued again)."""
+    __tablename__ = "invoices"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str | None] = mapped_column(String(24), unique=True)                  # given when the invoice is made final
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    admission_id: Mapped[int | None] = mapped_column(ForeignKey("admissions.id"))
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"))
+    status: Mapped[str] = mapped_column(String(10), default="DRAFT", index=True)         # DRAFT / FINAL / CANCELLED
+    subtotal: Mapped[float] = mapped_column(Float, default=0)
+    tax: Mapped[float] = mapped_column(Float, default=0)
+    discount: Mapped[float] = mapped_column(Float, default=0)
+    discount_reason: Mapped[str | None] = mapped_column(String(300))
+    discount_approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    total: Mapped[float] = mapped_column(Float, default=0)
+    note: Mapped[str | None] = mapped_column(String(300))
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    finalised_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    finalised_at: Mapped[datetime | None] = mapped_column(DateTime)
+    cancel_reason: Mapped[str | None] = mapped_column(String(300))
+    cancelled_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+    patient: Mapped[Patient] = relationship()
+    lines: Mapped[list["InvoiceLine"]] = relationship(cascade="all, delete-orphan", order_by="InvoiceLine.id")
+    payments: Mapped[list["Payment"]] = relationship(order_by="Payment.id")
+    refunds: Mapped[list["Refund"]] = relationship(order_by="Refund.id")
+
+
+class InvoiceLine(Base):
+    """One line. The price and GST are copied here, so a later change of the price list never changes a bill."""
+    __tablename__ = "invoice_lines"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id"), index=True)
+    charge_id: Mapped[int | None] = mapped_column(ForeignKey("encounter_charges.id"), index=True)   # a pending charge is billed once (checked in the service: a cancelled invoice frees its charges)
+    service_id: Mapped[int | None] = mapped_column(ForeignKey("service_catalog.id"))
+    package_id: Mapped[int | None] = mapped_column(ForeignKey("billing_packages.id"))
+    description: Mapped[str] = mapped_column(String(250))
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
+    unit_price: Mapped[float] = mapped_column(Float)
+    gst_percent: Mapped[float] = mapped_column(Float, default=0)
+    amount: Mapped[float] = mapped_column(Float)                                           # quantity x unit price, before GST
+    tax: Mapped[float] = mapped_column(Float, default=0)
+
+
+class Deposit(Base):
+    """Money paid in advance (for an admission). It is used against invoices, or the unused part is refunded."""
+    __tablename__ = "deposits"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    receipt_number: Mapped[str] = mapped_column(String(24), unique=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    admission_id: Mapped[int | None] = mapped_column(ForeignKey("admissions.id"))
+    amount: Mapped[float] = mapped_column(Float)
+    used: Mapped[float] = mapped_column(Float, default=0)
+    refunded: Mapped[float] = mapped_column(Float, default=0)
+    method: Mapped[str] = mapped_column(String(12))
+    reference: Mapped[str | None] = mapped_column(String(60))
+    received_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    received_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    patient: Mapped[Patient] = relationship()
+
+
+class Payment(Base):
+    """Money received against a FINAL invoice. Never edited; a wrong payment is corrected by a refund."""
+    __tablename__ = "payments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    receipt_number: Mapped[str] = mapped_column(String(24), unique=True)
+    invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id"), index=True)
+    amount: Mapped[float] = mapped_column(Float)
+    method: Mapped[str] = mapped_column(String(12), index=True)                           # CASH / UPI / CARD / BANK / ADVANCE / INSURANCE
+    reference: Mapped[str | None] = mapped_column(String(60))
+    deposit_id: Mapped[int | None] = mapped_column(ForeignKey("deposits.id"))
+    claim_id: Mapped[int | None] = mapped_column(ForeignKey("insurance_claims.id"))
+    received_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    received_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class Refund(Base):
+    """Money given back. Requested by one person and approved by a different one; the money counts as paid out only when approved."""
+    __tablename__ = "refunds"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str] = mapped_column(String(24), unique=True)
+    invoice_id: Mapped[int | None] = mapped_column(ForeignKey("invoices.id"), index=True)
+    deposit_id: Mapped[int | None] = mapped_column(ForeignKey("deposits.id"))
+    amount: Mapped[float] = mapped_column(Float)
+    method: Mapped[str] = mapped_column(String(12))
+    reason: Mapped[str] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(10), default="PENDING", index=True)       # PENDING / APPROVED / REJECTED
+    requested_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    requested_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    decided_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime)
+    decision_note: Mapped[str | None] = mapped_column(String(300))
+
+
+class InsuranceClaim(Base):
+    """A claim for one invoice: pre-authorisation, the documents the insurer needs, the decision and the settlement. The patient pays the rest."""
+    __tablename__ = "insurance_claims"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    claim_number: Mapped[str] = mapped_column(String(24), unique=True)
+    invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id"), unique=True)
+    patient_insurance_id: Mapped[int] = mapped_column(ForeignKey("patient_insurance.id"))
+    status: Mapped[str] = mapped_column(String(18), default="DRAFT", index=True)         # DRAFT / PREAUTH_SENT / PREAUTH_APPROVED / SUBMITTED / APPROVED / PARTIAL / REJECTED / SETTLED
+    preauth_reference: Mapped[str | None] = mapped_column(String(60))
+    preauth_requested: Mapped[float | None] = mapped_column(Float)
+    preauth_approved: Mapped[float | None] = mapped_column(Float)
+    claimed_amount: Mapped[float | None] = mapped_column(Float)
+    approved_amount: Mapped[float | None] = mapped_column(Float)
+    rejected_amount: Mapped[float | None] = mapped_column(Float)
+    settled_amount: Mapped[float] = mapped_column(Float, default=0)
+    settlement_reference: Mapped[str | None] = mapped_column(String(60))
+    rejection_reason: Mapped[str | None] = mapped_column(String(300))
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    invoice: Mapped[Invoice] = relationship()
+    policy: Mapped[PatientInsurance] = relationship()
+    documents: Mapped[list["ClaimDocument"]] = relationship(cascade="all, delete-orphan", order_by="ClaimDocument.id")
+    events: Mapped[list["ClaimEvent"]] = relationship(cascade="all, delete-orphan", order_by="ClaimEvent.id")
+
+
+class ClaimDocument(Base):
+    __tablename__ = "claim_documents"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    claim_id: Mapped[int] = mapped_column(ForeignKey("insurance_claims.id"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    received: Mapped[bool] = mapped_column(Boolean, default=False)
+    received_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    received_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class ClaimEvent(Base):
+    """The history of a claim, never edited."""
+    __tablename__ = "claim_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    claim_id: Mapped[int] = mapped_column(ForeignKey("insurance_claims.id"), index=True)
+    text: Mapped[str] = mapped_column(String(300))
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class LoginOtp(Base):
+    """A one-time code for signing in with a mobile number. Only a hash of the code is kept."""
+    __tablename__ = "login_otps"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    phone_tail: Mapped[str] = mapped_column(String(4))
+    code_hash: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    ip_address: Mapped[str | None] = mapped_column(String(45))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+# ------------------------------------------------------------------ Phase 8: the notification outbox
+class NotificationOutbox(Base):
+    """A message to a patient, waiting to be delivered by an adapter. QUEUED until a delivery service exists for its channel."""
+    __tablename__ = "notification_outbox"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    channel: Mapped[str] = mapped_column(String(10), index=True)                     # EMAIL / SMS / WHATSAPP
+    recipient_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    address: Mapped[str] = mapped_column(String(254))
+    template_key: Mapped[str] = mapped_column(String(30), index=True)
+    subject: Mapped[str] = mapped_column(String(150))
+    body: Mapped[str] = mapped_column(String(600))
+    related_type: Mapped[str] = mapped_column(String(20))
+    related_id: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(8), default="QUEUED", index=True)     # QUEUED / SENT / FAILED
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str | None] = mapped_column(String(250))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime)

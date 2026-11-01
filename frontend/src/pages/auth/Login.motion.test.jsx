@@ -84,6 +84,8 @@ describe("Login: motion and feedback", () => {
     expect(box.getAttribute("type")).toBe("password");
     const toggle = screen.getByRole("button", { name: "Show password" });
     expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    await userEvent.tab();                                   // the "Email login" tab
+    await userEvent.tab();                                   // the "Mobile code" tab
     await userEvent.tab();                                   // email
     await userEvent.tab();                                   // password
     await userEvent.tab();                                   // the eye button

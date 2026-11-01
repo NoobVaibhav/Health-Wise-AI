@@ -1,7 +1,7 @@
-import { BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, ScanLine, BadgeCheck, FileText, GraduationCap, History, Hospital as HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
+import { BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, ScanLine, BadgeCheck, Boxes, Droplets, Scissors, Warehouse, FileText, GraduationCap, History, Hospital as HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
 
 // Icon lookup (only the icons used in menus are bundled).
-export const ICONS = { ScanLine, BadgeCheck, BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
+export const ICONS = { Boxes, Droplets, Scissors, Warehouse, ScanLine, BadgeCheck, BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
 
 // Sidebar menu for each role: [path, label, icon name]. The backend enforces the same permissions.
 export const NAV = {
@@ -56,6 +56,7 @@ export const NAV = {
     ["/patient/assistant", "Ask HealthWise", "MessageCircle"],
     ["/patient/health-history", "My Health History", "ClipboardList"],
     ["/patient/reports", "My Reports", "FileText"],
+    ["/patient/bills", "My Bills", "ReceiptText"],
     ["/patient/history", "My Timeline", "History"],
     ["/patient/notes", "Doctor's Notes", "NotebookPen"],
     ["/patient/recommendations", "Doctor's Advice", "ListChecks"],
@@ -101,10 +102,28 @@ export const JUNIOR_MENU = [
 ];
 export const CONSULTANT_MENU = [["/doctor/countersign", "Awaiting my countersign", "ListChecks"]];
 
-/** The sidebar of a person: their role menu, and for a doctor the extra items of their grade. */
+// Pages that follow what a person may do (their permissions), whatever login they use: [permissions that open it, path, label, icon].
+export const PERMISSION_MENU = [
+  [["stock.view", "stock.manage"], "/stock", "Stock control", "Boxes"],
+  [["procure.request", "procure.order", "procure.approve", "inventory.manage"], "/procurement", "Procurement", "Warehouse"],
+  [["ot.view", "ot.schedule", "ot.record"], "/ot", "Operation theatre", "Scissors"],
+  [["bloodbank.manage"], "/bloodbank", "Blood bank", "Droplets"],
+  [["transfusion.give"], "/transfusions", "Transfusions", "Droplets"],
+  [["nursing.chart", "ipd.notes"], "/ward-requests", "Medicines for ward", "Pill"],
+  [["billing.view", "billing.create", "billing.collect", "billing.approve"], "/billing", "Billing", "ReceiptText"],
+  [["claims.manage"], "/claims", "Insurance claims", "ShieldAlert"],
+  [["billing.report"], "/finance-reports", "Finance reports", "ScrollText"],
+];
+
+/** The sidebar of a person: their role menu, the extra items of a doctor's grade, and the pages their permissions open. */
 export function menuFor(user) {
-  const base = NAV[user.role] || [];
-  if (user.role !== "DOCTOR") return base;
-  const extra = !user.grade || user.grade === "CONSULTANT" ? CONSULTANT_MENU : JUNIOR_MENU;
-  return [...base.slice(0, 1), ...extra, ...base.slice(1)];
+  let menu = NAV[user.role] || [];
+  if (user.role === "DOCTOR") {
+    const extra = !user.grade || user.grade === "CONSULTANT" ? CONSULTANT_MENU : JUNIOR_MENU;
+    menu = [...menu.slice(0, 1), ...extra, ...menu.slice(1)];
+  }
+  const mine = user.permissions || [];
+  const have = new Set(menu.map(([to]) => to));
+  const added = PERMISSION_MENU.filter(([perms, to]) => perms.some((p) => mine.includes(p)) && !have.has(to)).map(([, to, label, icon]) => [to, label, icon]);
+  return added.length === 0 ? menu : [...menu.slice(0, -1), ...added, ...menu.slice(-1)];
 }

@@ -241,7 +241,7 @@ def add_vitals(encounter_id: PathId, data: VitalsIn, user: User = Depends(vitals
 
 
 @router.post("/encounters/{encounter_id}/diagnoses", status_code=status.HTTP_201_CREATED)
-def add_diagnosis(encounter_id: PathId, data: DiagnosisIn, user: User = Depends(consult_perm), db: Session = Depends(get_db)):
+def add_diagnosis(encounter_id: PathId, data: DiagnosisIn, request: Request, user: User = Depends(consult_perm), db: Session = Depends(get_db)):
     encounter = svc.encounter_for_user(db, user, encounter_id, write=True)
     consultation = db.scalar(select(Consultation).where(Consultation.encounter_id == encounter.id))
     if consultation is not None and consultation.status == "SIGNED":
@@ -250,11 +250,12 @@ def add_diagnosis(encounter_id: PathId, data: DiagnosisIn, user: User = Depends(
     row = Diagnosis(encounter_id=encounter.id, patient_id=encounter.patient_id, text=data.text, code=data.code, kind=grade_service.diagnosis_kind(doctor, data.kind), added_by=doctor.id)
     db.add(row)
     db.commit()
+    audit_service.log_action(db, user, "DIAGNOSIS_ADDED", "diagnosis", row.id, request, f"{row.kind}: {row.text}"[:200])
     return {"id": row.id, "text": row.text, "code": row.code, "kind": row.kind}
 
 
 @router.post("/diagnoses/{diagnosis_id}/withdraw")
-def withdraw_diagnosis(diagnosis_id: PathId, user: User = Depends(consult_perm), db: Session = Depends(get_db)):
+def withdraw_diagnosis(diagnosis_id: PathId, request: Request, user: User = Depends(consult_perm), db: Session = Depends(get_db)):
     """A diagnosis is withdrawn (kept, marked) and never deleted."""
     row = db.get(Diagnosis, diagnosis_id)
     if row is None:
@@ -265,6 +266,7 @@ def withdraw_diagnosis(diagnosis_id: PathId, user: User = Depends(consult_perm),
         raise HTTPException(409, "This consultation is signed. Please add an addendum.")
     row.is_active = False
     db.commit()
+    audit_service.log_action(db, user, "DIAGNOSIS_WITHDRAWN", "diagnosis", row.id, request, row.text[:200])
     return {"id": row.id, "is_active": False}
 
 
@@ -285,7 +287,7 @@ def add_order(encounter_id: PathId, data: OrderIn, request: Request, user: User 
 
 
 @router.post("/orders/{order_id}/status")
-def order_status(order_id: PathId, data: OrderStatusIn, user: User = Depends(require_permission("orders.write", "nursing.chart")), db: Session = Depends(get_db)):
+def order_status(order_id: PathId, data: OrderStatusIn, request: Request, user: User = Depends(require_permission("orders.write", "nursing.chart")), db: Session = Depends(get_db)):
     row = db.get(ClinicalOrder, order_id)
     if row is None:
         raise HTTPException(404, "Order not found.")
@@ -296,4 +298,5 @@ def order_status(order_id: PathId, data: OrderStatusIn, user: User = Depends(req
     if data.status in ("DONE", "CANCELLED"):
         row.completed_at, row.completed_by = svc.now(), user.id
     db.commit()
+    audit_service.log_action(db, user, "ORDER_STATUS", "clinical_order", row.id, request, f"{row.kind} {data.status}")
     return {"id": row.id, "status": row.status}

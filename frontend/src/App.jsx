@@ -46,6 +46,17 @@ import TestOrders from "./pages/lab/TestOrders";
 import LabWorklist from "./pages/lab/Worklist";
 import LabApprovals from "./pages/lab/Approvals";
 import RadiologyWorklist from "./pages/radiology/Worklist";
+import PermissionRoute from "./routes/PermissionRoute";
+import StockControl from "./pages/stock/StockControl";
+import Procurement from "./pages/stock/Procurement";
+import WardRequests from "./pages/stock/WardRequests";
+import OtSchedule from "./pages/ot/Schedule";
+import BloodBank from "./pages/bloodbank/BloodBank";
+import Transfusions from "./pages/bloodbank/Transfusions";
+import FinanceBilling from "./pages/finance/Billing";
+import Claims from "./pages/finance/Claims";
+import FinanceReports from "./pages/finance/FinanceReports";
+import MyBills from "./pages/patient/MyBills";
 import TraineeDashboard from "./pages/trainee/Dashboard";
 import TraineeTakeHistory from "./pages/trainee/TakeHistory";
 import TraineeSelectDoctor from "./pages/trainee/SelectDoctor";
@@ -165,6 +176,16 @@ export default function App() {
             <Route path="profile" element={<Profile />} />
           </Route>
 
+          <Route element={<PermissionRoute any={["stock.view", "stock.manage"]} />}><Route path="/stock" element={<StockControl />} /></Route>
+          <Route element={<PermissionRoute any={["procure.request", "procure.order", "procure.approve", "inventory.manage"]} />}><Route path="/procurement" element={<Procurement />} /></Route>
+          <Route element={<PermissionRoute any={["ot.view", "ot.schedule", "ot.record"]} />}><Route path="/ot" element={<OtSchedule />} /></Route>
+          <Route element={<PermissionRoute any={["bloodbank.manage"]} />}><Route path="/bloodbank" element={<BloodBank />} /></Route>
+          <Route element={<PermissionRoute any={["billing.view", "billing.create", "billing.collect", "billing.approve"]} />}><Route path="/billing" element={<FinanceBilling />} /></Route>
+          <Route element={<PermissionRoute any={["claims.manage", "billing.view"]} />}><Route path="/claims" element={<Claims />} /></Route>
+          <Route element={<PermissionRoute any={["billing.report"]} />}><Route path="/finance-reports" element={<FinanceReports />} /></Route>
+          <Route element={<PermissionRoute any={["transfusion.give"]} />}><Route path="/transfusions" element={<Transfusions />} /></Route>
+          <Route element={<PermissionRoute any={["nursing.chart", "ipd.notes"]} />}><Route path="/ward-requests" element={<WardRequests />} /></Route>
+
           <Route path="/radiology" element={<RoleRoute roles={["RADIOLOGY"]} />}>
             <Route index element={<RadiologyWorklist />} />
             <Route path="profile" element={<Profile />} />
@@ -179,6 +200,7 @@ export default function App() {
 
           <Route path="/patient" element={<RoleRoute roles={["PATIENT"]} />}>
             <Route index element={<PatientDashboard />} />
+            <Route path="bills" element={<MyBills />} />
             <Route path="reports" element={<MyReports />} />
             <Route path="reports/:id" element={<ReportDetails />} />
             <Route path="history" element={<HealthHistory />} />

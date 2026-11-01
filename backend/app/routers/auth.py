@@ -12,16 +12,16 @@ from app.core.security import create_access_token, hash_password, is_current_has
 from app.database.connection import get_db
 from app.database.models import AuditLog, User, utcnow
 from app.schemas.auth import (
-    ChangePasswordRequest, FirstAdminRequest, LoginRequest, TokenResponse, UserOut,
+    ChangePasswordRequest, FirstAdminRequest, LoginRequest, OtpRequest, OtpVerify, TokenResponse, UserOut,
 )
-from app.services import audit_service, user_service
+from app.services import audit_service, otp_service, user_service
 from app.services.profile_service import avatar_version
 from app.utils.validators import NO_NAME_IN_PASSWORD, password_has_email_name
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-def user_out(user: User, db: Session | None = None) -> UserOut:
+def user_out(user: User, db: Session | None = None, with_permissions: bool = False) -> UserOut:
     grade = None
     if user.role == "DOCTOR":                          # the menu and the workspace follow the grade
         from sqlalchemy.orm import object_session
@@ -35,7 +35,13 @@ def user_out(user: User, db: Session | None = None) -> UserOut:
         session = db or object_session(user)
         model = LabStaff if user.role == "LAB" else RadiologyStaff
         staff_type = (session.scalar(select(model.staff_type).where(model.user_id == user.id)) if session is not None else None) or "TECHNICIAN"
-    return UserOut(id=user.id, staff_type=staff_type, email=user.email, full_name=user.full_name, role=user.role,
+    permissions = []
+    if with_permissions and user.role != "PATIENT":
+        from sqlalchemy.orm import object_session
+        from app.services.access_service import permissions_of
+        session = db or object_session(user)
+        permissions = sorted(permissions_of(session, user)) if session is not None else []
+    return UserOut(id=user.id, staff_type=staff_type, permissions=permissions, email=user.email, full_name=user.full_name, role=user.role,
                    is_active=user.is_active, must_change_password=user.must_change_password,
                    has_avatar=bool(user.avatar_path), avatar_version=avatar_version(user), grade=grade)
 
@@ -100,12 +106,38 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         user.password_hash = hash_password(data.password)
         db.commit()
     audit_service.log_action(db, user, audit_service.LOGIN, "user", user.id, request)
-    return TokenResponse(access_token=create_access_token(user.id, user.password_hash), user=user_out(user))
+    return TokenResponse(access_token=create_access_token(user.id, user.password_hash), user=user_out(user, with_permissions=True))
+
+
+@router.post("/otp/request")
+def otp_request(data: OtpRequest, request: Request, db: Session = Depends(get_db)):
+    """Ask for a sign-in code for a mobile number. The answer is the same whether or not the number is registered."""
+    return otp_service.request_code(db, data.phone, request.client.host if request.client else None)
+
+
+@router.post("/otp/verify", response_model=TokenResponse)
+def otp_verify(data: OtpVerify, request: Request, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else None
+    user = None
+    try:
+        user = otp_service.users_with_phone(db, otp_service.clean_phone(data.phone))
+        user = user[0] if len(user) == 1 else None
+        if user is not None:
+            wait = minutes_until_unlocked(db, user.email, ip)
+            if wait:
+                raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, f"Too many failed attempts. Please try again in {wait} minute{'s' if wait != 1 else ''}.", headers={"Retry-After": str(wait * 60)})
+        user = otp_service.verify_code(db, data.phone, data.code)
+    except HTTPException as e:
+        if e.status_code == 401:
+            audit_service.log_action(db, user, audit_service.LOGIN_FAILED, "user", user.id if user else None, request, "mobile code")
+        raise
+    audit_service.log_action(db, user, audit_service.LOGIN, "user", user.id, request, "mobile code")
+    return TokenResponse(access_token=create_access_token(user.id, user.password_hash), user=user_out(user, with_permissions=True))
 
 
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)):
-    return user_out(user)
+    return user_out(user, with_permissions=True)
 
 
 @router.post("/change-password")

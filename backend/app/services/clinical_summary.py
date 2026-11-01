@@ -84,7 +84,9 @@ def build(db: Session, patient: Patient) -> dict:
 
     # ------------------------------------------------------------ 2. what has happened (documented events, oldest first)
     verbs = {"REPORT": "a laboratory report was recorded", "ASSESSMENT": "a doctor's assessment was recorded", "EMERGENCY": "an emergency visit was recorded", "NOTE": "a doctor's note was added",
-             "RECOMMENDATION": "a recommendation was added", "PRESCRIPTION": "a prescription was issued", "APPOINTMENT": "an appointment was held or booked", "HISTORY": "a history entry was added"}
+             "RECOMMENDATION": "a recommendation was added", "PRESCRIPTION": "a prescription was issued", "APPOINTMENT": "an appointment was held or booked", "HISTORY": "a history entry was added",
+             "CONSULTATION": "a consultation was signed", "DIAGNOSIS": "a diagnosis was recorded", "ADMISSION": "an admission was recorded", "DISCHARGE": "a discharge summary was approved",
+             "LAB_TEST": "a hospital laboratory result was approved", "SCAN": "a scan report was approved", "SURGERY": "an operation was done", "TRANSFUSION": "a transfusion was recorded"}
     chosen = [e for e in timeline if e["kind"] in verbs]
     dated = sorted([e for e in chosen if e["datetime"]], key=lambda e: e["datetime"])[-12:]
     undated = [e for e in chosen if not e["datetime"]]

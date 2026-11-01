@@ -12,6 +12,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.utils.locking import lock
 from app.database.models import (
     Admission, InventoryItem, MedicineInventory, MedicineRequest, MedicineRequestItem, MedicineReturn, SaleItem, StockMovement, User, utcnow,
 )
@@ -101,6 +102,7 @@ def return_sold(db: Session, sale_item_id: int, quantity: int, reason: str, user
     sale_item = db.get(SaleItem, sale_item_id)
     if sale_item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Sale line not found.")
+    lock(db, sale_item)
     returned = db.scalar(select(func.coalesce(func.sum(MedicineReturn.quantity), 0)).where(MedicineReturn.sale_item_id == sale_item.id)) or 0
     if quantity > sale_item.quantity - returned:
         raise conflict(f"Only {sale_item.quantity - returned} of this line can still be returned.")
@@ -137,6 +139,7 @@ def create_request(db: Session, admission: Admission, user: User, items: list[di
 
 def issue_request(db: Session, req: MedicineRequest, user: User, issues: dict[int, int], note: str | None) -> MedicineRequest:
     """The pharmacy issues what it can. An item the pharmacy does not issue stays open; the request is PARTIAL until every line is full, then ISSUED."""
+    lock(db, req)
     if req.status not in ("PENDING", "PARTIAL"):
         raise conflict(f"This request is {req.status.lower()}.")
     lines = {i.id: i for i in req.items}

@@ -1,6 +1,18 @@
 -- Reference PostgreSQL schema, generated from app/database/models.py
 -- (the app also creates these tables automatically on startup)
 
+CREATE TABLE billing_packages (
+	id SERIAL NOT NULL, 
+	name VARCHAR(150) NOT NULL, 
+	price FLOAT NOT NULL, 
+	gst_percent FLOAT NOT NULL, 
+	inclusions VARCHAR(500), 
+	is_active BOOLEAN NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (name)
+);
+
+
 CREATE TABLE branches (
 	id SERIAL NOT NULL, 
 	code VARCHAR(8) NOT NULL, 
@@ -37,23 +49,6 @@ CREATE TABLE diagnostic_tests (
 
 CREATE INDEX ix_diagnostic_tests_kind ON diagnostic_tests (kind);
 
-CREATE TABLE medicine_inventory (
-	id SERIAL NOT NULL, 
-	medicine_name VARCHAR(200) NOT NULL, 
-	batch_number VARCHAR(50), 
-	quantity INTEGER NOT NULL, 
-	expiry_date DATE, 
-	manufacture_date DATE, 
-	manufacturer VARCHAR(150), 
-	unit_price FLOAT, 
-	barcode VARCHAR(64), 
-	gst_percent FLOAT, 
-	PRIMARY KEY (id)
-);
-
-CREATE INDEX ix_medicine_inventory_barcode ON medicine_inventory (barcode);
-CREATE INDEX ix_medicine_inventory_medicine_name ON medicine_inventory (medicine_name);
-
 CREATE TABLE permissions (
 	id SERIAL NOT NULL, 
 	code VARCHAR(60) NOT NULL, 
@@ -71,6 +66,20 @@ CREATE TABLE roles (
 	is_system BOOLEAN NOT NULL, 
 	PRIMARY KEY (id), 
 	UNIQUE (code)
+);
+
+
+CREATE TABLE suppliers (
+	id SERIAL NOT NULL, 
+	name VARCHAR(150) NOT NULL, 
+	contact_person VARCHAR(100), 
+	phone VARCHAR(30), 
+	email VARCHAR(254), 
+	gstin VARCHAR(20), 
+	address VARCHAR(300), 
+	is_active BOOLEAN NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (name)
 );
 
 
@@ -106,6 +115,26 @@ CREATE TABLE audit_logs (
 CREATE INDEX ix_audit_logs_action ON audit_logs (action);
 CREATE INDEX ix_audit_logs_timestamp ON audit_logs (timestamp);
 CREATE INDEX ix_audit_logs_user_id ON audit_logs (user_id);
+
+CREATE TABLE blood_donors (
+	id SERIAL NOT NULL, 
+	donor_no VARCHAR(20) NOT NULL, 
+	full_name VARCHAR(150) NOT NULL, 
+	gender VARCHAR(10) NOT NULL, 
+	date_of_birth DATE NOT NULL, 
+	phone VARCHAR(30), 
+	blood_group VARCHAR(3) NOT NULL, 
+	last_donation_date DATE, 
+	deferred_until DATE, 
+	deferral_reason VARCHAR(300), 
+	created_by INTEGER NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (donor_no), 
+	FOREIGN KEY(created_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_blood_donors_full_name ON blood_donors (full_name);
 
 CREATE TABLE consultation_templates (
 	id SERIAL NOT NULL, 
@@ -196,6 +225,24 @@ CREATE TABLE hospital_settings (
 
 CREATE INDEX ix_hospital_settings_key ON hospital_settings (key);
 
+CREATE TABLE inventory_items (
+	id SERIAL NOT NULL, 
+	code VARCHAR(30) NOT NULL, 
+	name VARCHAR(200) NOT NULL, 
+	category VARCHAR(12) NOT NULL, 
+	unit VARCHAR(20) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	min_level INTEGER NOT NULL, 
+	reorder_quantity INTEGER NOT NULL, 
+	supplier_id INTEGER, 
+	is_active BOOLEAN NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (code), 
+	FOREIGN KEY(supplier_id) REFERENCES suppliers (id)
+);
+
+CREATE INDEX ix_inventory_items_name ON inventory_items (name);
+
 CREATE TABLE lab_staff (
 	id SERIAL NOT NULL, 
 	user_id INTEGER NOT NULL, 
@@ -209,6 +256,30 @@ CREATE TABLE lab_staff (
 	FOREIGN KEY(user_id) REFERENCES users (id)
 );
 
+
+CREATE TABLE medicine_inventory (
+	id SERIAL NOT NULL, 
+	medicine_name VARCHAR(200) NOT NULL, 
+	batch_number VARCHAR(50), 
+	quantity INTEGER NOT NULL, 
+	expiry_date DATE, 
+	manufacture_date DATE, 
+	manufacturer VARCHAR(150), 
+	unit_price FLOAT, 
+	barcode VARCHAR(64), 
+	gst_percent FLOAT, 
+	generic_name VARCHAR(200), 
+	reorder_level INTEGER, 
+	supplier_id INTEGER, 
+	recalled BOOLEAN, 
+	recall_reason VARCHAR(300), 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(supplier_id) REFERENCES suppliers (id)
+);
+
+CREATE INDEX ix_medicine_inventory_barcode ON medicine_inventory (barcode);
+CREATE INDEX ix_medicine_inventory_generic_name ON medicine_inventory (generic_name);
+CREATE INDEX ix_medicine_inventory_medicine_name ON medicine_inventory (medicine_name);
 
 CREATE TABLE number_counters (
 	id SERIAL NOT NULL, 
@@ -236,6 +307,17 @@ CREATE TABLE nurses (
 );
 
 
+CREATE TABLE operation_theatres (
+	id SERIAL NOT NULL, 
+	branch_id INTEGER, 
+	name VARCHAR(80) NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(branch_id) REFERENCES branches (id), 
+	UNIQUE (name)
+);
+
+
 CREATE TABLE pharmacy_staff (
 	id SERIAL NOT NULL, 
 	user_id INTEGER NOT NULL, 
@@ -260,6 +342,26 @@ CREATE TABLE radiology_staff (
 	FOREIGN KEY(user_id) REFERENCES users (id)
 );
 
+
+CREATE TABLE requisitions (
+	id SERIAL NOT NULL, 
+	number VARCHAR(20) NOT NULL, 
+	requested_by INTEGER NOT NULL, 
+	department_id INTEGER, 
+	status VARCHAR(10) NOT NULL, 
+	note VARCHAR(300), 
+	decided_by INTEGER, 
+	decided_at TIMESTAMP WITHOUT TIME ZONE, 
+	decision_note VARCHAR(300), 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (number), 
+	FOREIGN KEY(requested_by) REFERENCES users (id), 
+	FOREIGN KEY(department_id) REFERENCES departments (id), 
+	FOREIGN KEY(decided_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_requisitions_status ON requisitions (status);
 
 CREATE TABLE role_permissions (
 	id SERIAL NOT NULL, 
@@ -343,6 +445,26 @@ CREATE TABLE wards (
 );
 
 
+CREATE TABLE blood_donations (
+	id SERIAL NOT NULL, 
+	donor_id INTEGER NOT NULL, 
+	donated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	volume_ml INTEGER NOT NULL, 
+	haemoglobin FLOAT NOT NULL, 
+	weight_kg FLOAT NOT NULL, 
+	collected_by INTEGER NOT NULL, 
+	screening VARCHAR(10) NOT NULL, 
+	screening_note VARCHAR(300), 
+	screened_by INTEGER, 
+	screened_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(donor_id) REFERENCES blood_donors (id), 
+	FOREIGN KEY(collected_by) REFERENCES users (id), 
+	FOREIGN KEY(screened_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_blood_donations_donor_id ON blood_donations (donor_id);
+
 CREATE TABLE doctors (
 	id SERIAL NOT NULL, 
 	user_id INTEGER NOT NULL, 
@@ -367,6 +489,99 @@ CREATE TABLE doctors (
 );
 
 CREATE INDEX ix_doctors_grade ON doctors (grade);
+
+CREATE TABLE purchase_orders (
+	id SERIAL NOT NULL, 
+	number VARCHAR(20) NOT NULL, 
+	supplier_id INTEGER NOT NULL, 
+	requisition_id INTEGER, 
+	status VARCHAR(10) NOT NULL, 
+	created_by INTEGER NOT NULL, 
+	approved_by INTEGER, 
+	approved_at TIMESTAMP WITHOUT TIME ZONE, 
+	note VARCHAR(300), 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (number), 
+	FOREIGN KEY(supplier_id) REFERENCES suppliers (id), 
+	FOREIGN KEY(requisition_id) REFERENCES requisitions (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id), 
+	FOREIGN KEY(approved_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_purchase_orders_status ON purchase_orders (status);
+
+CREATE TABLE requisition_items (
+	id SERIAL NOT NULL, 
+	requisition_id INTEGER NOT NULL, 
+	inventory_item_id INTEGER, 
+	medicine_name VARCHAR(200), 
+	quantity INTEGER NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(requisition_id) REFERENCES requisitions (id), 
+	FOREIGN KEY(inventory_item_id) REFERENCES inventory_items (id)
+);
+
+CREATE INDEX ix_requisition_items_requisition_id ON requisition_items (requisition_id);
+
+CREATE TABLE stock_counts (
+	id SERIAL NOT NULL, 
+	medicine_inventory_id INTEGER, 
+	inventory_item_id INTEGER, 
+	system_quantity INTEGER NOT NULL, 
+	counted_quantity INTEGER NOT NULL, 
+	reason VARCHAR(300), 
+	status VARCHAR(10) NOT NULL, 
+	counted_by INTEGER NOT NULL, 
+	counted_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	decided_by INTEGER, 
+	decided_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(medicine_inventory_id) REFERENCES medicine_inventory (id), 
+	FOREIGN KEY(inventory_item_id) REFERENCES inventory_items (id), 
+	FOREIGN KEY(counted_by) REFERENCES users (id), 
+	FOREIGN KEY(decided_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_stock_counts_status ON stock_counts (status);
+
+CREATE TABLE stock_movements (
+	id SERIAL NOT NULL, 
+	medicine_inventory_id INTEGER, 
+	inventory_item_id INTEGER, 
+	kind VARCHAR(16) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	balance_after INTEGER NOT NULL, 
+	reference_type VARCHAR(20), 
+	reference_id INTEGER, 
+	note VARCHAR(300), 
+	created_by INTEGER, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(medicine_inventory_id) REFERENCES medicine_inventory (id), 
+	FOREIGN KEY(inventory_item_id) REFERENCES inventory_items (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_stock_movements_created_at ON stock_movements (created_at);
+CREATE INDEX ix_stock_movements_inventory_item_id ON stock_movements (inventory_item_id);
+CREATE INDEX ix_stock_movements_kind ON stock_movements (kind);
+CREATE INDEX ix_stock_movements_medicine_inventory_id ON stock_movements (medicine_inventory_id);
+
+CREATE TABLE goods_receipts (
+	id SERIAL NOT NULL, 
+	number VARCHAR(20) NOT NULL, 
+	order_id INTEGER NOT NULL, 
+	received_by INTEGER NOT NULL, 
+	received_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	note VARCHAR(300), 
+	PRIMARY KEY (id), 
+	UNIQUE (number), 
+	FOREIGN KEY(order_id) REFERENCES purchase_orders (id), 
+	FOREIGN KEY(received_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_goods_receipts_order_id ON goods_receipts (order_id);
 
 CREATE TABLE patients (
 	id SERIAL NOT NULL, 
@@ -398,6 +613,21 @@ CREATE TABLE patients (
 CREATE UNIQUE INDEX ix_patients_patient_code ON patients (patient_code);
 CREATE UNIQUE INDEX ix_patients_uhid ON patients (uhid);
 
+CREATE TABLE purchase_order_items (
+	id SERIAL NOT NULL, 
+	order_id INTEGER NOT NULL, 
+	inventory_item_id INTEGER, 
+	medicine_name VARCHAR(200), 
+	ordered_quantity INTEGER NOT NULL, 
+	received_quantity INTEGER NOT NULL, 
+	unit_cost FLOAT, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(order_id) REFERENCES purchase_orders (id), 
+	FOREIGN KEY(inventory_item_id) REFERENCES inventory_items (id)
+);
+
+CREATE INDEX ix_purchase_order_items_order_id ON purchase_order_items (order_id);
+
 CREATE TABLE beds (
 	id SERIAL NOT NULL, 
 	ward_id INTEGER NOT NULL, 
@@ -413,6 +643,26 @@ CREATE TABLE beds (
 
 CREATE INDEX ix_beds_status ON beds (status);
 CREATE INDEX ix_beds_ward_id ON beds (ward_id);
+
+CREATE TABLE blood_requests (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	requested_by INTEGER NOT NULL, 
+	component VARCHAR(12) NOT NULL, 
+	blood_group VARCHAR(3), 
+	units_requested INTEGER NOT NULL, 
+	urgency VARCHAR(10) NOT NULL, 
+	indication VARCHAR(300) NOT NULL, 
+	status VARCHAR(12) NOT NULL, 
+	decision_note VARCHAR(300), 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(requested_by) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_blood_requests_patient_id ON blood_requests (patient_id);
+CREATE INDEX ix_blood_requests_status ON blood_requests (status);
 
 CREATE TABLE break_glass_grants (
 	id SERIAL NOT NULL, 
@@ -607,6 +857,22 @@ CREATE TABLE follow_up_tasks (
 );
 
 CREATE INDEX ix_follow_up_tasks_patient_id ON follow_up_tasks (patient_id);
+
+CREATE TABLE goods_receipt_items (
+	id SERIAL NOT NULL, 
+	receipt_id INTEGER NOT NULL, 
+	order_item_id INTEGER NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	batch_number VARCHAR(50), 
+	expiry_date DATE, 
+	selling_price FLOAT, 
+	gst_percent FLOAT, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(receipt_id) REFERENCES goods_receipts (id), 
+	FOREIGN KEY(order_item_id) REFERENCES purchase_order_items (id)
+);
+
+CREATE INDEX ix_goods_receipt_items_receipt_id ON goods_receipt_items (receipt_id);
 
 CREATE TABLE health_reports (
 	id SERIAL NOT NULL, 
@@ -906,6 +1172,30 @@ CREATE INDEX ix_appointments_doctor_id ON appointments (doctor_id);
 CREATE INDEX ix_appointments_patient_id ON appointments (patient_id);
 CREATE INDEX ix_appointments_scheduled_at ON appointments (scheduled_at);
 
+CREATE TABLE blood_units (
+	id SERIAL NOT NULL, 
+	unit_number VARCHAR(24) NOT NULL, 
+	donation_id INTEGER NOT NULL, 
+	blood_group VARCHAR(3) NOT NULL, 
+	component VARCHAR(12) NOT NULL, 
+	volume_ml INTEGER NOT NULL, 
+	collected_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	status VARCHAR(12) NOT NULL, 
+	reserved_for INTEGER, 
+	discard_reason VARCHAR(300), 
+	PRIMARY KEY (id), 
+	UNIQUE (unit_number), 
+	FOREIGN KEY(donation_id) REFERENCES blood_donations (id), 
+	FOREIGN KEY(reserved_for) REFERENCES blood_requests (id)
+);
+
+CREATE INDEX ix_blood_units_blood_group ON blood_units (blood_group);
+CREATE INDEX ix_blood_units_component ON blood_units (component);
+CREATE INDEX ix_blood_units_donation_id ON blood_units (donation_id);
+CREATE INDEX ix_blood_units_expires_at ON blood_units (expires_at);
+CREATE INDEX ix_blood_units_status ON blood_units (status);
+
 CREATE TABLE consultations (
 	id SERIAL NOT NULL, 
 	encounter_id INTEGER NOT NULL, 
@@ -1015,6 +1305,8 @@ CREATE TABLE encounter_charges (
 	amount FLOAT NOT NULL, 
 	gst_percent FLOAT NOT NULL, 
 	status VARCHAR(10) NOT NULL, 
+	source_type VARCHAR(12), 
+	source_id INTEGER, 
 	created_by INTEGER, 
 	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
@@ -1269,6 +1561,42 @@ CREATE INDEX ix_bed_assignments_bed_id ON bed_assignments (bed_id);
 CREATE UNIQUE INDEX uq_admission_one_bed ON bed_assignments (admission_id) WHERE released_at IS NULL;
 CREATE UNIQUE INDEX uq_bed_one_active ON bed_assignments (bed_id) WHERE released_at IS NULL;
 
+CREATE TABLE blood_crossmatches (
+	id SERIAL NOT NULL, 
+	request_id INTEGER NOT NULL, 
+	unit_id INTEGER NOT NULL, 
+	result VARCHAR(12) NOT NULL, 
+	done_by INTEGER NOT NULL, 
+	done_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(request_id) REFERENCES blood_requests (id), 
+	FOREIGN KEY(unit_id) REFERENCES blood_units (id), 
+	FOREIGN KEY(done_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_blood_crossmatches_request_id ON blood_crossmatches (request_id);
+CREATE INDEX ix_blood_crossmatches_unit_id ON blood_crossmatches (unit_id);
+
+CREATE TABLE blood_issues (
+	id SERIAL NOT NULL, 
+	request_id INTEGER NOT NULL, 
+	unit_id INTEGER NOT NULL, 
+	issued_by INTEGER NOT NULL, 
+	issued_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	verified_by INTEGER, 
+	verified_at TIMESTAMP WITHOUT TIME ZONE, 
+	returned_at TIMESTAMP WITHOUT TIME ZONE, 
+	return_reason VARCHAR(300), 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(request_id) REFERENCES blood_requests (id), 
+	UNIQUE (unit_id), 
+	FOREIGN KEY(unit_id) REFERENCES blood_units (id), 
+	FOREIGN KEY(issued_by) REFERENCES users (id), 
+	FOREIGN KEY(verified_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_blood_issues_request_id ON blood_issues (request_id);
+
 CREATE TABLE clinical_orders (
 	id SERIAL NOT NULL, 
 	encounter_id INTEGER NOT NULL, 
@@ -1309,6 +1637,27 @@ CREATE TABLE consultation_addenda (
 );
 
 CREATE INDEX ix_consultation_addenda_consultation_id ON consultation_addenda (consultation_id);
+
+CREATE TABLE deposits (
+	id SERIAL NOT NULL, 
+	receipt_number VARCHAR(24) NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	admission_id INTEGER, 
+	amount FLOAT NOT NULL, 
+	used FLOAT NOT NULL, 
+	refunded FLOAT NOT NULL, 
+	method VARCHAR(12) NOT NULL, 
+	reference VARCHAR(60), 
+	received_by INTEGER NOT NULL, 
+	received_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (receipt_number), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(admission_id) REFERENCES admissions (id), 
+	FOREIGN KEY(received_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_deposits_patient_id ON deposits (patient_id);
 
 CREATE TABLE discharge_summaries (
 	id SERIAL NOT NULL, 
@@ -1384,6 +1733,40 @@ CREATE TABLE intake_output (
 CREATE INDEX ix_intake_output_admission_id ON intake_output (admission_id);
 CREATE INDEX ix_intake_output_patient_id ON intake_output (patient_id);
 
+CREATE TABLE invoices (
+	id SERIAL NOT NULL, 
+	number VARCHAR(24), 
+	patient_id INTEGER NOT NULL, 
+	admission_id INTEGER, 
+	encounter_id INTEGER, 
+	status VARCHAR(10) NOT NULL, 
+	subtotal FLOAT NOT NULL, 
+	tax FLOAT NOT NULL, 
+	discount FLOAT NOT NULL, 
+	discount_reason VARCHAR(300), 
+	discount_approved_by INTEGER, 
+	total FLOAT NOT NULL, 
+	note VARCHAR(300), 
+	created_by INTEGER NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	finalised_by INTEGER, 
+	finalised_at TIMESTAMP WITHOUT TIME ZONE, 
+	cancel_reason VARCHAR(300), 
+	cancelled_by INTEGER, 
+	PRIMARY KEY (id), 
+	UNIQUE (number), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(admission_id) REFERENCES admissions (id), 
+	FOREIGN KEY(encounter_id) REFERENCES encounters (id), 
+	FOREIGN KEY(discount_approved_by) REFERENCES users (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id), 
+	FOREIGN KEY(finalised_by) REFERENCES users (id), 
+	FOREIGN KEY(cancelled_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_invoices_patient_id ON invoices (patient_id);
+CREATE INDEX ix_invoices_status ON invoices (status);
+
 CREATE TABLE medication_orders (
 	id SERIAL NOT NULL, 
 	admission_id INTEGER NOT NULL, 
@@ -1410,6 +1793,28 @@ CREATE TABLE medication_orders (
 CREATE INDEX ix_medication_orders_admission_id ON medication_orders (admission_id);
 CREATE INDEX ix_medication_orders_patient_id ON medication_orders (patient_id);
 CREATE INDEX ix_medication_orders_status ON medication_orders (status);
+
+CREATE TABLE medicine_requests (
+	id SERIAL NOT NULL, 
+	admission_id INTEGER NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	requested_by INTEGER NOT NULL, 
+	status VARCHAR(12) NOT NULL, 
+	note VARCHAR(300), 
+	decided_by INTEGER, 
+	decided_at TIMESTAMP WITHOUT TIME ZONE, 
+	decision_note VARCHAR(300), 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(admission_id) REFERENCES admissions (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(requested_by) REFERENCES users (id), 
+	FOREIGN KEY(decided_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_medicine_requests_admission_id ON medicine_requests (admission_id);
+CREATE INDEX ix_medicine_requests_patient_id ON medicine_requests (patient_id);
+CREATE INDEX ix_medicine_requests_status ON medicine_requests (status);
 
 CREATE TABLE nursing_notes (
 	id SERIAL NOT NULL, 
@@ -1534,6 +1939,70 @@ CREATE TABLE sales (
 CREATE UNIQUE INDEX ix_sales_bill_number ON sales (bill_number);
 CREATE INDEX ix_sales_created_at ON sales (created_at);
 
+CREATE TABLE surgeries (
+	id SERIAL NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	admission_id INTEGER, 
+	encounter_id INTEGER, 
+	theatre_id INTEGER NOT NULL, 
+	service_id INTEGER, 
+	procedure VARCHAR(200) NOT NULL, 
+	priority VARCHAR(10) NOT NULL, 
+	surgeon_id INTEGER NOT NULL, 
+	anaesthetist_id INTEGER, 
+	scheduled_start TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	scheduled_end TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	status VARCHAR(12) NOT NULL, 
+	cancel_reason VARCHAR(300), 
+	preop_fit BOOLEAN, 
+	preop_notes TEXT, 
+	preop_by INTEGER, 
+	preop_at TIMESTAMP WITHOUT TIME ZONE, 
+	consent_given BOOLEAN, 
+	consent_by_name VARCHAR(150), 
+	consent_note VARCHAR(300), 
+	consent_recorded_by INTEGER, 
+	consent_at TIMESTAMP WITHOUT TIME ZONE, 
+	anaesthesia_type VARCHAR(30), 
+	anaesthesia_notes TEXT, 
+	anaesthesia_by INTEGER, 
+	anaesthesia_at TIMESTAMP WITHOUT TIME ZONE, 
+	op_findings TEXT, 
+	op_procedure_done TEXT, 
+	op_complications TEXT, 
+	op_blood_loss_ml INTEGER, 
+	op_note_final BOOLEAN, 
+	op_note_by INTEGER, 
+	op_note_at TIMESTAMP WITHOUT TIME ZONE, 
+	started_at TIMESTAMP WITHOUT TIME ZONE, 
+	recovery_at TIMESTAMP WITHOUT TIME ZONE, 
+	recovery_notes TEXT, 
+	completed_at TIMESTAMP WITHOUT TIME ZONE, 
+	created_by INTEGER NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(admission_id) REFERENCES admissions (id), 
+	FOREIGN KEY(encounter_id) REFERENCES encounters (id), 
+	FOREIGN KEY(theatre_id) REFERENCES operation_theatres (id), 
+	FOREIGN KEY(service_id) REFERENCES service_catalog (id), 
+	FOREIGN KEY(surgeon_id) REFERENCES doctors (id), 
+	FOREIGN KEY(anaesthetist_id) REFERENCES doctors (id), 
+	FOREIGN KEY(preop_by) REFERENCES users (id), 
+	FOREIGN KEY(consent_recorded_by) REFERENCES users (id), 
+	FOREIGN KEY(anaesthesia_by) REFERENCES users (id), 
+	FOREIGN KEY(op_note_by) REFERENCES users (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_surgeries_admission_id ON surgeries (admission_id);
+CREATE INDEX ix_surgeries_anaesthetist_id ON surgeries (anaesthetist_id);
+CREATE INDEX ix_surgeries_patient_id ON surgeries (patient_id);
+CREATE INDEX ix_surgeries_scheduled_start ON surgeries (scheduled_start);
+CREATE INDEX ix_surgeries_status ON surgeries (status);
+CREATE INDEX ix_surgeries_surgeon_id ON surgeries (surgeon_id);
+CREATE INDEX ix_surgeries_theatre_id ON surgeries (theatre_id);
+
 CREATE TABLE vital_sets (
 	id SERIAL NOT NULL, 
 	patient_id INTEGER NOT NULL, 
@@ -1605,6 +2074,56 @@ CREATE TABLE ed_timeline (
 );
 
 CREATE INDEX ix_ed_timeline_ed_visit_id ON ed_timeline (ed_visit_id);
+
+CREATE TABLE insurance_claims (
+	id SERIAL NOT NULL, 
+	claim_number VARCHAR(24) NOT NULL, 
+	invoice_id INTEGER NOT NULL, 
+	patient_insurance_id INTEGER NOT NULL, 
+	status VARCHAR(18) NOT NULL, 
+	preauth_reference VARCHAR(60), 
+	preauth_requested FLOAT, 
+	preauth_approved FLOAT, 
+	claimed_amount FLOAT, 
+	approved_amount FLOAT, 
+	rejected_amount FLOAT, 
+	settled_amount FLOAT NOT NULL, 
+	settlement_reference VARCHAR(60), 
+	rejection_reason VARCHAR(300), 
+	created_by INTEGER NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (claim_number), 
+	UNIQUE (invoice_id), 
+	FOREIGN KEY(invoice_id) REFERENCES invoices (id), 
+	FOREIGN KEY(patient_insurance_id) REFERENCES patient_insurance (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_insurance_claims_status ON insurance_claims (status);
+
+CREATE TABLE invoice_lines (
+	id SERIAL NOT NULL, 
+	invoice_id INTEGER NOT NULL, 
+	charge_id INTEGER, 
+	service_id INTEGER, 
+	package_id INTEGER, 
+	description VARCHAR(250) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	unit_price FLOAT NOT NULL, 
+	gst_percent FLOAT NOT NULL, 
+	amount FLOAT NOT NULL, 
+	tax FLOAT NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(invoice_id) REFERENCES invoices (id), 
+	FOREIGN KEY(charge_id) REFERENCES encounter_charges (id), 
+	FOREIGN KEY(service_id) REFERENCES service_catalog (id), 
+	FOREIGN KEY(package_id) REFERENCES billing_packages (id)
+);
+
+CREATE INDEX ix_invoice_lines_charge_id ON invoice_lines (charge_id);
+CREATE INDEX ix_invoice_lines_invoice_id ON invoice_lines (invoice_id);
 
 CREATE TABLE lab_test_orders (
 	id SERIAL NOT NULL, 
@@ -1696,6 +2215,18 @@ CREATE TABLE medicine_dispensing (
 
 CREATE INDEX ix_medicine_dispensing_prescription_id ON medicine_dispensing (prescription_id);
 
+CREATE TABLE medicine_request_items (
+	id SERIAL NOT NULL, 
+	request_id INTEGER NOT NULL, 
+	medicine_name VARCHAR(200) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	issued_quantity INTEGER NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(request_id) REFERENCES medicine_requests (id)
+);
+
+CREATE INDEX ix_medicine_request_items_request_id ON medicine_request_items (request_id);
+
 CREATE TABLE radiology_orders (
 	id SERIAL NOT NULL, 
 	clinical_order_id INTEGER, 
@@ -1734,6 +2265,31 @@ CREATE INDEX ix_radiology_orders_modality ON radiology_orders (modality);
 CREATE INDEX ix_radiology_orders_patient_id ON radiology_orders (patient_id);
 CREATE INDEX ix_radiology_orders_status ON radiology_orders (status);
 
+CREATE TABLE refunds (
+	id SERIAL NOT NULL, 
+	number VARCHAR(24) NOT NULL, 
+	invoice_id INTEGER, 
+	deposit_id INTEGER, 
+	amount FLOAT NOT NULL, 
+	method VARCHAR(12) NOT NULL, 
+	reason VARCHAR(300) NOT NULL, 
+	status VARCHAR(10) NOT NULL, 
+	requested_by INTEGER NOT NULL, 
+	requested_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	decided_by INTEGER, 
+	decided_at TIMESTAMP WITHOUT TIME ZONE, 
+	decision_note VARCHAR(300), 
+	PRIMARY KEY (id), 
+	UNIQUE (number), 
+	FOREIGN KEY(invoice_id) REFERENCES invoices (id), 
+	FOREIGN KEY(deposit_id) REFERENCES deposits (id), 
+	FOREIGN KEY(requested_by) REFERENCES users (id), 
+	FOREIGN KEY(decided_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_refunds_invoice_id ON refunds (invoice_id);
+CREATE INDEX ix_refunds_status ON refunds (status);
+
 CREATE TABLE sale_items (
 	id SERIAL NOT NULL, 
 	sale_id INTEGER NOT NULL, 
@@ -1755,6 +2311,102 @@ CREATE TABLE sale_items (
 
 CREATE INDEX ix_sale_items_prescription_item_id ON sale_items (prescription_item_id);
 CREATE INDEX ix_sale_items_sale_id ON sale_items (sale_id);
+
+CREATE TABLE surgery_checklist_items (
+	id SERIAL NOT NULL, 
+	surgery_id INTEGER NOT NULL, 
+	phase VARCHAR(10) NOT NULL, 
+	item VARCHAR(60) NOT NULL, 
+	ticked_by INTEGER NOT NULL, 
+	ticked_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_surgery_checklist UNIQUE (surgery_id, phase, item), 
+	FOREIGN KEY(surgery_id) REFERENCES surgeries (id), 
+	FOREIGN KEY(ticked_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_surgery_checklist_items_surgery_id ON surgery_checklist_items (surgery_id);
+
+CREATE TABLE surgery_consumables (
+	id SERIAL NOT NULL, 
+	surgery_id INTEGER NOT NULL, 
+	inventory_item_id INTEGER NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	created_by INTEGER NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(surgery_id) REFERENCES surgeries (id), 
+	FOREIGN KEY(inventory_item_id) REFERENCES inventory_items (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_surgery_consumables_surgery_id ON surgery_consumables (surgery_id);
+
+CREATE TABLE surgery_events (
+	id SERIAL NOT NULL, 
+	surgery_id INTEGER NOT NULL, 
+	text VARCHAR(500) NOT NULL, 
+	created_by INTEGER NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(surgery_id) REFERENCES surgeries (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_surgery_events_surgery_id ON surgery_events (surgery_id);
+
+CREATE TABLE transfusions (
+	id SERIAL NOT NULL, 
+	issue_id INTEGER NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	status VARCHAR(14) NOT NULL, 
+	started_by INTEGER NOT NULL, 
+	started_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	verified_by INTEGER, 
+	verified_at TIMESTAMP WITHOUT TIME ZONE, 
+	ended_at TIMESTAMP WITHOUT TIME ZONE, 
+	ended_by INTEGER, 
+	volume_given_ml INTEGER, 
+	reaction BOOLEAN, 
+	reaction_note VARCHAR(500), 
+	PRIMARY KEY (id), 
+	UNIQUE (issue_id), 
+	FOREIGN KEY(issue_id) REFERENCES blood_issues (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(started_by) REFERENCES users (id), 
+	FOREIGN KEY(verified_by) REFERENCES users (id), 
+	FOREIGN KEY(ended_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_transfusions_patient_id ON transfusions (patient_id);
+CREATE INDEX ix_transfusions_status ON transfusions (status);
+
+CREATE TABLE claim_documents (
+	id SERIAL NOT NULL, 
+	claim_id INTEGER NOT NULL, 
+	name VARCHAR(120) NOT NULL, 
+	received BOOLEAN NOT NULL, 
+	received_by INTEGER, 
+	received_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(claim_id) REFERENCES insurance_claims (id), 
+	FOREIGN KEY(received_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_claim_documents_claim_id ON claim_documents (claim_id);
+
+CREATE TABLE claim_events (
+	id SERIAL NOT NULL, 
+	claim_id INTEGER NOT NULL, 
+	text VARCHAR(300) NOT NULL, 
+	created_by INTEGER NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(claim_id) REFERENCES insurance_claims (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_claim_events_claim_id ON claim_events (claim_id);
 
 CREATE TABLE lab_results (
 	id SERIAL NOT NULL, 
@@ -1778,6 +2430,44 @@ CREATE TABLE lab_results (
 );
 
 CREATE INDEX ix_lab_results_order_id ON lab_results (order_id);
+
+CREATE TABLE medicine_returns (
+	id SERIAL NOT NULL, 
+	sale_item_id INTEGER NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	reason VARCHAR(300) NOT NULL, 
+	restocked BOOLEAN NOT NULL, 
+	created_by INTEGER NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(sale_item_id) REFERENCES sale_items (id), 
+	FOREIGN KEY(created_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_medicine_returns_sale_item_id ON medicine_returns (sale_item_id);
+
+CREATE TABLE payments (
+	id SERIAL NOT NULL, 
+	receipt_number VARCHAR(24) NOT NULL, 
+	invoice_id INTEGER NOT NULL, 
+	amount FLOAT NOT NULL, 
+	method VARCHAR(12) NOT NULL, 
+	reference VARCHAR(60), 
+	deposit_id INTEGER, 
+	claim_id INTEGER, 
+	received_by INTEGER NOT NULL, 
+	received_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (receipt_number), 
+	FOREIGN KEY(invoice_id) REFERENCES invoices (id), 
+	FOREIGN KEY(deposit_id) REFERENCES deposits (id), 
+	FOREIGN KEY(claim_id) REFERENCES insurance_claims (id), 
+	FOREIGN KEY(received_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_payments_invoice_id ON payments (invoice_id);
+CREATE INDEX ix_payments_method ON payments (method);
+CREATE INDEX ix_payments_received_at ON payments (received_at);
 
 CREATE TABLE radiology_attachments (
 	id SERIAL NOT NULL, 

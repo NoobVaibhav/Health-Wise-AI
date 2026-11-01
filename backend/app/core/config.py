@@ -43,6 +43,17 @@ class Settings(BaseSettings):
     # Optional path to tesseract.exe if it is not on PATH.
     tesseract_cmd: str = ""
 
+    # Sign in with a mobile number. There is no SMS provider in this build: with otp_demo_mode the code is shown on the screen (LOCAL DEMO ONLY, keep it off in production).
+    otp_demo_mode: bool = False
+
+    # Notifications. E-mail works when these are filled in; there is no SMS or WhatsApp provider in this build (messages wait in the outbox).
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    notify_test_adapter: bool = False            # tests only: pretend every channel delivers
+
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
 

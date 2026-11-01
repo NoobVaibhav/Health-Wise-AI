@@ -77,7 +77,7 @@ def list_inventory(q: SearchText = None, _: User = Depends(pharmacy_only), db: S
 
 
 @router.post("/inventory", response_model=InventoryOut, status_code=status.HTTP_201_CREATED)
-def add_inventory(data: InventoryCreate, user: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
+def add_inventory(data: InventoryCreate, request: Request, user: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
     item = MedicineInventory(**data.model_dump())
     db.add(item)
     db.flush()
@@ -85,11 +85,12 @@ def add_inventory(data: InventoryCreate, user: User = Depends(pharmacy_only), db
         stock_service.record(db, medicine=item, kind="RECEIPT", quantity=item.quantity, reference_type="manual", user_id=user.id)
     db.commit()
     db.refresh(item)
+    audit_service.log_action(db, user, "STOCK_BATCH_ADDED", "medicine_batch", item.id, request, f"{item.medicine_name} x{item.quantity}")
     return item
 
 
 @router.put("/inventory/{item_id}", response_model=InventoryOut)
-def update_inventory(item_id: PathId, data: InventoryUpdate, user: User = Depends(pharmacy_only),
+def update_inventory(item_id: PathId, data: InventoryUpdate, request: Request, user: User = Depends(pharmacy_only),
                      db: Session = Depends(get_db)):
     item = db.get(MedicineInventory, item_id)
     if item is None:
@@ -101,4 +102,5 @@ def update_inventory(item_id: PathId, data: InventoryUpdate, user: User = Depend
         stock_service.record(db, medicine=item, kind="ADJUST", quantity=item.quantity - before, reference_type="manual", note="quantity edited by hand", user_id=user.id)
     db.commit()
     db.refresh(item)
+    audit_service.log_action(db, user, "STOCK_BATCH_UPDATED", "medicine_batch", item.id, request, f"{item.medicine_name} qty {before}->{item.quantity}")
     return item

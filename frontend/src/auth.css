@@ -78,3 +78,71 @@
   .hw-btn, .hw-label, .hw-eye svg { transition: none; }
   .hw-btn::after { animation: none !important; }
 }
+
+
+/* ---------------------------------------------------------------------------------------------------------------------------------------------------
+   More life for the sign-in page: aurora bands, rising lights, a typed word, a tilting card, sliding tabs, code boxes, demo cards, a gradient that flows over
+   the button. Same rule as above: only transform and opacity move (the background-position of the button is the one exception) and "reduce motion" switches it all off.
+--------------------------------------------------------------------------------------------------------------------------------------------------- */
+@keyframes hw-aurora-a { 0%, 100% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(14deg) scale(1.15) translate3d(30px, 20px, 0); } }
+@keyframes hw-aurora-b { 0%, 100% { transform: rotate(0deg) scale(1.05); } 50% { transform: rotate(-12deg) scale(0.92) translate3d(-40px, -20px, 0); } }
+@keyframes hw-dot { 0% { transform: translate3d(0, 0, 0) scale(0.6); opacity: 0; } 15% { opacity: 0.8; } 100% { transform: translate3d(14px, -140px, 0) scale(1.2); opacity: 0; } }
+@keyframes hw-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes hw-flow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+@keyframes hw-slide-in { from { opacity: 0; transform: translate3d(22px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes hw-slide-in-left { from { opacity: 0; transform: translate3d(-22px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes hw-digit { 0% { transform: scale(0.8); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes hw-glow-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.35); } 50% { box-shadow: 0 0 0 8px rgba(6, 182, 212, 0); } }
+@keyframes hw-confetti { 0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(0.4); opacity: 1; } 100% { transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--rot)) scale(1); opacity: 0; } }
+@keyframes hw-count { from { transform: translate3d(0, 8px, 0); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.hw-aurora-a { animation: hw-aurora-a 26s ease-in-out infinite; }
+.hw-aurora-b { animation: hw-aurora-b 31s ease-in-out infinite; }
+.hw-dot { animation: hw-dot 14s linear infinite; }
+.hw-caret { animation: hw-caret 0.9s steps(1) infinite; }
+.hw-slide-in { animation: hw-slide-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.hw-slide-in-left { animation: hw-slide-in-left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.hw-count { animation: hw-count 0.5s ease both; }
+[data-paused="true"] .hw-aurora-a, [data-paused="true"] .hw-aurora-b, [data-paused="true"] .hw-dot, [data-paused="true"] .hw-caret, [data-paused="true"] .hw-glow { animation-play-state: paused; }
+
+/* the card leans a little towards the pointer (--tx and --ty are set by the page) */
+.hw-tilt { transform: perspective(1100px) rotateX(calc(var(--ty, 0) * -4deg)) rotateY(calc(var(--tx, 0) * 5deg)); transition: transform 0.25s ease-out; will-change: transform; }
+
+/* the log-in method switch: a pill slides under the chosen tab */
+.hw-tabs { position: relative; display: grid; grid-template-columns: 1fr 1fr; border-radius: 1rem; background: rgba(226, 232, 240, 0.8); padding: 0.3rem; }
+.hw-tabs-pill { position: absolute; top: 0.3rem; bottom: 0.3rem; left: 0.3rem; width: calc(50% - 0.3rem); border-radius: 0.75rem; background: #fff; box-shadow: 0 6px 16px -8px rgba(8, 145, 178, 0.7); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.hw-tabs[data-tab="otp"] .hw-tabs-pill { transform: translate3d(100%, 0, 0); }
+.hw-tab { position: relative; z-index: 1; display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: 0.45rem; border-radius: 0.75rem; font-weight: 800; font-size: 0.95rem; color: #475569; transition: color 0.2s ease; }
+.hw-tab[aria-selected="true"] { color: #0e7490; }
+.hw-tab:focus-visible { outline: 3px solid rgba(6, 182, 212, 0.55); outline-offset: 2px; }
+
+/* the six boxes of the code */
+.hw-otp { width: 100%; min-width: 0; height: 3.4rem; text-align: center; font-size: 1.5rem; font-weight: 800; color: #0f172a; border-radius: 0.9rem; border: 1.5px solid #cbd5e1; background: rgba(255, 255, 255, 0.95); outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.hw-otp:focus { border-color: #0891b2; box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.25); }
+.hw-otp[data-filled="true"] { border-color: #0e7490; animation: hw-digit 0.2s ease; }
+.hw-otp[aria-invalid="true"] { border-color: #ef4444; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }
+
+/* the button gets a gradient that flows slowly across it */
+.hw-btn { background-size: 200% 100%; background-image: linear-gradient(110deg, #0891b2, #0e7490 30%, #2563eb 55%, #0e7490 80%, #0891b2); animation: hw-flow 6s linear infinite; }
+.hw-btn:disabled { animation-play-state: paused; }
+.hw-btn-ghost { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 0.9rem; border: 1.5px solid #bae6fd; background: rgba(240, 249, 255, 0.9); padding: 0 1rem; font-weight: 700; color: #0e7490; transition: transform 0.15s ease, background 0.15s ease; }
+.hw-btn-ghost:hover:not(:disabled) { transform: translate3d(0, -1px, 0); background: #e0f2fe; }
+.hw-btn-ghost:disabled { opacity: 0.55; cursor: not-allowed; }
+.hw-glow { animation: hw-glow-pulse 2.2s ease-out infinite; }
+
+/* the demo accounts: small cards that lift when you point at them */
+.hw-demo { position: relative; display: flex; align-items: center; gap: 0.6rem; width: 100%; border-radius: 0.9rem; border: 1px solid #e2e8f0; background: rgba(255, 255, 255, 0.9); padding: 0.5rem 0.65rem; text-align: left; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
+.hw-demo:hover { transform: translate3d(0, -2px, 0); border-color: #67e8f9; box-shadow: 0 10px 20px -12px rgba(8, 145, 178, 0.6); }
+.hw-demo[data-picked="true"] { border-color: #0891b2; box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.25); background: #ecfeff; }
+.hw-demo:focus-visible { outline: 3px solid rgba(6, 182, 212, 0.55); outline-offset: 2px; }
+
+/* a burst of small pieces when the sign-in works */
+.hw-piece { position: absolute; left: 50%; top: 50%; width: 9px; height: 14px; border-radius: 2px; animation: hw-confetti 0.9s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hw-aurora-a, .hw-aurora-b, .hw-dot, .hw-caret, .hw-slide-in, .hw-slide-in-left, .hw-count, .hw-glow, .hw-piece, .hw-btn, .hw-otp[data-filled="true"] { animation: none !important; }
+  .hw-tilt { transform: none; transition: none; }
+  .hw-tabs-pill, .hw-demo, .hw-btn-ghost, .hw-otp { transition: none; }
+  .hw-slide-in, .hw-slide-in-left, .hw-count { opacity: 1; transform: none; }
+  .hw-btn { background-image: linear-gradient(135deg, #0891b2, #0e7490 55%, #155e75); }
+}

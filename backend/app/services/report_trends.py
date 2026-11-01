@@ -10,7 +10,7 @@ Rules (see the clinical-intelligence brief):
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.database.models import HealthReport, Patient
+from app.database.models import HealthReport, LabTestOrder, Patient
 
 # value in the FIRST unit x factor = value in the SECOND unit. Only widely accepted factors are listed.
 CONVERSIONS = {
@@ -73,15 +73,42 @@ def collect(db: Session, patient: Patient) -> list[dict]:
             point = {"report_id": r.id, "report_name": r.filename, "date": when.isoformat(), "date_known": known, "value": p.value, "unit": p.unit,
                      "status": p.status, "reference_text": p.reference_text, "reference_low": p.reference_low, "reference_high": p.reference_high,
                      "review_status": "REVIEWED" if r.doctor_review_status == "REVIEWED" else "WAITING_FOR_DOCTOR"}
-            same_day = [q for q in entry["points"] if q["date"] == point["date"]]
-            if any(q["value"] == point["value"] and unit_key(q["unit"]) == unit_key(point["unit"]) for q in same_day):
-                entry["duplicates_removed"] += 1
-                continue
-            if same_day:
-                entry["conflicts"].append(f"{point['date']}: {same_day[0]['value']} {same_day[0]['unit'] or ''} ({same_day[0]['report_name']}) and "
-                                          f"{point['value']} {point['unit'] or ''} ({point['report_name']}) were both recorded.")
-            entry["points"].append(point)
+            _add_point(entry, point)
+    _add_structured(db, patient, by_name)
+    for entry in by_name.values():
+        entry["points"].sort(key=lambda q: q["date"])                          # the values entered in the hospital laboratory are placed in date order with the uploaded reports
     return sorted(by_name.values(), key=lambda e: e["name"].lower())
+
+
+def _add_point(entry: dict, point: dict) -> None:
+    same_day = [q for q in entry["points"] if q["date"] == point["date"]]
+    if any(q["value"] == point["value"] and unit_key(q["unit"]) == unit_key(point["unit"]) for q in same_day):
+        entry["duplicates_removed"] += 1
+        return
+    if same_day:
+        entry["conflicts"].append(f"{point['date']}: {same_day[0]['value']} {same_day[0]['unit'] or ''} ({same_day[0]['report_name']}) and "
+                                  f"{point['value']} {point['unit'] or ''} ({point['report_name']}) were both recorded.")
+    entry["points"].append(point)
+
+
+STRUCTURED_STATUS = {"NORMAL": "WITHIN_RANGE", "LOW": "BELOW_RANGE", "CRITICAL_LOW": "BELOW_RANGE", "HIGH": "ABOVE_RANGE", "CRITICAL_HIGH": "ABOVE_RANGE", "UNRATED": "UNKNOWN"}
+
+
+def _add_structured(db: Session, patient: Patient, by_name: dict) -> None:
+    """Values entered in the hospital laboratory and APPROVED by a pathologist, with the range the hospital set. They count as 'reviewed' (for the patient) only after the doctor
+    has seen them. Their source id is negative (minus the lab test id) so a link opens the lab test and never a report."""
+    from app.services.normalization_service import match_parameter_name
+    for o in db.scalars(select(LabTestOrder).where(LabTestOrder.patient_id == patient.id, LabTestOrder.result_status == "APPROVED").order_by(LabTestOrder.approved_at)):
+        for r in o.results:
+            if r.value_num is None:
+                continue
+            matched = match_parameter_name(r.analyte_name)
+            name = matched.info.name if matched else r.analyte_name
+            entry = by_name.setdefault(name, {"name": name, "points": [], "duplicates_removed": 0, "conflicts": []})
+            text = None if r.ref_low is None and r.ref_high is None else f"{'' if r.ref_low is None else f'{r.ref_low:g}'} - {'' if r.ref_high is None else f'{r.ref_high:g}'}"
+            _add_point(entry, {"report_id": -o.id, "report_name": f"Lab: {o.test_name}", "date": o.approved_at.date().isoformat(), "date_known": True, "value": r.value_num, "unit": r.unit,
+                               "status": STRUCTURED_STATUS[r.flag], "reference_text": text, "reference_low": r.ref_low, "reference_high": r.ref_high,
+                               "review_status": "REVIEWED" if o.doctor_seen_at else "WAITING_FOR_DOCTOR"})
 
 
 def compare_points(name: str, prev: dict, latest: dict) -> dict:

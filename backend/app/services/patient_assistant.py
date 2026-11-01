@@ -24,7 +24,7 @@ from app.database.models import (
     Appointment, DoctorNote, DoctorRecommendation, HealthReport, Patient, PatientAssistantConversation,
     PatientAssistantEvidence, PatientAssistantMessage, Prescription, PrescriptionItem, utcnow,
 )
-from app.services import assistant_safety, assistant_talk, llm_service, medication_history, report_trends
+from app.services import assistant_hospital, assistant_safety, assistant_talk, llm_service, medication_history, report_trends
 from app.services.assistant_text import GLOSSARY, LANGUAGES, fdate, has_devanagari, normalise_lang, t
 from app.services.clinical_timeline import source
 from app.services.health_history_service import load_history
@@ -46,7 +46,8 @@ KEYWORDS = {
     "ABNORMAL": ["abnormal", "out of range", "outside the range", "flagged", "marked", "असामान्य", "रेंज से बाहर", "असाधारण", "श्रेणीबाहेर"],
     "REPORT": ["report", "blood", "test", "result", "lab", "रिपोर्ट", "ब्लड", "जांच", "जाँच", "रिजल्ट", "नतीजा", "नतीजे", "निकाल", "तपासणी"],
 }
-ORDER = ["ALLERGY", "MEDICINES", "APPOINTMENTS", "INSTRUCTIONS", "HISTORY", "ABNORMAL", "COMPARE", "LAST_CHECKUP", "REPORT"]
+KEYWORDS.update(assistant_hospital.KEYWORDS)
+ORDER = ["BILLS", "SCANS", "STAY", "ALLERGY", "MEDICINES", "APPOINTMENTS", "INSTRUCTIONS", "HISTORY", "ABNORMAL", "COMPARE", "LAST_CHECKUP", "REPORT"]
 MEANING = ["what is ", "what does", "meaning of", "meaning", "means", "mean?", "explain the term", "explain this", "medical term", "क्या होता है", "क्या है", "मतलब", "म्हणजे काय", "अर्थ"]
 MINE = ["my ", "mine", "मेरा", "मेरी", "मेरे", "माझा", "माझी", "माझे", "level", "result", "report", "value", "स्तर", "रिपोर्ट", "पातळी", "निकाल"]
 BACK = ["previous", "earlier", "before", "last time", "old", "पिछला", "पिछली", "पहले", "आधी", "मागील", "what about", "और"]
@@ -531,6 +532,12 @@ def compose(db: Session, patient: Patient, message: str, lang: str, topic: dict)
         out = answer_medicines(db, patient, lang, latest_only=_has(text, LATEST_WORDS) and _has(text, ["visit", "checkup", "check-up", "time", "विज़िट", "चेकअप", "भेट", "तपासणी"]))
     elif intent == "ALLERGY":
         out = answer_allergies(db, patient, lang)
+    elif intent == "BILLS":
+        out = assistant_hospital.answer_bills(db, patient, lang)
+    elif intent == "SCANS":
+        out = assistant_hospital.answer_scans(db, patient, lang)
+    elif intent == "STAY":
+        out = assistant_hospital.answer_stay(db, patient, lang)
     elif intent == "HISTORY":
         out = answer_history(db, patient, lang)
     elif intent == "INSTRUCTIONS":

@@ -248,12 +248,13 @@ def assign_staff(admission_id: PathId, data: StaffAssignIn, request: Request, us
 
 
 @router.post("/admissions/{admission_id}/staff/{staff_id}/end")
-def end_staff(admission_id: PathId, staff_id: PathId, user: User = Depends(admit_perm), db: Session = Depends(get_db)):
+def end_staff(admission_id: PathId, staff_id: PathId, request: Request, user: User = Depends(admit_perm), db: Session = Depends(get_db)):
     row = db.get(AdmissionStaff, staff_id)
     if row is None or row.admission_id != admission_id:
         raise HTTPException(404, "Assignment not found.")
     row.to_at = row.to_at or ipd.now()
     db.commit()
+    audit_service.log_action(db, user, "STAFF_ASSIGNMENT_ENDED", "admission", admission_id, request, f"assignment {staff_id}")
     return ipd.admission_out(db, _admission(db, admission_id))
 
 
@@ -332,7 +333,7 @@ def admission_order(admission_id: PathId, data: OrderIn, request: Request, user:
 
 # ------------------------------------------------------------------ discharge
 @router.put("/admissions/{admission_id}/discharge-summary")
-def save_summary(admission_id: PathId, data: DischargeSummaryIn, user: User = Depends(require_permission("discharge.write")), db: Session = Depends(get_db)):
+def save_summary(admission_id: PathId, data: DischargeSummaryIn, request: Request, user: User = Depends(require_permission("discharge.write")), db: Session = Depends(get_db)):
     a = _admission(db, admission_id)
     doctor = _doctor_of_admission(db, user, a)
     if doctor.current_grade == "INTERN":
@@ -350,6 +351,7 @@ def save_summary(admission_id: PathId, data: DischargeSummaryIn, user: User = De
     if doctor.is_junior:                                        # a resident prepares it; the consultant approves it
         grade_service.request_countersign(db, "DISCHARGE_SUMMARY", summary.id, a.patient_id, doctor, f"Discharge summary of {a.admission_no}")
     db.commit()
+    audit_service.log_action(db, user, "DISCHARGE_SUMMARY_SAVED", "admission", a.id, request, summary.status)
     return ipd.summary_out(summary)
 
 

@@ -76,3 +76,55 @@ export function LogoMark({ reduced, size = 34, box = "h-16 w-16" }) {
     </span>
   );
 }
+
+
+/** A slow aurora: three big blurred colour bands that turn and breathe behind the brand panel. */
+export function Aurora({ reduced }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <div className={`absolute -left-1/4 top-0 h-[120%] w-[90%] rounded-full bg-gradient-to-tr from-cyan-300/30 via-sky-400/10 to-transparent blur-3xl ${reduced ? "" : "hw-aurora-a"}`} />
+      <div className={`absolute -right-1/4 bottom-[-20%] h-[100%] w-[90%] rounded-full bg-gradient-to-tl from-teal-300/30 via-emerald-300/10 to-transparent blur-3xl ${reduced ? "" : "hw-aurora-b"}`} />
+      <div className={`absolute left-1/4 top-1/3 h-72 w-72 rounded-full bg-indigo-400/20 blur-3xl ${reduced ? "" : "hw-orb-c"}`} />
+    </div>
+  );
+}
+
+// fixed positions and timings, so the picture is the same on every visit (no random numbers while drawing)
+const DOTS = [[8, 12, 5, 0, 11], [18, 72, 3, 2, 14], [27, 38, 6, 5, 12], [36, 88, 4, 1, 16], [45, 20, 3, 7, 13], [53, 60, 5, 3, 15], [62, 8, 4, 9, 12], [71, 46, 6, 4, 17], [80, 82, 3, 6, 11],
+  [88, 28, 5, 8, 14], [14, 52, 4, 10, 16], [58, 34, 3, 12, 13], [92, 66, 4, 2, 15], [4, 90, 5, 11, 12], [76, 14, 3, 13, 18], [40, 56, 4, 14, 14]];
+
+/** Small lights that drift upwards and fade, like bubbles in a lab. */
+export function Particles({ reduced }) {
+  if (reduced) return null;
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {DOTS.map(([left, top, size, delay, dur], i) => (
+        <span key={i} className="hw-dot absolute rounded-full bg-white/60" style={{ left: `${left}%`, top: `${top}%`, width: size, height: size, animationDelay: `${delay}s`, animationDuration: `${dur}s` }} />))}
+    </div>
+  );
+}
+
+const WORDS = ["reports", "medicines", "history", "scans", "bills"];
+
+/** "Understand your [reports]": the last word is typed and wiped in turn (the full sentence is also there for screen readers). */
+export function Rotator({ reduced }) {
+  const [shown, setShown] = useState(WORDS[0]);
+  useEffect(() => {
+    if (reduced) return undefined;
+    let word = 0, chars = WORDS[0].length, erasing = false, timer;
+    const tick = () => {
+      if (!erasing && chars === WORDS[word].length) { erasing = true; timer = setTimeout(tick, 1600); return; }
+      if (erasing && chars === 0) { erasing = false; word = (word + 1) % WORDS.length; }
+      chars += erasing ? -1 : 1;
+      setShown(WORDS[word].slice(0, chars));
+      timer = setTimeout(tick, erasing ? 45 : 85);
+    };
+    timer = setTimeout(tick, 1600);
+    return () => clearTimeout(timer);
+  }, [reduced]);
+  return (
+    <span aria-hidden="true" className="inline-block min-w-[6ch] text-cyan-200">
+      {shown}<span className={`ml-0.5 inline-block h-[0.9em] w-[3px] translate-y-[0.1em] bg-cyan-200 ${reduced ? "" : "hw-caret"}`} />
+    </span>
+  );
+}

@@ -44,6 +44,12 @@ export function AuthProvider({ children }) {
       setUser(data.user);
       return data.user;
     },
+    loginWithOtp: async (phone, code) => {
+      const data = await authApi.verifyOtp(phone, code);
+      tokenStore.set(data.access_token);
+      setUser(data.user);
+      return data.user;
+    },
     registerFirstAdmin: async (form) => {
       const data = await authApi.registerFirstAdmin(form);
       tokenStore.set(data.access_token);

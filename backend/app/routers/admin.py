@@ -214,12 +214,13 @@ def list_departments(_: User = Depends(require_roles(ADMIN, EMPLOYEE, DOCTOR)), 
 
 
 @router.post("/departments", status_code=status.HTTP_201_CREATED)
-def create_department(data: DepartmentCreate, _: User = Depends(admin_only), db: Session = Depends(get_db)):
+def create_department(data: DepartmentCreate, request: Request, _: User = Depends(admin_only), db: Session = Depends(get_db)):
     if db.scalar(select(Department).where(Department.name == data.name.strip())):
         raise HTTPException(status.HTTP_409_CONFLICT, "This department already exists.")
     department = Department(name=data.name.strip())
     db.add(department)
     db.commit()
+    audit_service.log_action(db, _, "DEPARTMENT_ADDED", "department", department.id, request, department.name)
     return {"id": department.id, "name": department.name}
 
 

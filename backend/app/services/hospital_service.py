@@ -18,6 +18,8 @@ SETTINGS: dict[str, tuple[str, str, float | None, float | None]] = {
     "currency": ("INR", "text", None, None),
     "invoice_prefix": ("INV", "text", None, None),
     "duplicate_check": ("on", "choice:on,off", None, None),
+    "discount_approval_percent": ("10", "int", 0, 100),                      # a discount above this share of the bill needs a second person
+    "claim_documents": ("Discharge summary,Final bill,Policy card copy,ID proof,Investigation reports", "text", None, None),
 }
 
 def now() -> datetime:

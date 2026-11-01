@@ -169,13 +169,14 @@ def assign(visit_id: PathId, data: AssignIn, request: Request, user: User = Depe
 
 
 @router.post("/visits/{visit_id}/timeline", status_code=status.HTTP_201_CREATED)
-def add_timeline(visit_id: PathId, data: TimelineIn, user: User = Depends(treat_perm), db: Session = Depends(get_db)):
+def add_timeline(visit_id: PathId, data: TimelineIn, request: Request, user: User = Depends(treat_perm), db: Session = Depends(get_db)):
     v = _visit(db, visit_id)
     _clinical(db, user, v)
     if v.status == "DISPOSED":
         raise HTTPException(409, "This visit is finished.")
     _timeline(db, v, data.kind, data.text, user)
     db.commit()
+    audit_service.log_action(db, user, "ED_TIMELINE_ADDED", "ed_visit", v.id, request, data.kind)
     return visit_out(db, v, detail=True)
 
 

@@ -53,8 +53,18 @@ class UserOut(BaseModel):
     must_change_password: bool = False
     has_avatar: bool = False
     avatar_version: str | None = None      # changes whenever the picture changes (so browsers reload it)
+    permissions: list[str] = []             # what this person may do (staff only): the sidebar shows the pages that fit
     staff_type: str | None = None          # laboratory: TECHNICIAN / PATHOLOGIST; radiology: TECHNICIAN / RADIOLOGIST
     grade: str | None = None               # a doctor's grade (INTERN, PG_RESIDENT, SENIOR_RESIDENT, CONSULTANT)
+
+
+class OtpRequest(BaseModel):
+    phone: str = Field(min_length=7, max_length=20)
+
+
+class OtpVerify(BaseModel):
+    phone: str = Field(min_length=7, max_length=20)
+    code: str = Field(pattern=r"^\d{6}$")
 
 
 class TokenResponse(BaseModel):

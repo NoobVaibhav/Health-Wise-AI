@@ -62,6 +62,15 @@ PERMISSIONS: dict[str, str] = {
     "bloodbank.manage": "Run the blood bank: donors, units, cross-match, issue",
     "bloodbank.request": "Ask the blood bank for blood for a patient",
     "transfusion.give": "Give a transfusion and record it",
+    # Phase 6: finance
+    "billing.view": "See invoices, payments and receipts (never clinical notes)",
+    "billing.create": "Make invoices, collect the charges of a patient and apply a discount",
+    "billing.collect": "Receive payments and advances and ask for a refund",
+    "billing.approve": "Approve refunds and large discounts, cancel a final invoice",
+    "billing.report": "See the cash, outstanding and revenue reports",
+    "claims.manage": "Handle insurance and TPA claims",
+    # Phase 8: integrations
+    "integration.manage": "See the integration status, the notification outbox, and send reminders",
 }
 ALL = list(PERMISSIONS)
 DOCTOR_PERMISSIONS = ["hospital.view", "service.view", "breakglass.use", "opd.queue", "consult.write", "orders.write", "vitals.record", "alert.ack", "ed.register", "ed.triage", "ed.treat",
@@ -96,6 +105,11 @@ ROLES: dict[str, tuple[str, str, list[str]]] = {
 }
 
 _EXTRA = {
+    "BILLING_EXECUTIVE": ["billing.view", "billing.create", "billing.collect"],
+    "ACCOUNTANT": ["billing.view", "billing.report", "billing.approve"],
+    "INSURANCE_EXECUTIVE": ["claims.manage", "billing.view"],
+    "RECEPTIONIST": ["billing.view", "billing.create", "billing.collect"],
+    "HR_MANAGER": [],
     "PHARMACIST": ["stock.view", "stock.manage", "procure.request", "procure.order"],
     "PHARMACY_ASSISTANT": ["stock.view"],
     "INVENTORY_MANAGER": ["stock.view", "stock.manage", "inventory.manage", "procure.request", "procure.order", "procure.approve"],

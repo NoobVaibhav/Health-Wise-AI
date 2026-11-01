@@ -14,6 +14,7 @@ from app.database.models import (
     GoodsReceipt, GoodsReceiptItem, InventoryItem, MedicineInventory, PurchaseOrder, PurchaseOrderItem, Requisition, RequisitionItem, StockCount, StockMovement, Supplier, User, utcnow,
 )
 from app.services import stock_service
+from app.utils.locking import lock
 
 
 def conflict(message: str) -> HTTPException:
@@ -45,6 +46,7 @@ def create_requisition(db: Session, user: User, department_id: int | None, note:
 
 
 def decide_requisition(db: Session, req: Requisition, user: User, approve: bool, note: str | None) -> Requisition:
+    lock(db, req)
     if req.status != "PENDING":
         raise conflict(f"This requisition is already {req.status.lower()}.")
     if req.requested_by == user.id:
@@ -81,6 +83,7 @@ def create_order(db: Session, user: User, supplier_id: int, requisition_id: int 
 
 
 def approve_order(db: Session, order: PurchaseOrder, user: User) -> PurchaseOrder:
+    lock(db, order)
     if order.status != "DRAFT":
         raise conflict(f"This order is already {order.status.lower()}.")
     if order.created_by == user.id:
@@ -99,6 +102,7 @@ def cancel_order(db: Session, order: PurchaseOrder) -> PurchaseOrder:
 
 
 def receive_goods(db: Session, order: PurchaseOrder, user: User, lines: list[dict], note: str | None) -> GoodsReceipt:
+    lock(db, order)
     if order.status not in ("APPROVED", "PARTIAL"):
         raise conflict("Goods can be received only against an approved order." if order.status == "DRAFT" else f"This order is {order.status.lower()}.")
     by_id = {i.id: i for i in order.items}
@@ -149,6 +153,7 @@ def record_count(db: Session, user: User, medicine: MedicineInventory | None, it
 
 
 def decide_count(db: Session, count: StockCount, user: User, approve: bool) -> StockCount:
+    lock(db, count)
     if count.status != "PENDING":
         raise conflict(f"This count is already {count.status.lower()}.")
     if count.counted_by == user.id:

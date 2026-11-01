@@ -13,6 +13,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.utils.locking import lock
 from app.database.models import (
     ClinicalAlert, ClinicalOrder, Doctor, DiagnosticAnalyte, DiagnosticTest, LabResult, LabStaff, LabTestOrder, Patient, RadiologyOrder, RadiologyReport, RadiologyStaff, User, utcnow,
 )
@@ -201,6 +202,7 @@ def save_results(db: Session, order: LabTestOrder, user: User, items: list[dict]
 
 
 def approve_result(db: Session, order: LabTestOrder, user: User, note: str | None) -> LabTestOrder:
+    lock(db, order)
     if order.result_status != "PENDING_APPROVAL":
         raise conflict("Only a result that was sent for approval can be approved." if order.result_status != "APPROVED" else "This result is already approved.")
     if order.assigned_to == user.id:
@@ -342,6 +344,7 @@ def write_report(db: Session, order: RadiologyOrder, user: User, technique: str 
 
 
 def approve_radiology(db: Session, order: RadiologyOrder, user: User) -> RadiologyOrder:
+    lock(db, order)
     if order.status != "REPORTED" or order.report is None:
         raise conflict("Only a reported study can be approved." if order.status != "APPROVED" else "This report is already approved.")
     now = utcnow()
@@ -357,6 +360,8 @@ def mark_seen(db: Session, order, kind: str) -> None:
     if order.doctor_seen_at is None:
         order.doctor_seen_at = utcnow()
         db.commit()
+        from app.services import integration_service
+        integration_service.queue_result_ready(db, "lab" if kind == "LAB" else "radiology", order.id)
 
 
 # ------------------------------------------------------------------ catalogue

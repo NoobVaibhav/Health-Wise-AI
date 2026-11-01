@@ -21,7 +21,9 @@ NOT_RECORDED = "Date not recorded"
 
 
 def source(kind: str, ident: int, label: str, when: str | None = None) -> dict:
-    """A pointer to the original record: the screen opens the record from `type` and `id`."""
+    """A pointer to the original record: the screen opens the record from `type` and `id`. A negative report id is a value entered in the hospital laboratory (minus the lab test id)."""
+    if kind == "report" and ident < 0:
+        kind, ident, label = "lab_test", -ident, label.replace("Report: ", "", 1)
     return {"type": kind, "id": ident, "label": label, "date": when}
 
 
@@ -35,6 +37,45 @@ def _event(key: str, kind: str, title: str, detail: str | None, when: datetime |
 
 def _sort_value(e: dict) -> str:
     return e["datetime"] or ""
+
+
+def _hospital_events(db: Session, patient: Patient, events: list[dict]) -> None:
+    """What the hospital system recorded (Phases 3 to 5): signed consultations, diagnoses, admissions and approved discharge summaries, approved laboratory results and scan reports,
+    completed operations and transfusions. Only FINISHED and APPROVED records are used: a draft, an unsigned note or an unapproved result is never shown as a fact."""
+    from app.database.models import (
+        Admission, Consultation, Diagnosis, DischargeSummary, LabTestOrder, RadiologyOrder, Surgery, Transfusion,
+    )
+    for c in db.scalars(select(Consultation).where(Consultation.patient_id == patient.id, Consultation.status == "SIGNED")):
+        bits = [x for x in (c.complaint and f"Complaint: {c.complaint}", c.assessment and f"Assessment: {c.assessment}", c.plan and f"Plan: {c.plan}") if x]
+        events.append(_event(f"consultation:{c.id}", "CONSULTATION", f"Consultation signed by {c.doctor.user.full_name}", "; ".join(bits) or None, c.signed_at, "Signed",
+                             source("consultation", c.encounter_id, "Consultation", c.signed_at.date().isoformat() if c.signed_at else None)))
+    for d in db.scalars(select(Diagnosis).where(Diagnosis.patient_id == patient.id, Diagnosis.is_active.is_(True))):
+        word = {"FINAL": "Final diagnosis", "PROVISIONAL": "Provisional diagnosis", "DRAFT": "Draft diagnosis (not confirmed)"}.get(d.kind, "Diagnosis")
+        events.append(_event(f"diagnosis:{d.id}", "DIAGNOSIS", f"{word}: {d.text}", f"Code {d.code}" if d.code else None, d.added_at, "Recorded", source("consultation", d.encounter_id, "Diagnosis", d.added_at.date().isoformat())))
+    for a in db.scalars(select(Admission).where(Admission.patient_id == patient.id)):
+        stay = f"Admitted for {a.admitting_diagnosis}" if a.admitting_diagnosis else "Admitted"
+        events.append(_event(f"admission:{a.id}", "ADMISSION", f"{stay} ({a.admission_no})", f"Discharged on {a.discharged_at.date().isoformat()} ({(a.discharge_type or '').lower()})." if a.discharged_at else "Still in hospital.",
+                             a.admitted_at, "Admitted", source("admission", a.id, f"Admission {a.admission_no}", a.admitted_at.date().isoformat())))
+        summary = db.scalar(select(DischargeSummary).where(DischargeSummary.admission_id == a.id, DischargeSummary.status == "APPROVED"))
+        if summary is not None:
+            detail = "; ".join(x for x in (summary.final_diagnosis and f"Final diagnosis: {summary.final_diagnosis}", summary.follow_up and f"Follow-up: {summary.follow_up}") if x)
+            events.append(_event(f"discharge:{a.id}", "DISCHARGE", f"Discharge summary approved for {a.admission_no}", detail or None, summary.approved_at, "Approved",
+                                 source("admission", a.id, f"Discharge summary {a.admission_no}", summary.approved_at.date().isoformat() if summary.approved_at else None)))
+    for o in db.scalars(select(LabTestOrder).where(LabTestOrder.patient_id == patient.id, LabTestOrder.result_status == "APPROVED")):
+        outside = [r for r in o.results if r.flag in ("LOW", "HIGH", "CRITICAL_LOW", "CRITICAL_HIGH")]
+        critical = [r for r in o.results if r.flag.startswith("CRITICAL")]
+        detail = f"{len(o.results)} values, {len(outside)} outside the hospital's range" + (f", {len(critical)} critical" if critical else "")
+        events.append(_event(f"lab:{o.id}", "LAB_TEST", f"Laboratory result approved: {o.test_name}", detail, o.approved_at, "Approved by the pathologist",
+                             source("lab_test", o.id, f"Lab: {o.test_name}", o.approved_at.date().isoformat())))
+    for o in db.scalars(select(RadiologyOrder).where(RadiologyOrder.patient_id == patient.id, RadiologyOrder.status == "APPROVED")):
+        events.append(_event(f"scan:{o.id}", "SCAN", f"Scan report approved: {o.study}", f"Radiologist's impression: {o.report.impression}" if o.report else None, o.approved_at, "Approved by the radiologist",
+                             source("radiology", o.id, f"Scan: {o.study}", o.approved_at.date().isoformat())))
+    for s in db.scalars(select(Surgery).where(Surgery.patient_id == patient.id, Surgery.status == "COMPLETED")):
+        events.append(_event(f"surgery:{s.id}", "SURGERY", f"Operation done: {s.procedure}", f"Surgeon {s.surgeon.user.full_name}" + (f"; anaesthesia {s.anaesthesia_type.lower()}" if s.anaesthesia_type else "") + (f"; complications: {s.op_complications}" if s.op_complications else ""),
+                             s.completed_at, "Completed", source("surgery", s.id, f"Surgery: {s.procedure}", s.completed_at.date().isoformat() if s.completed_at else None)))
+    for t in db.scalars(select(Transfusion).where(Transfusion.patient_id == patient.id, Transfusion.status.in_(("COMPLETED", "STOPPED")))):
+        events.append(_event(f"transfusion:{t.id}", "TRANSFUSION", f"Transfusion {'stopped after a reaction' if t.reaction else 'completed'}: {t.issue.unit.component.replace('_', ' ').lower()}", t.reaction_note or (f"{t.volume_given_ml} ml given" if t.volume_given_ml else None),
+                             t.ended_at, "Ended", source("transfusion", t.id, "Transfusion", t.ended_at.date().isoformat() if t.ended_at else None)))
 
 
 def build(db: Session, patient: Patient, q: str | None = None) -> list[dict]:
@@ -98,6 +139,8 @@ def build(db: Session, patient: Patient, q: str | None = None) -> list[dict]:
         state = {"PENDING": "pending", "DONE": "done", "CANCELLED": "cancelled"}[t.status]
         events.append(_event(f"followup:{t.id}", "FOLLOW_UP", f"Follow-up task ({state}): {t.title}", (f"Due {t.due_date.isoformat()}. " if t.due_date else "") + (t.outcome or ""), t.created_at, "Created",
                              source("follow_up", t.id, "Follow-up task", t.created_at.date().isoformat())))
+
+    _hospital_events(db, patient, events)
 
     if q:
         needle = q.strip().lower()
