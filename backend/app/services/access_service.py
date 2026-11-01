@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PATIENT, PHARMACY, TRAINEE, forbidden, get_current_user
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PATIENT, PHARMACY, forbidden, get_current_user
 from app.database.connection import get_db
 from app.database.models import Permission, Role, RolePermission, User, UserRole
 
@@ -60,9 +60,8 @@ ROLES: dict[str, tuple[str, str, list[str]]] = {
     "HOSPITAL_ADMIN": ("Hospital Admin", "Runs the hospital system", ALL),
     "BRANCH_ADMIN": ("Branch Admin", "Runs one branch", ["ipd.bed", "opd.queue", "hospital.view", "service.view", "patient.register", "patient.search", "consent.manage", "insurance.manage", "abha.manage", "audit.view"]),
     "RECEPTIONIST": ("Receptionist", "Registers patients and books appointments", ["opd.checkin", "opd.queue", "ed.register", "ipd.bed", "hospital.view", "service.view", "patient.register", "patient.search", "consent.manage", "insurance.manage", "abha.manage"]),
-    "DOCTOR": ("Doctor", "Treats patients", DOCTOR_PERMISSIONS),
+    "DOCTOR": ("Doctor", "Treats patients; interns and residents are doctors of a lower grade (see docs/DOCTOR_GRADES.md)", DOCTOR_PERMISSIONS),
     "SPECIALIST_DOCTOR": ("Specialist Doctor", "A doctor with a specialization", DOCTOR_PERMISSIONS),
-    "TRAINEE": ("Intern / PG Student", "Takes histories and refers patients", ["hospital.view"]),
     "NURSE": ("Nurse", "Nursing care", ["hospital.view", "service.view", "breakglass.use", "opd.queue", "ed.register", "ed.triage", "vitals.record", "nursing.chart", "alert.ack", "ipd.bed"]),
     "LAB_TECHNICIAN": ("Lab Technician", "Laboratory work", ["hospital.view"]),
     "PATHOLOGIST": ("Pathologist", "Approves laboratory results", ["hospital.view"]),
@@ -84,7 +83,7 @@ ROLES: dict[str, tuple[str, str, list[str]]] = {
 }
 
 # the login role -> the hospital role it means
-BASE_ROLE = {ADMIN: "HOSPITAL_ADMIN", DOCTOR: "DOCTOR", EMPLOYEE: "RECEPTIONIST", PATIENT: "PATIENT", PHARMACY: "PHARMACIST", LAB: "LAB_TECHNICIAN", TRAINEE: "TRAINEE", NURSE: "NURSE"}
+BASE_ROLE = {ADMIN: "HOSPITAL_ADMIN", DOCTOR: "DOCTOR", EMPLOYEE: "RECEPTIONIST", PATIENT: "PATIENT", PHARMACY: "PHARMACIST", LAB: "LAB_TECHNICIAN", NURSE: "NURSE"}
 
 
 def seed_access(db: Session) -> None:

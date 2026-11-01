@@ -58,7 +58,7 @@ def list_doctors(_: User = Depends(require_roles(ADMIN, EMPLOYEE, PATIENT, DOCTO
     return [DoctorOut(id=d.id, full_name=d.user.full_name, specialization=d.specialization_name,
                       specialization_id=d.specialization_id, specialization_name=d.specialization_name,
                       department_id=d.department_id, department_name=d.department.name if d.department else None,
-                      is_active=d.user.is_active) for d in rows if d.user.is_active]
+                      is_active=d.user.is_active, grade=d.current_grade) for d in rows if d.user.is_active]
 
 
 # ------------------------------------------------------------------ dashboard and patients

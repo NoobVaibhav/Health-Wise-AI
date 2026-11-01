@@ -67,8 +67,8 @@ def fill(path: str, value: str = "1") -> str:
 def all_actors(client, world):
     """Headers for every role, plus none."""
     client.post("/api/admin/lab-staff", headers=world.admin, json={"email": "lab@hospital.example.com", "full_name": "Lab Person", "password": PASSWORD})
-    client.post("/api/admin/trainees", headers=world.admin, json={"email": "intern@hospital.example.com", "full_name": "Intern Person", "password": PASSWORD,
-                                                                "department_id": world.department_id, "trainee_type": "INTERN"})
+    client.post("/api/admin/doctors", headers=world.admin, json={"email": "intern@hospital.example.com", "full_name": "Intern Person", "password": PASSWORD,
+                                                                "department_id": world.department_id, "grade": "INTERN", "supervisor_id": world.doctor_id})
     client.post("/api/admin/nurses", headers=world.admin, json={"email": "nurse@hospital.example.com", "full_name": "Nurse Person", "password": PASSWORD})
     return {"none": {}, "ADMIN": world.admin, "DOCTOR": world.doctor, "EMPLOYEE": world.employee, "PATIENT": world.patient, "PHARMACY": world.pharmacy,
-            "LAB": login(client, "lab@hospital.example.com"), "TRAINEE": login(client, "intern@hospital.example.com"), "NURSE": login(client, "nurse@hospital.example.com")}
+            "LAB": login(client, "lab@hospital.example.com"), "INTERN": login(client, "intern@hospital.example.com"), "NURSE": login(client, "nurse@hospital.example.com")}

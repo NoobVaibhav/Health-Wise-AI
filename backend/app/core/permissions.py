@@ -15,7 +15,7 @@ from app.database.connection import get_db
 from datetime import datetime, timezone
 
 from app.database.models import (
-    Admission, AdmissionStaff, Appointment, BreakGlassGrant, Doctor, EdVisit, Encounter, HealthReport, Nurse, Patient, Referral, ReferralRequest, Trainee, User,
+    Admission, AdmissionStaff, Appointment, BreakGlassGrant, Doctor, EdVisit, Encounter, HealthReport, Nurse, Patient, Referral, ReferralRequest, User,
 )
 
 ADMIN = "ADMIN"
@@ -25,8 +25,13 @@ PATIENT = "PATIENT"
 PHARMACY = "PHARMACY"
 LAB = "LAB"   # laboratory staff: sees the tests doctors advise, never medicines or reports
 NURSE = "NURSE"   # nurses: vitals, nursing notes, medication administration, intake and output
-TRAINEE = "TRAINEE"   # intern or PG student: takes histories and refers patients, never prescribes or orders tests
-ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB, TRAINEE, NURSE)
+ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB, NURSE)
+
+# Doctor is one role family. The grade decides what a doctor may finish alone (see docs/DOCTOR_GRADES.md).
+INTERN, PG_RESIDENT, SENIOR_RESIDENT, CONSULTANT = "INTERN", "PG_RESIDENT", "SENIOR_RESIDENT", "CONSULTANT"
+GRADES = (INTERN, PG_RESIDENT, SENIOR_RESIDENT, CONSULTANT)
+JUNIOR_GRADES = (INTERN, PG_RESIDENT, SENIOR_RESIDENT)
+GRADE_LABEL = {INTERN: "Intern", PG_RESIDENT: "PG Resident", SENIOR_RESIDENT: "Senior Resident", CONSULTANT: "Consultant"}
 
 FORBIDDEN_MESSAGE = "You do not have permission to access this information."
 
@@ -111,9 +116,12 @@ def care_team_patient_ids(db: Session, doctor: Doctor, only_patient: int | None 
         return query.where(column == only_patient) if only_patient else query
 
     ids: set[int] = set()
-    ids.update(db.scalars(narrow(select(Encounter.patient_id).where(Encounter.attending_doctor_id == doctor.id), Encounter.patient_id)))
-    ids.update(db.scalars(narrow(select(EdVisit.patient_id).where(EdVisit.assigned_doctor_id == doctor.id), EdVisit.patient_id)))
-    ids.update(db.scalars(narrow(select(Admission.patient_id).where(Admission.attending_doctor_id == doctor.id), Admission.patient_id)))
+    mine = [doctor.id]
+    if doctor.current_grade == "CONSULTANT":                                  # a supervising consultant also looks after the cases of their junior doctors
+        mine += list(db.scalars(select(Doctor.id).where(Doctor.supervisor_id == doctor.id)))
+    ids.update(db.scalars(narrow(select(Encounter.patient_id).where(Encounter.attending_doctor_id.in_(mine)), Encounter.patient_id)))
+    ids.update(db.scalars(narrow(select(EdVisit.patient_id).where(EdVisit.assigned_doctor_id.in_(mine)), EdVisit.patient_id)))
+    ids.update(db.scalars(narrow(select(Admission.patient_id).where(Admission.attending_doctor_id.in_(mine)), Admission.patient_id)))
     ids.update(db.scalars(narrow(select(Admission.patient_id).join(AdmissionStaff, AdmissionStaff.admission_id == Admission.id).where(
         AdmissionStaff.user_id == doctor.user_id, AdmissionStaff.kind == "CONSULTING_DOCTOR", AdmissionStaff.to_at.is_(None)), Admission.patient_id)))
     open_status = ("REQUESTED", "ACCEPTED", "COMPLETED")
@@ -152,11 +160,12 @@ def doctor_can_access_patient(db: Session, doctor: Doctor, patient: Patient) -> 
     return patient.id in care_team_patient_ids(db, doctor, only_patient=patient.id)
 
 
-def get_trainee_profile(db: Session, user: User) -> Trainee:
-    trainee = db.scalar(select(Trainee).where(Trainee.user_id == user.id))
-    if trainee is None:
+def get_junior_profile(db: Session, user: User) -> Doctor:
+    """The doctor profile of an intern or resident. A consultant (and anybody else) is refused: the junior workspace is for them."""
+    doctor = db.scalar(select(Doctor).where(Doctor.user_id == user.id))
+    if doctor is None or not doctor.is_junior:
         raise forbidden()
-    return trainee
+    return doctor
 
 
 def get_accessible_patient(db: Session, user: User, patient_id: int, clinical: bool = True) -> Patient:

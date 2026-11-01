@@ -13,7 +13,7 @@ from app.core.errors import ReportError
 from app.database.connection import init_db
 from app.routers import (
     admin, appointments, auth, billing, catalog, dashboard, profile, lab, doctors, employees, health_history, clinical_intel, patient_assistant, patient_portal, patients, pharmacy,
-    prescriptions, reports, trainee, referrals, hospital, access, patient_registry, opd, nursing, emergency, ipd, referral_requests,
+    prescriptions, reports, trainee, referrals, hospital, access, patient_registry, opd, nursing, emergency, ipd, referral_requests, countersign,
 )
 from app.services.ocr_service import ocr_is_available
 from app.services.safety_filter import DISCLAIMER
@@ -122,7 +122,7 @@ async def report_error_handler(_: Request, exc: ReportError):
 
 
 for module in (auth, admin, patients, doctors, employees, reports, appointments, prescriptions, pharmacy,
-               patient_portal, dashboard, catalog, lab, billing, profile, health_history, clinical_intel, patient_assistant, trainee, referrals, hospital, access, patient_registry, opd, nursing, emergency, ipd, referral_requests):
+               patient_portal, dashboard, catalog, lab, billing, profile, health_history, clinical_intel, patient_assistant, trainee, referrals, hospital, access, patient_registry, opd, nursing, emergency, ipd, referral_requests, countersign):
     app.include_router(module.router)
 app.include_router(doctors.directory)
 

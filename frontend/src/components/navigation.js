@@ -12,7 +12,6 @@ export const NAV = {
     ["/admin/employees", "Employees", "Briefcase"],
     ["/admin/pharmacy-staff", "Pharmacy Staff", "Pill"],
     ["/admin/lab-staff", "Laboratory Staff", "FlaskConical"],
-    ["/admin/trainees", "Interns & PG", "GraduationCap"],
     ["/admin/nurses", "Nurses", "Stethoscope"],
     ["/admin/patients", "Patients", "UserRound"],
     ["/admin/appointments", "Appointments", "CalendarClock"],
@@ -78,12 +77,6 @@ export const NAV = {
     ["/nurse/beds", "Bed board", "BedDouble"],
     ["/nurse/profile", "My Profile", "CircleUser"],
   ],
-  TRAINEE: [
-    ["/trainee", "Dashboard", "LayoutDashboard"],
-    ["/trainee/take-history", "Take History", "ClipboardList"],
-    ["/trainee/referrals", "My Referrals", "Send"],
-    ["/trainee/profile", "My Profile", "CircleUser"],
-  ],
   LAB: [
     ["/lab", "Work list", "FlaskConical"],
     ["/lab/advised", "Tests advised", "ClipboardList"],
@@ -91,4 +84,21 @@ export const NAV = {
   ],
 };
 
-export const ROLE_LABEL = { ADMIN: "Admin", DOCTOR: "Doctor", EMPLOYEE: "Hospital Employee", PATIENT: "Patient", PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", TRAINEE: "Intern / PG student", NURSE: "Nurse" };
+export const ROLE_LABEL = { ADMIN: "Admin", DOCTOR: "Doctor", EMPLOYEE: "Hospital Employee", PATIENT: "Patient", PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", NURSE: "Nurse" };
+
+// Menu items added to the doctor menu by grade: a junior doctor gets the history and referral workspace, a consultant gets the countersign queue.
+export const JUNIOR_MENU = [
+  ["/trainee", "My Work", "ClipboardList"],
+  ["/trainee/take-history", "Take History", "FileText"],
+  ["/trainee/referrals", "My Referrals", "Send"],
+  ["/doctor/countersign", "Pending Approval", "ListChecks"],
+];
+export const CONSULTANT_MENU = [["/doctor/countersign", "Awaiting my countersign", "ListChecks"]];
+
+/** The sidebar of a person: their role menu, and for a doctor the extra items of their grade. */
+export function menuFor(user) {
+  const base = NAV[user.role] || [];
+  if (user.role !== "DOCTOR") return base;
+  const extra = !user.grade || user.grade === "CONSULTANT" ? CONSULTANT_MENU : JUNIOR_MENU;
+  return [...base.slice(0, 1), ...extra, ...base.slice(1)];
+}

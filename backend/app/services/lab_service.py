@@ -30,7 +30,7 @@ def conflict(message: str) -> HTTPException:
 
 def sync_orders(db: Session) -> None:
     """Make one order row for every test written on a prescription (once), and cancel open orders of cancelled prescriptions."""
-    rxs = db.scalars(select(Prescription).where(Prescription.tests_advised.is_not(None)).order_by(Prescription.id.desc()).limit(500)).all()
+    rxs = db.scalars(select(Prescription).where(Prescription.tests_advised.is_not(None), Prescription.status.notin_(("PENDING_COUNTERSIGN", "RETURNED"))).order_by(Prescription.id.desc()).limit(500)).all()
     if not rxs:
         return
     existing = {(o.prescription_id, o.test_name.lower()): o for o in db.scalars(select(LabTestOrder).where(LabTestOrder.prescription_id.in_([r.id for r in rxs])))}

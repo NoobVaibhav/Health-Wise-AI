@@ -10,7 +10,7 @@ from tests.security_and_chaos._helpers import all_actors, fill, intended_roles, 
 OUT = pathlib.Path(__file__).with_name("endpoint_matrix.json")
 DOC = pathlib.Path(__file__).parents[3] / "docs" / "ENDPOINT_MATRIX.md"
 NEWLINE = chr(10)
-NAMES = ["none", "PATIENT", "PHARMACY", "LAB", "TRAINEE", "NURSE", "EMPLOYEE", "ADMIN", "DOCTOR"]
+NAMES = ["none", "PATIENT", "PHARMACY", "LAB", "INTERN", "NURSE", "EMPLOYEE", "ADMIN", "DOCTOR"]
 
 
 def test_every_endpoint_denies_the_roles_it_is_not_meant_for_and_never_crashes(client, world):
@@ -24,7 +24,8 @@ def test_every_endpoint_denies_the_roles_it_is_not_meant_for_and_never_crashes(c
             kw = {"json": {}} if method in ("POST", "PUT", "PATCH") else {}
             r = quiet.request(method, fill(route.path), headers=actors[name], **kw)
             row["results"][name] = r.status_code
-            allowed = public or (roles is None and name != "none") or (roles is not None and name in roles)
+            role_name = "DOCTOR" if name == "INTERN" else name                 # an intern is a doctor of the lowest grade
+            allowed = public or (roles is None and name != "none") or (roles is not None and role_name in roles)
             if r.status_code >= 500 and r.status_code != 503:      # 503 = a clearly worded "no AI model connected", by design
                 violations.append(f"CRASH {r.status_code} {method} {route.path} as {name}")
             elif not public and name == "none" and r.status_code != 401:
@@ -48,6 +49,6 @@ def write_doc(matrix):
     for row in sorted(matrix, key=lambda r: (r["path"], r["method"])):
         intended = ", ".join(row["roles"]) if isinstance(row["roles"], list) else row["roles"]
         lines.append(f"| {row['method']} | `{row['path']}` | {intended} | " + " | ".join(str(row["results"][n]) for n in NAMES) + " |")
-    lines += ["", "Trainees (interns and PG students) reach only `/api/trainee/*`, their own profile, the dashboard and the read-only catalog. The doctor's side of the "
+    lines += ["", "An INTERN (a doctor of the lowest grade) is a DOCTOR who is refused where the grade matters: the column shows what an intern gets on every endpoint. The doctor's side of the "
               "trainee workflow is `/api/referrals/*` (DOCTOR only; a doctor sees only the referrals sent to them or from their own trainees)."]
     DOC.write_text(NEWLINE.join(lines) + NEWLINE, encoding="utf-8")

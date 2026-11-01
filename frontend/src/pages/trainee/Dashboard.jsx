@@ -18,7 +18,7 @@ export default function TraineeDashboard() {
   return (
     <div className="space-y-6">
       <Hero title={`${greeting()}, ${user.full_name}`}
-        subtitle={`${t.type === "INTERN" ? "Intern" : "PG student"}${t.year_branch ? `, ${t.year_branch}` : ""}${t.department_name ? ` · ${t.department_name}` : ""}${t.supervisor ? ` · Supervisor: ${t.supervisor}` : ""}`}>
+        subtitle={`${{ INTERN: "Intern", PG_RESIDENT: "PG Resident", SENIOR_RESIDENT: "Senior Resident" }[t.grade] || "Doctor"}${t.pg_year ? `, year ${t.pg_year}` : ""}${t.year_branch ? `, ${t.year_branch}` : ""}${t.department_name ? ` · ${t.department_name}` : ""}${t.supervisor ? ` · Supervisor: ${t.supervisor}` : ""}`}>
         <HeroButton to="/trainee/take-history" primary>Take a history</HeroButton>
         <HeroButton to="/trainee/referrals">My referrals</HeroButton>
       </Hero>

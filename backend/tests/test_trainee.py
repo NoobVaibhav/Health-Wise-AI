@@ -1,7 +1,6 @@
-"""Interns and PG students: account creation, history drafts, the doctor suggestion, referrals, what the doctor sees, and everything a trainee must NOT reach."""
+"""Junior doctors (interns and PG residents): history drafts, the doctor suggestion, referrals, what the consultant sees, and what a junior doctor must NOT reach."""
 import pytest
 
-from app.main import app
 from app.services import referral_rules
 from tests.conftest import PASSWORD, future, login
 
@@ -14,17 +13,17 @@ def department(client, auth, name):
 
 
 def make_trainee(client, world, email="intern@hospital.example.com", name="Neha Kulkarni", kind="INTERN", **extra):
-    body = {"email": email, "full_name": name, "password": PASSWORD, "department_id": world.department_id, "trainee_type": kind, **extra}
-    res = client.post("/api/admin/trainees", headers=world.admin, json=body)
+    body = {"email": email, "full_name": name, "password": PASSWORD, "department_id": world.department_id, "grade": kind, "supervisor_id": world.doctor_id, **extra}
+    res = client.post("/api/admin/doctors", headers=world.admin, json=body)
     assert res.status_code == 201, res.text
     return login(client, email)
 
 
 @pytest.fixture()
 def tw(client, world):
-    """The usual hospital plus an intern (no supervisor) and a PG student supervised by Dr. Anjali."""
+    """The usual hospital plus an intern and a PG resident, both supervised by the consultant Dr. Anjali."""
     world.intern = make_trainee(client, world)
-    world.pg = make_trainee(client, world, "pg@hospital.example.com", "Arjun Deshmukh", "PG_STUDENT", year_branch="MD Medicine, Year 2", supervisor_id=world.doctor_id)
+    world.pg = make_trainee(client, world, "pg@hospital.example.com", "Arjun Deshmukh", "PG_RESIDENT", pg_year=2, pg_branch="MD Medicine")
     return world
 
 
@@ -52,36 +51,14 @@ def refer_with(client, auth, hid, default_doctor, **change):
     return client.post("/api/trainee/referrals", headers=auth, json=body)
 
 
-# ------------------------------------------------------------------ accounts
-def test_admin_creates_an_intern_and_a_pg_student(client, tw):
-    people = {p["full_name"]: p for p in client.get("/api/admin/people?role=TRAINEE", headers=tw.admin).json()}
-    assert people["Neha Kulkarni"]["trainee_type"] == "INTERN" and people["Arjun Deshmukh"]["trainee_type"] == "PG_STUDENT"
-    assert ["Year / branch", "MD Medicine, Year 2"] in people["Arjun Deshmukh"]["details"]
+# ------------------------------------------------------------------ accounts (the grade rules are in test_doctor_grades.py)
+def test_the_junior_doctors_are_doctors_with_a_grade(client, tw):
+    people = {p["full_name"]: p for p in client.get("/api/admin/people?role=DOCTOR", headers=tw.admin).json()}
+    assert people["Neha Kulkarni"]["grade"] == "INTERN" and people["Arjun Deshmukh"]["grade"] == "PG_RESIDENT"
+    assert ["Grade", "PG Resident, year 2, MD Medicine"] in people["Arjun Deshmukh"]["details"]
     assert ["Supervisor", "Dr. Anjali Sharma"] in people["Arjun Deshmukh"]["details"]
     me = client.get("/api/auth/me", headers=tw.pg).json()
-    assert me["role"] == "TRAINEE"
-
-
-def test_only_the_admin_creates_trainees(client, world):
-    body = {"email": "x@hospital.example.com", "full_name": "Some Intern", "department_id": world.department_id, "trainee_type": "INTERN"}
-    for who in (world.doctor, world.employee, world.pharmacy, world.patient):
-        assert client.post("/api/admin/trainees", headers=who, json=body).status_code == 403
-    assert client.post("/api/admin/trainees", json=body).status_code == 401
-
-
-@pytest.mark.parametrize("change,word", [
-    ({"department_id": None}, "department"), ({"trainee_type": None}, "Intern or PG"), ({"trainee_type": "PG_STUDENT"}, "year and branch"),
-    ({"department_id": 999999}, "department"), ({"supervisor_id": 999999}, "supervising doctor"), ({"trainee_type": "DOCTOR"}, ""), ({"supervisor_id": -1}, "")])
-def test_trainee_details_are_checked_with_a_clear_422(client, world, change, word):
-    body = {"email": "t@hospital.example.com", "full_name": "Test Trainee", "department_id": world.department_id, "trainee_type": "INTERN", **change}
-    res = client.post("/api/admin/trainees", headers=world.admin, json=body)
-    assert res.status_code == 422 and word.lower() in res.json()["detail"].lower()
-
-
-def test_supervisor_must_be_in_the_same_department(client, world):
-    other = department(client, world.admin, "Cardiology")
-    body = {"email": "t2@hospital.example.com", "full_name": "Test Trainee", "department_id": other, "trainee_type": "INTERN", "supervisor_id": world.doctor_id}
-    assert client.post("/api/admin/trainees", headers=world.admin, json=body).status_code == 422
+    assert me["role"] == "DOCTOR" and me["grade"] == "PG_RESIDENT"
 
 
 def test_existing_staff_creation_is_unchanged(client, world):
@@ -221,7 +198,7 @@ def test_a_referral_reaches_the_doctor_with_the_history(client, tw):
     other_doctor = refer(client, tw.pg, hid, tw.other_doctor_id)
     assert other_doctor.status_code == 201, other_doctor.text
     referral = other_doctor.json()
-    assert referral["status"] == "SENT" and referral["taken_by"] == "Arjun Deshmukh (PG)"
+    assert referral["status"] == "SENT" and referral["taken_by"] == "Arjun Deshmukh (PG Resident)"
     listed = client.get("/api/referrals", headers=tw.other_doctor).json()
     assert [r["id"] for r in listed] == [referral["id"]]
     detail = client.get(f"/api/referrals/{referral['id']}", headers=tw.other_doctor).json()
@@ -319,57 +296,41 @@ def test_the_supervisor_sees_and_corrects_a_pg_students_referral(client, tw):
     assert client.post(f"/api/referrals/{ref['id']}/review", headers=tw.doctor, json={"doctor_id": 999999}).status_code == 422
 
 
-def test_the_intern_has_no_supervisor_review(client, tw):
-    ref = refer(client, tw.intern, complete(client, tw.intern, tw.patient_id), tw.doctor_id).json()
-    assert client.post(f"/api/referrals/{ref['id']}/review", headers=tw.doctor, json={"note": "ok"}).status_code == 403
+def test_only_the_supervisor_reviews_a_junior_doctors_referral(client, tw):
+    ref = refer(client, tw.intern, complete(client, tw.intern, tw.patient_id), tw.other_doctor_id).json()
+    assert client.post(f"/api/referrals/{ref['id']}/review", headers=tw.other_doctor, json={"note": "ok"}).status_code == 403       # the referred doctor is not the supervisor
+    assert client.post(f"/api/referrals/{ref['id']}/review", headers=tw.doctor, json={"note": "ok"}).status_code == 200
 
 
-# ------------------------------------------------------------------ what a trainee must not reach
-def test_a_trainee_cannot_reach_prescriptions_lab_billing_reports_or_admin(client, tw):
-    for method, path in [("get", "/api/prescriptions"), ("post", "/api/prescriptions"), ("get", "/api/lab/orders"), ("get", "/api/billing/sales"), ("get", "/api/reports"),
-                         ("get", "/api/patients"), ("get", f"/api/patients/{tw.patient_id}"), ("get", "/api/admin/users"), ("get", "/api/admin/audit-logs"),
-                         ("post", "/api/admin/doctors"), ("get", f"/api/health-history/patient/{tw.patient_id}"), ("put", f"/api/health-history/patient/{tw.patient_id}"),
-                         ("get", "/api/pharmacy/inventory"), ("get", "/api/appointments"), ("post", "/api/appointments"), ("get", "/api/referrals"), ("get", "/api/doctor/dashboard")]:
-        body = {"patient_id": tw.patient_id, "doctor_id": tw.doctor_id, "scheduled_at": future(30)}
-        res = getattr(client, method)(path, headers=tw.intern, **({"json": body} if method in ("post", "put") else {}))
+# ------------------------------------------------------------------ what a junior doctor must not reach
+def test_a_junior_doctor_cannot_reach_other_roles_pages_or_other_patients(client, tw):
+    for method, path in [("get", "/api/lab/orders"), ("get", "/api/billing/sales"), ("get", "/api/admin/users"), ("get", "/api/admin/audit-logs"), ("post", "/api/admin/doctors"),
+                         ("get", "/api/pharmacy/inventory"), ("get", "/api/trainee/admin/overview"), ("get", "/api/access/roles"), ("get", "/api/countersign/awaiting")]:
+        res = getattr(client, method)(path, headers=tw.intern, **({"json": {}} if method == "post" else {}))
         assert res.status_code in (403, 404, 405), (method, path, res.status_code)
-
-
-def test_no_endpoint_outside_the_trainee_area_answers_a_trainee_with_data(client, tw):
-    """Sweep every GET route of the application: a trainee gets data only from the few places meant for them."""
-    allowed = ("/api/trainee", "/api/auth", "/api/profile", "/api/dashboard", "/api/catalog", "/api/health")
-    leaks = []
-    for route in app.routes:
-        methods = getattr(route, "methods", None) or set()
-        path = getattr(route, "path", "")
-        if "GET" not in methods or not path.startswith("/api") or path.startswith(allowed):
-            continue
-        url = path.replace("{", "").replace("}", "")
-        import re as _re
-        url = _re.sub(r"\{[^}]+\}", "1", path)
-        res = client.get(url, headers=tw.intern)
-        if res.status_code < 300:
-            leaks.append((path, res.status_code))
-    assert leaks == [] or all(p in ("/api/doctors", "/api/doctors/") for p, _ in leaks), leaks
+    assert client.get("/api/patients", headers=tw.intern).json() == []                                       # no patient of theirs yet
+    assert client.get(f"/api/patients/{tw.patient_id}", headers=tw.intern).status_code == 403
+    assert client.get(f"/api/health-history/patient/{tw.patient_id}", headers=tw.intern).status_code == 403
 
 
 def test_the_admin_can_only_look_at_the_trainee_area(client, tw):
     ref = refer(client, tw.intern, complete(client, tw.intern, tw.patient_id), tw.doctor_id).json()
     overview = client.get("/api/trainee/admin/overview", headers=tw.admin).json()
-    assert len(overview["trainees"]) == 2 and overview["referrals"][0]["id"] == ref["id"]
+    assert len(overview["trainees"]) == 2 and {t["grade"] for t in overview["trainees"]} == {"INTERN", "PG_RESIDENT"} and overview["referrals"][0]["id"] == ref["id"]
     assert "history" not in overview["referrals"][0]
     assert client.get("/api/trainee/dashboard", headers=tw.admin).status_code == 403
     assert client.post("/api/trainee/histories", headers=tw.admin, json={"patient_id": tw.patient_id}).status_code == 403
     assert client.get("/api/trainee/admin/overview", headers=tw.doctor).status_code == 403
 
 
-def test_a_doctor_or_patient_cannot_use_the_trainee_endpoints(client, tw):
+def test_a_consultant_or_other_staff_cannot_use_the_junior_endpoints(client, tw):
     for who in (tw.doctor, tw.employee, tw.pharmacy, tw.patient):
         assert client.get("/api/trainee/dashboard", headers=who).status_code == 403
         assert client.post("/api/trainee/histories", headers=who, json={"patient_id": tw.patient_id}).status_code == 403
-        assert client.post("/api/trainee/referrals", headers=who, json={}).status_code == 403
+        assert client.post("/api/trainee/referrals", headers=who, json={"history_id": 1, "doctor_id": tw.doctor_id, "reason": "A reason"}).status_code in (403, 404)
     assert client.get("/api/trainee/dashboard").status_code == 401
     assert client.get("/api/referrals", headers=tw.patient).status_code == 403
+    assert client.get("/api/trainee/dashboard", headers=tw.admin).status_code == 403
 
 
 def test_the_patient_cannot_see_the_trainee_history(client, tw):
@@ -385,8 +346,8 @@ def test_trainee_dashboard_counts(client, tw):
     start(client, tw.intern, tw.patient_id)
     assert client.get("/api/trainee/dashboard", headers=tw.intern).json()["drafts"][0]["patient_id"] == tw.patient_id
     refer(client, tw.intern, complete(client, tw.intern, tw.patient_id), tw.doctor_id)
-    after = client.get("/api/dashboard", headers=tw.intern).json()
-    assert after["role"] == "TRAINEE" and after["histories_today"] == 1 and after["referrals_today"] == 1
+    after = client.get("/api/trainee/dashboard", headers=tw.intern).json()
+    assert after["histories_today"] == 1 and after["referrals_today"] == 1
 
 
 def test_history_and_referral_steps_are_in_the_audit_log(client, tw):
@@ -398,15 +359,15 @@ def test_history_and_referral_steps_are_in_the_audit_log(client, tw):
     assert {"TRAINEE_HISTORY_STARTED", "TRAINEE_HISTORY_COMPLETED", "REFERRAL_CREATED", "TRAINEE_HISTORY_VERIFIED", "REFERRAL_UPDATED", "USER_CREATED"} <= actions
 
 
-def test_trainee_profile_shows_the_assigned_details_read_only(client, tw):
+def test_the_profile_shows_the_grade_and_the_supervisor_read_only(client, tw):
     fields = {f["key"]: f for f in client.get("/api/profile", headers=tw.pg).json()["fields"]}
-    assert fields["trainee_type"]["value"] == "PG student" and fields["year_branch"]["value"] == "MD Medicine, Year 2"
+    assert fields["grade"]["value"] == "PG Resident" and fields["grade"]["editable"] is False
     assert fields["supervisor"]["value"] == "Dr. Anjali Sharma" and fields["supervisor"]["editable"] is False
 
 
 def test_a_trainee_with_records_cannot_be_deleted_but_can_be_deactivated(client, tw):
     complete(client, tw.intern, tw.patient_id)
-    uid = next(p["id"] for p in client.get("/api/admin/people?role=TRAINEE", headers=tw.admin).json() if p["full_name"] == "Neha Kulkarni")
+    uid = next(p["id"] for p in client.get("/api/admin/people?role=DOCTOR", headers=tw.admin).json() if p["full_name"] == "Neha Kulkarni")
     check = client.get(f"/api/admin/users/{uid}/delete-check", headers=tw.admin).json()
     assert check["can_delete"] is False and any("histories" in r for r in check["reasons"])
     assert client.put(f"/api/admin/users/{uid}", headers=tw.admin, json={"is_active": False}).status_code == 200

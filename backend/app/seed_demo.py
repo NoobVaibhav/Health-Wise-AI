@@ -8,7 +8,7 @@ from datetime import date, timedelta
 
 from sqlalchemy import select
 
-from app.core.permissions import DOCTOR, EMPLOYEE, LAB, NURSE, PHARMACY, TRAINEE
+from app.core.permissions import DOCTOR, EMPLOYEE, LAB, NURSE, PHARMACY
 from app.database.connection import SessionLocal, init_db
 from app.database.models import Department, Doctor, MedicineInventory, Bed, ServiceCatalog, Specialization, User, Ward
 from app.schemas.auth import StaffCreate
@@ -61,14 +61,13 @@ def main() -> None:
                     db.add(Bed(ward_id=ward.id, code=code, status="AVAILABLE", is_active=True))
             db.commit()
         if not exists("intern@healthwise.demo.com"):
-            user_service.create_staff(db, TRAINEE, StaffCreate(
+            user_service.create_staff(db, DOCTOR, StaffCreate(
                 email="intern@healthwise.demo.com", full_name="Neha Kulkarni", password=DEMO_PASSWORD,
-                department_id=department.id, trainee_type="INTERN", supervisor_id=anjali.id if anjali else None))
+                department_id=department.id, grade="INTERN", supervisor_id=anjali.id if anjali else None))
         if not exists("pg.student@healthwise.demo.com"):
-            user_service.create_staff(db, TRAINEE, StaffCreate(
-                email="pg.student@healthwise.demo.com", full_name="Arjun Deshmukh", password=DEMO_PASSWORD,
-                department_id=department.id, trainee_type="PG_STUDENT", year_branch="MD Medicine, Year 2",
-                supervisor_id=anjali.id if anjali else None))
+            user_service.create_staff(db, DOCTOR, StaffCreate(
+                email="pg.student@healthwise.demo.com", full_name="Dr. Arjun Deshmukh", password=DEMO_PASSWORD,
+                department_id=department.id, grade="PG_RESIDENT", pg_year=2, pg_branch="MD Medicine", supervisor_id=anjali.id if anjali else None))
         if not exists("rahul.patil@healthwise.demo.com"):
             doctor = db.scalar(select(Doctor).join(User, Doctor.user_id == User.id)
                                .where(User.email == "anjali.sharma@healthwise.demo.com"))
@@ -94,7 +93,7 @@ def main() -> None:
     for role, email in (("Admin", "admin@healthwise.demo.com"), ("Doctor", "anjali.sharma@healthwise.demo.com"),
                         ("Employee", "priya.joshi@healthwise.demo.com"), ("Patient", "rahul.patil@healthwise.demo.com"),
                         ("Pharmacy", "pharmacy@healthwise.demo.com"), ("Lab", "lab@healthwise.demo.com"),
-                        ("Nurse", "nurse@healthwise.demo.com"), ("Intern", "intern@healthwise.demo.com"), ("PG student", "pg.student@healthwise.demo.com")):
+                        ("Nurse", "nurse@healthwise.demo.com"), ("Intern", "intern@healthwise.demo.com"), ("PG resident", "pg.student@healthwise.demo.com")):
         print(f"  {role:9s} {email}")
 
 

@@ -13,7 +13,7 @@ from app.database.models import (
 from app.schemas.clinical import (
     AdmitIn, BedAssignIn, BedIn, BedStatusIn, DischargeIn, DischargeSummaryIn, MedicationOrderIn, OrderIn, ProgressNoteIn, StaffAssignIn, WardIn, WardUpdate,
 )
-from app.services import audit_service, encounter_service as enc, hospital_service, ipd_service as ipd, nursing_service
+from app.services import audit_service, encounter_service as enc, grade_service, hospital_service, ipd_service as ipd, nursing_service
 from app.services.access_service import permissions_of, require_permission
 from app.utils.validators import PathId, QueryId
 
@@ -124,11 +124,18 @@ def _doctor_of_admission(db: Session, user: User, admission: Admission) -> Docto
     """The doctor must be the attending or a consulting doctor of this stay."""
     doctor = get_doctor_profile(db, user)
     _clinical_patient(db, user, admission.patient_id)
-    if admission.attending_doctor_id == doctor.id:
+    if admission.attending_doctor_id == doctor.id or admission.attending_doctor.supervisor_id == doctor.id:       # the attending doctor, or the consultant who supervises them
         return doctor
     if db.scalar(select(AdmissionStaff.id).where(AdmissionStaff.admission_id == admission.id, AdmissionStaff.user_id == user.id, AdmissionStaff.kind == "CONSULTING_DOCTOR", AdmissionStaff.to_at.is_(None))):
         return doctor
     raise forbidden()
+
+
+def _treating_consultant(doctor: Doctor, admission: Admission) -> bool:
+    """The attending doctor when they are a consultant, or the consultant who supervises a junior attending doctor."""
+    if doctor.current_grade != "CONSULTANT":
+        return False
+    return admission.attending_doctor_id == doctor.id or admission.attending_doctor.supervisor_id == doctor.id
 
 
 @router.post("/admissions", status_code=status.HTTP_201_CREATED)
@@ -140,7 +147,9 @@ def admit(data: AdmitIn, request: Request, user: User = Depends(admit_perm), db:
     if user.role == DOCTOR:
         me = get_doctor_profile(db, user)
         _clinical_patient(db, user, patient.id)
-        doctor = db.get(Doctor, data.attending_doctor_id) if data.attending_doctor_id else me
+        doctor = db.get(Doctor, data.attending_doctor_id) if data.attending_doctor_id else (me.supervisor if me.current_grade == "INTERN" else me)
+        if me.current_grade == "INTERN" and (doctor is None or doctor.is_junior):
+            raise HTTPException(422, "An intern admits under a consultant. Please choose the attending consultant.")
     else:
         doctor = db.get(Doctor, data.attending_doctor_id) if data.attending_doctor_id else None
     if doctor is None or not doctor.user.is_active:
@@ -271,6 +280,8 @@ def progress_note(admission_id: PathId, data: ProgressNoteIn, request: Request, 
 def medication_order(admission_id: PathId, data: MedicationOrderIn, request: Request, user: User = Depends(notes_perm), db: Session = Depends(get_db)):
     a = _admission(db, admission_id)
     doctor = _doctor_of_admission(db, user, a)
+    if doctor.current_grade == "INTERN":
+        raise HTTPException(403, "An intern cannot order medicines. Please ask your consultant.")
     if a.status != "ADMITTED":
         raise HTTPException(409, "This patient has been discharged.")
     start = data.start_date or date.today()
@@ -307,8 +318,13 @@ def admission_order(admission_id: PathId, data: OrderIn, request: Request, user:
     _doctor_of_admission(db, user, a)
     if a.status != "ADMITTED":
         raise HTTPException(409, "This patient has been discharged.")
-    row = ClinicalOrder(encounter_id=a.encounter_id, patient_id=a.patient_id, admission_id=a.id, kind=data.kind, text=data.text, priority=data.priority, ordered_by=user.id)
+    doctor = get_doctor_profile(db, user)
+    row = ClinicalOrder(encounter_id=a.encounter_id, patient_id=a.patient_id, admission_id=a.id, kind=data.kind, text=data.text, priority=data.priority, ordered_by=user.id,
+                        status=grade_service.order_status(doctor))
     db.add(row)
+    db.flush()
+    if row.status == "DRAFT":
+        grade_service.request_countersign(db, "ORDER", row.id, a.patient_id, doctor, f"{data.kind.title()} order: {data.text}")
     db.commit()
     audit_service.log_action(db, user, audit_service.ORDER_PLACED, "clinical_order", row.id, request, f"{data.kind} {data.priority}")
     return {"id": row.id, "kind": row.kind, "text": row.text, "priority": row.priority, "status": row.status}
@@ -319,6 +335,8 @@ def admission_order(admission_id: PathId, data: OrderIn, request: Request, user:
 def save_summary(admission_id: PathId, data: DischargeSummaryIn, user: User = Depends(require_permission("discharge.write")), db: Session = Depends(get_db)):
     a = _admission(db, admission_id)
     doctor = _doctor_of_admission(db, user, a)
+    if doctor.current_grade == "INTERN":
+        raise HTTPException(403, "An intern does not prepare the discharge summary.")
     summary = db.scalar(select(DischargeSummary).where(DischargeSummary.admission_id == a.id))
     if summary is None:
         summary = DischargeSummary(admission_id=a.id, status="DRAFT", prepared_by=doctor.id)
@@ -328,6 +346,9 @@ def save_summary(admission_id: PathId, data: DischargeSummaryIn, user: User = De
     for key, value in data.model_dump().items():
         setattr(summary, key, value)
     summary.updated_at = ipd.now()
+    db.flush()
+    if doctor.is_junior:                                        # a resident prepares it; the consultant approves it
+        grade_service.request_countersign(db, "DISCHARGE_SUMMARY", summary.id, a.patient_id, doctor, f"Discharge summary of {a.admission_no}")
     db.commit()
     return ipd.summary_out(summary)
 
@@ -337,8 +358,8 @@ def approve_summary(admission_id: PathId, request: Request, user: User = Depends
     """Only the treating (attending) doctor approves the summary."""
     a = _admission(db, admission_id)
     doctor = get_doctor_profile(db, user)
-    if a.attending_doctor_id != doctor.id:
-        raise HTTPException(403, "Only the treating doctor of this patient can approve the discharge summary.")
+    if not _treating_consultant(doctor, a):
+        raise HTTPException(403, "Only the treating consultant of this patient can approve the discharge summary.")
     summary = db.scalar(select(DischargeSummary).where(DischargeSummary.admission_id == a.id))
     if summary is None:
         raise HTTPException(409, "There is no discharge summary yet.")
@@ -356,8 +377,8 @@ def approve_summary(admission_id: PathId, request: Request, user: User = Depends
 def discharge(admission_id: PathId, data: DischargeIn, request: Request, user: User = Depends(require_permission("discharge.approve")), db: Session = Depends(get_db)):
     a = _admission(db, admission_id)
     doctor = _doctor_of_admission(db, user, a)
-    if a.attending_doctor_id != doctor.id:
-        raise HTTPException(403, "Only the treating doctor of this patient can discharge the patient.")
+    if not _treating_consultant(doctor, a):
+        raise HTTPException(403, "Only the treating consultant of this patient can discharge the patient.")
     result = ipd.discharge(db, a, data.discharge_type, data.note, user)
     audit_service.log_action(db, user, audit_service.PATIENT_DISCHARGED, "admission", a.id, request, data.discharge_type)
     return {**result, "admission": ipd.admission_out(db, a)}

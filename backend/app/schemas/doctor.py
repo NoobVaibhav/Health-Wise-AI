@@ -66,3 +66,4 @@ class DoctorOut(BaseModel):
     department_id: int | None
     department_name: str | None
     is_active: bool
+    grade: str = "CONSULTANT"

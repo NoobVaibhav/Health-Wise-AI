@@ -309,13 +309,20 @@ CREATE TABLE doctors (
 	qualification VARCHAR(150), 
 	registration_number VARCHAR(50), 
 	experience_years INTEGER, 
+	grade VARCHAR(16), 
+	pg_year INTEGER, 
+	pg_branch VARCHAR(120), 
+	supervisor_id INTEGER, 
+	can_prescribe_independently BOOLEAN, 
 	PRIMARY KEY (id), 
 	UNIQUE (user_id), 
 	FOREIGN KEY(user_id) REFERENCES users (id), 
 	FOREIGN KEY(department_id) REFERENCES departments (id), 
-	FOREIGN KEY(specialization_id) REFERENCES specializations (id)
+	FOREIGN KEY(specialization_id) REFERENCES specializations (id), 
+	FOREIGN KEY(supervisor_id) REFERENCES doctors (id)
 );
 
+CREATE INDEX ix_doctors_grade ON doctors (grade);
 
 CREATE TABLE patients (
 	id SERIAL NOT NULL, 
@@ -346,22 +353,6 @@ CREATE TABLE patients (
 
 CREATE UNIQUE INDEX ix_patients_patient_code ON patients (patient_code);
 CREATE UNIQUE INDEX ix_patients_uhid ON patients (uhid);
-
-CREATE TABLE trainees (
-	id SERIAL NOT NULL, 
-	user_id INTEGER NOT NULL, 
-	department_id INTEGER, 
-	trainee_type VARCHAR(15) NOT NULL, 
-	year_branch VARCHAR(120), 
-	supervisor_id INTEGER, 
-	phone VARCHAR(30), 
-	PRIMARY KEY (id), 
-	UNIQUE (user_id), 
-	FOREIGN KEY(user_id) REFERENCES users (id), 
-	FOREIGN KEY(department_id) REFERENCES departments (id), 
-	FOREIGN KEY(supervisor_id) REFERENCES doctors (id)
-);
-
 
 CREATE TABLE beds (
 	id SERIAL NOT NULL, 
@@ -463,6 +454,34 @@ CREATE TABLE clinical_summary_snapshots (
 );
 
 CREATE INDEX ix_clinical_summary_snapshots_patient_id ON clinical_summary_snapshots (patient_id);
+
+CREATE TABLE countersign_requests (
+	id SERIAL NOT NULL, 
+	kind VARCHAR(20) NOT NULL, 
+	item_id INTEGER NOT NULL, 
+	patient_id INTEGER NOT NULL, 
+	requested_by INTEGER NOT NULL, 
+	supervisor_id INTEGER, 
+	status VARCHAR(10) NOT NULL, 
+	summary VARCHAR(300), 
+	original_json TEXT, 
+	comment VARCHAR(500), 
+	decided_by INTEGER, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	decided_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(requested_by) REFERENCES doctors (id), 
+	FOREIGN KEY(supervisor_id) REFERENCES doctors (id), 
+	FOREIGN KEY(decided_by) REFERENCES doctors (id)
+);
+
+CREATE INDEX ix_countersign_requests_item_id ON countersign_requests (item_id);
+CREATE INDEX ix_countersign_requests_kind ON countersign_requests (kind);
+CREATE INDEX ix_countersign_requests_patient_id ON countersign_requests (patient_id);
+CREATE INDEX ix_countersign_requests_requested_by ON countersign_requests (requested_by);
+CREATE INDEX ix_countersign_requests_status ON countersign_requests (status);
+CREATE INDEX ix_countersign_requests_supervisor_id ON countersign_requests (supervisor_id);
 
 CREATE TABLE emergency_events (
 	id SERIAL NOT NULL, 
@@ -777,7 +796,7 @@ CREATE TABLE trainee_histories (
 	verified_at TIMESTAMP WITHOUT TIME ZONE, 
 	PRIMARY KEY (id), 
 	FOREIGN KEY(patient_id) REFERENCES patients (id), 
-	FOREIGN KEY(trainee_id) REFERENCES trainees (id), 
+	FOREIGN KEY(trainee_id) REFERENCES doctors (id), 
 	FOREIGN KEY(verified_by) REFERENCES doctors (id)
 );
 
@@ -1473,7 +1492,7 @@ CREATE TABLE referrals (
 	supervisor_note VARCHAR(500), 
 	PRIMARY KEY (id), 
 	FOREIGN KEY(patient_id) REFERENCES patients (id), 
-	FOREIGN KEY(trainee_id) REFERENCES trainees (id), 
+	FOREIGN KEY(trainee_id) REFERENCES doctors (id), 
 	FOREIGN KEY(doctor_id) REFERENCES doctors (id), 
 	FOREIGN KEY(history_id) REFERENCES trainee_histories (id), 
 	FOREIGN KEY(suggested_department_id) REFERENCES departments (id), 

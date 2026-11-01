@@ -112,10 +112,10 @@ def doctor_dashboard(db: Session, user: User) -> dict:
 
 def _referrals_for_doctor(db: Session, doctor) -> list[dict]:
     """Patients sent by interns or PG students, urgent and unseen first. Each says who took the history and that it waits for the doctor."""
-    from app.database.models import Referral, Trainee
+    from app.database.models import Doctor as JuniorDoctor, Referral
     from app.services.trainee_service import referral_out
-    rows = db.scalars(select(Referral).join(Trainee, Referral.trainee_id == Trainee.id).where(
-        (Referral.doctor_id == doctor.id) | (Trainee.supervisor_id == doctor.id), Referral.status != "COMPLETED").order_by(Referral.id.desc()).limit(50)).all()
+    rows = db.scalars(select(Referral).join(JuniorDoctor, Referral.trainee_id == JuniorDoctor.id).where(
+        (Referral.doctor_id == doctor.id) | (JuniorDoctor.supervisor_id == doctor.id), Referral.status != "COMPLETED").order_by(Referral.id.desc()).limit(50)).all()
     rows.sort(key=lambda r: (not r.urgent, r.status != "SENT"))
     return [{**referral_out(r), "mine": r.doctor_id == doctor.id} for r in rows[:10]]
 

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.permissions import DOCTOR, forbidden, get_accessible_patient, get_doctor_profile, require_roles
 from app.database.connection import get_db
-from app.database.models import Doctor, Referral, Trainee, TraineeHistory, TraineeHistoryRevision, User
+from app.database.models import Doctor, Referral, TraineeHistory, TraineeHistoryRevision, User
 from app.schemas.trainee import DoctorHistoryEdit, SupervisorReview
 from app.services import audit_service, trainee_service as service
 from app.utils.validators import PathId
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/referrals", tags=["referrals"])
 doctor_only = require_roles(DOCTOR)
 
 
-def _is_supervisor(doctor: Doctor, trainee: Trainee) -> bool:
+def _is_supervisor(doctor: Doctor, trainee: Doctor) -> bool:
     return trainee.supervisor_id == doctor.id
 
 
@@ -42,8 +42,8 @@ def _history_for(db: Session, doctor: Doctor, history_id: int) -> TraineeHistory
 def my_referrals(user: User = Depends(doctor_only), db: Session = Depends(get_db)):
     """Referrals sent to this doctor, and those of the doctor's own trainees. Urgent and not yet seen first."""
     doctor = get_doctor_profile(db, user)
-    rows = db.scalars(select(Referral).join(Trainee, Referral.trainee_id == Trainee.id)
-                      .where(or_(Referral.doctor_id == doctor.id, Trainee.supervisor_id == doctor.id)).order_by(Referral.id.desc()).limit(200)).all()
+    rows = db.scalars(select(Referral).join(Doctor, Referral.trainee_id == Doctor.id)
+                      .where(or_(Referral.doctor_id == doctor.id, Doctor.supervisor_id == doctor.id)).order_by(Referral.id.desc()).limit(200)).all()
     rows.sort(key=lambda r: (r.status == "COMPLETED", not r.urgent, r.status != "SENT"))
     return [{**service.referral_out(r), "mine": r.doctor_id == doctor.id, "as_supervisor": _is_supervisor(doctor, r.trainee)} for r in rows]
 

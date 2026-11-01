@@ -11,6 +11,7 @@ import { AdmitDialog, ReferDialog } from "../../components/ClinicalDialogs";
 import { Section } from "../../components/HealthCard";
 import { ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 import { Button, Field, Input, Select, Textarea, fmtUtc } from "../../components/ui";
+import { useAuth } from "../../context/AuthContext";
 
 const CORE = [["complaint", "Complaint *", 2], ["hpi", "History of present illness", 4], ["past_history", "Past history", 2], ["family_history", "Family history", 2], ["examination", "Examination", 3], ["assessment", "Assessment", 3], ["plan", "Plan", 3], ["advice", "Advice to the patient", 3]];
 const EMPTY = { complaint: "", hpi: "", past_history: "", family_history: "", examination: "", assessment: "", plan: "", advice: "", follow_up_date: "", data: {} };
@@ -25,6 +26,8 @@ export default function Consultation() {
 }
 
 function Workspace({ ws, reload }) {
+  const { user } = useAuth();
+  const grade = user.grade || "CONSULTANT";
   const eid = ws.encounter.id;
   const signed = ws.consultation?.status === "SIGNED";
   const closed = ws.encounter.status !== "OPEN";
@@ -79,7 +82,7 @@ function Workspace({ ws, reload }) {
         <Link to={`/doctor/patients/${p.id}`} className="inline-flex min-h-11 items-center rounded-xl border-2 border-brand-700 bg-white px-4 py-2 font-bold text-brand-800">Full record</Link>
         {!closed && <Button type="button" variant="secondary" onClick={() => setDialog("refer")}>Refer to a department</Button>}
         <Button type="button" variant="secondary" onClick={() => setDialog("admit")}>Admit to a ward</Button>
-        <Button type="button" variant="secondary" onClick={() => setDialog("rx")}><Pill size={15} className="mr-1 inline" /> Prescription</Button>
+        {grade !== "INTERN" && <Button type="button" variant="secondary" onClick={() => setDialog("rx")}><Pill size={15} className="mr-1 inline" /> {grade === "CONSULTANT" ? "Prescription" : "Prescription (consultant countersigns)"}</Button>}
       </div>
       {signed && <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-3 font-semibold text-emerald-900"><Lock size={16} /> Signed {fmtUtc(ws.consultation.signed_at)}. It can no longer be changed; add an addendum below if something must be added.</p>}
 
@@ -135,7 +138,7 @@ function Workspace({ ws, reload }) {
         <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
           <span className="text-sm">{saveState === "saving" ? <span className="text-slate-500"><Loader2 size={14} className="mr-1 inline animate-spin" />Saving...</span> : saveState === "saved" ? <span className="text-emerald-700"><CheckCircle2 size={14} className="mr-1 inline" />Draft saved</span>
             : saveState === "failed" ? <span role="alert" className="font-semibold text-red-700"><CloudOff size={14} className="mr-1 inline" />Not saved. What you typed is still here. <button type="button" className="underline" onClick={save}>Try again</button></span> : <span className="text-slate-400">Saved automatically as you type</span>}</span>
-          <span className="flex gap-2"><Button type="button" variant="secondary" onClick={save}>Save draft</Button><Button type="button" disabled={busy} onClick={sign}>Review and sign</Button></span>
+          <span className="flex gap-2"><Button type="button" variant="secondary" onClick={save}>Save draft</Button>{grade !== "INTERN" ? <Button type="button" disabled={busy} onClick={sign}>Review and sign</Button> : <span className="self-center text-sm font-semibold text-slate-600">Your consultant signs this</span>}</span>
         </div>)}
 
       {dialog === "rx" && <PrescriptionModal patientId={p.id} encounterId={eid} onClose={() => setDialog(null)} onSaved={() => { setDialog(null); reload(); }} />}

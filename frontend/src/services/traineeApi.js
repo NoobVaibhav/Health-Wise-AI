@@ -21,3 +21,10 @@ export const reviewReferral = (id, data) => api.post(`/referrals/${id}/review`, 
 export const verifyTraineeHistory = (id) => api.post(`/referrals/histories/${id}/verify`).then((r) => r.data);
 export const editTraineeHistory = (id, data) => api.put(`/referrals/histories/${id}`, data).then((r) => r.data);
 export const listPatientTraineeHistories = (patientId) => api.get(`/referrals/patient/${patientId}`).then((r) => r.data);
+
+// Countersign: what a junior doctor prepared, waiting for the supervising consultant
+export const listAwaiting = (state = "PENDING") => api.get("/countersign/awaiting", { params: { state } }).then((r) => r.data);
+export const listMySubmissions = () => api.get("/countersign/mine").then((r) => r.data);
+export const getCountersign = (id) => api.get(`/countersign/${id}`).then((r) => r.data);
+export const approveCountersign = (id, data = {}) => api.post(`/countersign/${id}/approve`, data).then((r) => r.data);
+export const returnCountersign = (id, comment) => api.post(`/countersign/${id}/return`, { comment }).then((r) => r.data);

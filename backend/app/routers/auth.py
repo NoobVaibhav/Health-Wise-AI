@@ -21,10 +21,16 @@ from app.utils.validators import NO_NAME_IN_PASSWORD, password_has_email_name
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-def user_out(user: User) -> UserOut:
+def user_out(user: User, db: Session | None = None) -> UserOut:
+    grade = None
+    if user.role == "DOCTOR":                          # the menu and the workspace follow the grade
+        from sqlalchemy.orm import object_session
+        from app.database.models import Doctor
+        session = db or object_session(user)
+        grade = (session.scalar(select(Doctor.grade).where(Doctor.user_id == user.id)) if session is not None else None) or "CONSULTANT"
     return UserOut(id=user.id, email=user.email, full_name=user.full_name, role=user.role,
                    is_active=user.is_active, must_change_password=user.must_change_password,
-                   has_avatar=bool(user.avatar_path), avatar_version=avatar_version(user))
+                   has_avatar=bool(user.avatar_path), avatar_version=avatar_version(user), grade=grade)
 
 
 @router.get("/setup-status")

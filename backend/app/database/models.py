@@ -93,10 +93,33 @@ class Doctor(Base):
     qualification: Mapped[str | None] = mapped_column(String(150))
     registration_number: Mapped[str | None] = mapped_column(String(50))
     experience_years: Mapped[int | None] = mapped_column(Integer)
+    grade: Mapped[str | None] = mapped_column(String(16), default="CONSULTANT", index=True)       # INTERN / PG_RESIDENT / SENIOR_RESIDENT / CONSULTANT (empty = consultant)
+    pg_year: Mapped[int | None] = mapped_column(Integer)                                          # 1 to 3 (PG resident)
+    pg_branch: Mapped[str | None] = mapped_column(String(120))                                    # for example "MD Medicine"
+    supervisor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))                  # the consultant who supervises a junior doctor
+    can_prescribe_independently: Mapped[bool | None] = mapped_column(Boolean, default=False)    # only the administrator changes this
 
     user: Mapped[User] = relationship()
     department: Mapped[Department | None] = relationship()
     specialization_ref: Mapped["Specialization | None"] = relationship()
+
+    supervisor: Mapped["Doctor | None"] = relationship(remote_side="Doctor.id", foreign_keys="Doctor.supervisor_id")
+
+    @property
+    def supervisor_name(self) -> str | None:
+        return self.supervisor.user.full_name if self.supervisor is not None else None
+
+    @property
+    def grade_label(self) -> str:
+        return {"INTERN": "Intern", "PG_RESIDENT": "PG Resident", "SENIOR_RESIDENT": "Senior Resident"}.get(self.current_grade, "Consultant")
+
+    @property
+    def current_grade(self) -> str:
+        return self.grade or "CONSULTANT"
+
+    @property
+    def is_junior(self) -> bool:
+        return self.current_grade != "CONSULTANT"
 
     @property
     def specialization_name(self) -> str | None:
@@ -784,31 +807,14 @@ class AuditLog(Base):
     user: Mapped[User | None] = relationship()
 
 
-# ------------------------------------------------------------------ trainees (interns and PG students) and referrals
-class Trainee(Base):
-    """An intern or PG student. Not a doctor: takes histories and refers the patient to a doctor, never prescribes or orders tests."""
-    __tablename__ = "trainees"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
-    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
-    trainee_type: Mapped[str] = mapped_column(String(15), default="INTERN")          # INTERN / PG_STUDENT
-    year_branch: Mapped[str | None] = mapped_column(String(120))                      # PG only, e.g. "MD Medicine, Year 2"
-    supervisor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
-    phone: Mapped[str | None] = mapped_column(String(30))
-
-    user: Mapped[User] = relationship()
-    department: Mapped[Department | None] = relationship()
-    supervisor: Mapped["Doctor | None"] = relationship()
-
-
+# ------------------------------------------------------------------ histories and referrals of junior doctors (interns, PG residents)
 class TraineeHistory(Base):
     """A history taken by a trainee. It is NOT the patient's permanent record: a doctor reviews it first (DRAFT -> COMPLETE -> VERIFIED)."""
     __tablename__ = "trainee_histories"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
-    trainee_id: Mapped[int] = mapped_column(ForeignKey("trainees.id"), index=True)
+    trainee_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)         # the junior doctor (the old name is kept)
     status: Mapped[str] = mapped_column(String(15), default="DRAFT", index=True)
     data_json: Mapped[str | None] = mapped_column(Text)
     doctor_notes: Mapped[str | None] = mapped_column(Text)
@@ -819,7 +825,7 @@ class TraineeHistory(Base):
     verified_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     patient: Mapped[Patient] = relationship()
-    trainee: Mapped[Trainee] = relationship()
+    trainee: Mapped["Doctor"] = relationship(foreign_keys=[trainee_id])
     verifier: Mapped["Doctor | None"] = relationship(foreign_keys=[verified_by])
 
 
@@ -840,7 +846,7 @@ class Referral(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
-    trainee_id: Mapped[int] = mapped_column(ForeignKey("trainees.id"), index=True)
+    trainee_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)         # the junior doctor (the old name is kept)
     doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
     history_id: Mapped[int] = mapped_column(ForeignKey("trainee_histories.id"), index=True)
     reason: Mapped[str] = mapped_column(String(300))
@@ -857,8 +863,8 @@ class Referral(Base):
     supervisor_note: Mapped[str | None] = mapped_column(String(500))
 
     patient: Mapped[Patient] = relationship()
-    trainee: Mapped[Trainee] = relationship()
-    doctor: Mapped[Doctor] = relationship()
+    trainee: Mapped["Doctor"] = relationship(foreign_keys=[trainee_id])
+    doctor: Mapped[Doctor] = relationship(foreign_keys=[doctor_id])
     history: Mapped[TraineeHistory] = relationship()
 
 
@@ -1509,3 +1515,25 @@ class NumberCounter(Base):
     branch_id: Mapped[int] = mapped_column(ForeignKey("branches.id"))
     year: Mapped[int] = mapped_column(Integer)
     last_number: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class CountersignRequest(Base):
+    """Something a junior doctor prepared (a prescription, an order, a discharge summary) that waits for the supervising consultant. The original is kept."""
+    __tablename__ = "countersign_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kind: Mapped[str] = mapped_column(String(20), index=True)                      # PRESCRIPTION / ORDER / DISCHARGE_SUMMARY
+    item_id: Mapped[int] = mapped_column(Integer, index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    requested_by: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    supervisor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"), index=True)
+    status: Mapped[str] = mapped_column(String(10), default="PENDING", index=True)  # PENDING / APPROVED / EDITED / RETURNED
+    summary: Mapped[str | None] = mapped_column(String(300))                         # what the supervisor sees in the list
+    original_json: Mapped[str | None] = mapped_column(Text)                          # the junior doctor's version, kept when the consultant edits
+    comment: Mapped[str | None] = mapped_column(String(500))
+    decided_by: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    patient: Mapped[Patient] = relationship()
+    requester: Mapped["Doctor"] = relationship(foreign_keys=[requested_by])

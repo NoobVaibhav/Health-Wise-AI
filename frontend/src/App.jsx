@@ -56,6 +56,7 @@ import OpdQueue from "./pages/doctor/OpdQueue";
 import Consultation from "./pages/doctor/Consultation";
 import Inpatients, { InpatientDetail } from "./pages/doctor/Inpatients";
 import ReferralRequests from "./pages/doctor/ReferralRequests";
+import Countersign from "./pages/doctor/Countersign";
 import Emergency from "./pages/shared/Emergency";
 import Beds from "./pages/shared/Beds";
 import { NurseChart, NurseDashboard } from "./pages/nurse/Nurse";
@@ -93,7 +94,6 @@ export default function App() {
             <Route path="employees" element={<StaffManager kind="employees" />} />
             <Route path="pharmacy-staff" element={<StaffManager kind="pharmacy-staff" />} />
             <Route path="lab-staff" element={<StaffManager kind="lab-staff" />} />
-            <Route path="trainees" element={<StaffManager kind="trainees" />} />
             <Route path="nurses" element={<StaffManager kind="nurses" />} />
             <Route path="beds" element={<Beds />} />
             <Route path="profile" element={<Profile />} />
@@ -122,6 +122,7 @@ export default function App() {
             <Route path="inpatients/:id" element={<InpatientDetail />} />
             <Route path="emergency" element={<Emergency />} />
             <Route path="referral-requests" element={<ReferralRequests />} />
+            <Route path="countersign" element={<Countersign />} />
             <Route path="beds" element={<Beds />} />
             <Route path="notes" element={<DoctorNotes />} />
             <Route path="recommendations" element={<DoctorRecommendations />} />
@@ -152,7 +153,7 @@ export default function App() {
             <Route path="profile" element={<Profile />} />
           </Route>
 
-          <Route path="/trainee" element={<RoleRoute roles={["TRAINEE"]} />}>
+          <Route path="/trainee" element={<RoleRoute roles={["DOCTOR"]} />}>
             <Route index element={<TraineeDashboard />} />
             <Route path="take-history" element={<TraineeTakeHistory />} />
             <Route path="take-history/:patientId" element={<TraineeTakeHistory />} />

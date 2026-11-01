@@ -1,4 +1,4 @@
-"""Trainee workspace: which patients a trainee may work on, the history drafts, the doctor suggestion and the referral."""
+"""Junior doctors (interns and residents): which patients they may work on, the history drafts, the doctor suggestion and the referral."""
 import json
 from datetime import date, datetime, timedelta, timezone
 
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.permissions import forbidden
 from app.database.models import (
-    Appointment, Department, Doctor, Patient, Referral, Trainee, TraineeHistory, TraineeHistoryRevision, User,
+    Appointment, Department, Doctor, Patient, Referral, TraineeHistory, TraineeHistoryRevision, User,
 )
 from app.schemas.trainee import TraineeHistoryData
 from app.services import referral_rules
@@ -22,12 +22,12 @@ def now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-def type_label(trainee: Trainee) -> str:
-    return "Intern" if trainee.trainee_type == "INTERN" else "PG"
+def type_label(trainee: Doctor) -> str:
+    return {"INTERN": "Intern", "PG_RESIDENT": "PG Resident", "SENIOR_RESIDENT": "Senior Resident"}.get(trainee.current_grade, "Consultant")
 
 
 # ------------------------------------------------------------------ who the trainee may work on
-def scope_query(trainee: Trainee):
+def scope_query(trainee: Doctor):
     """Patients of the trainee's department (their doctor works in it), patients with no doctor yet (just registered by reception), and anybody the
     trainee already started a history for."""
     own = Patient.id.in_(select(TraineeHistory.patient_id).where(TraineeHistory.trainee_id == trainee.id))
@@ -37,7 +37,7 @@ def scope_query(trainee: Trainee):
     return select(Patient).where(or_(*conditions))
 
 
-def patient_in_scope(db: Session, trainee: Trainee, patient_id: int) -> Patient:
+def patient_in_scope(db: Session, trainee: Doctor, patient_id: int) -> Patient:
     patient = db.get(Patient, patient_id)
     if patient is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found.")
@@ -56,7 +56,7 @@ def basic_patient(patient: Patient) -> dict:
 def history_out(h: TraineeHistory) -> dict:
     return {
         "id": h.id, "patient_id": h.patient_id, "patient_name": h.patient.user.full_name, "patient_code": h.patient.patient_code,
-        "trainee_id": h.trainee_id, "trainee_name": h.trainee.user.full_name, "trainee_type": h.trainee.trainee_type, "status": h.status,
+        "trainee_id": h.trainee_id, "trainee_name": h.trainee.user.full_name, "trainee_type": h.trainee.current_grade, "grade": h.trainee.current_grade, "status": h.status,
         "data": json.loads(h.data_json) if h.data_json else TraineeHistoryData().model_dump(),
         "doctor_notes": h.doctor_notes, "created_at": h.created_at.isoformat(), "updated_at": h.updated_at.isoformat(),
         "completed_at": h.completed_at.isoformat() if h.completed_at else None,
@@ -65,7 +65,7 @@ def history_out(h: TraineeHistory) -> dict:
     }
 
 
-def own_history(db: Session, trainee: Trainee, history_id: int) -> TraineeHistory:
+def own_history(db: Session, trainee: Doctor, history_id: int) -> TraineeHistory:
     """A history of this trainee only; somebody else's gives the same 404 as one that does not exist (no way to probe ids)."""
     h = db.get(TraineeHistory, history_id)
     if h is None or h.trainee_id != trainee.id:
@@ -73,7 +73,7 @@ def own_history(db: Session, trainee: Trainee, history_id: int) -> TraineeHistor
     return h
 
 
-def start_history(db: Session, trainee: Trainee, patient: Patient) -> tuple[TraineeHistory, bool]:
+def start_history(db: Session, trainee: Doctor, patient: Patient) -> tuple[TraineeHistory, bool]:
     """The open draft of this trainee for this patient (a second tap continues it), else a new one."""
     existing = db.scalar(select(TraineeHistory).where(TraineeHistory.trainee_id == trainee.id, TraineeHistory.patient_id == patient.id,
                                                       TraineeHistory.status == "DRAFT").order_by(TraineeHistory.id.desc()))
@@ -143,9 +143,9 @@ def doctor_card(db: Session, doctor: Doctor) -> dict:
 
 
 def doctors_of_department(db: Session, department_id: int) -> list[dict]:
-    rows = db.scalars(select(Doctor).join(User, Doctor.user_id == User.id).where(Doctor.department_id == department_id, User.is_active.is_(True))
-                      .order_by(User.full_name)).all()
-    return [doctor_card(db, d) for d in rows]
+    rows = db.scalars(select(Doctor).join(User, Doctor.user_id == User.id).where(Doctor.department_id == department_id, User.is_active.is_(True),
+                                                                              or_(Doctor.grade == "CONSULTANT", Doctor.grade.is_(None))).order_by(User.full_name)).all()
+    return [doctor_card(db, d) for d in rows]          # patients are referred to consultants
 
 
 def suggestion(db: Session, h: TraineeHistory) -> dict:
@@ -161,7 +161,7 @@ def suggestion(db: Session, h: TraineeHistory) -> dict:
             "specialization": rule["specialization"], "reason": rule["reason"], "matched": rule["matched"], "doctors": doctors}
 
 
-def create_referral(db: Session, trainee: Trainee, h: TraineeHistory, doctor: Doctor, reason: str, urgent: bool, suggested_department_id: int | None,
+def create_referral(db: Session, trainee: Doctor, h: TraineeHistory, doctor: Doctor, reason: str, urgent: bool, suggested_department_id: int | None,
                     book_at: datetime | None, user: User) -> Referral:
     if h.status not in ("COMPLETE", "VERIFIED"):
         raise HTTPException(409, "Please complete the history before choosing a doctor.")
@@ -204,7 +204,7 @@ def create_referral(db: Session, trainee: Trainee, h: TraineeHistory, doctor: Do
 def referral_out(r: Referral) -> dict:
     return {
         "id": r.id, "patient_id": r.patient_id, "patient_name": r.patient.user.full_name, "patient_code": r.patient.patient_code,
-        "trainee_name": r.trainee.user.full_name, "trainee_type": r.trainee.trainee_type, "doctor_id": r.doctor_id, "doctor_name": r.doctor.user.full_name,
+        "trainee_name": r.trainee.user.full_name, "trainee_type": r.trainee.current_grade, "grade": r.trainee.current_grade, "doctor_id": r.doctor_id, "doctor_name": r.doctor.user.full_name,
         "history_id": r.history_id, "reason": r.reason, "urgent": r.urgent, "status": r.status, "status_label": STATUS_LABEL[r.status],
         "overridden": r.overridden, "appointment_id": r.appointment_id, "created_at": r.created_at.isoformat(),
         "seen_at": r.seen_at.isoformat() if r.seen_at else None, "completed_at": r.completed_at.isoformat() if r.completed_at else None,
@@ -213,7 +213,7 @@ def referral_out(r: Referral) -> dict:
     }
 
 
-def trainee_dashboard(db: Session, trainee: Trainee) -> dict:
+def trainee_dashboard(db: Session, trainee: Doctor) -> dict:
     start, _ = _day_range()
     seen_today = select(TraineeHistory.patient_id).where(TraineeHistory.trainee_id == trainee.id, TraineeHistory.created_at >= start)
     waiting = db.scalars(scope_query(trainee).where(~Patient.id.in_(seen_today)).order_by(Patient.id.desc()).limit(10)).all()
@@ -225,5 +225,5 @@ def trainee_dashboard(db: Session, trainee: Trainee) -> dict:
     recent = db.scalars(select(Referral).where(Referral.trainee_id == trainee.id).order_by(Referral.id.desc()).limit(5)).all()
     return {"waiting_patients": [basic_patient(p) for p in waiting], "waiting_count": len(waiting), "histories_today": taken_today, "referrals_today": referrals_today,
             "drafts": [history_out(d) for d in drafts], "recent_referrals": [referral_out(r) for r in recent],
-            "trainee": {"type": trainee.trainee_type, "department_id": trainee.department_id, "department_name": trainee.department.name if trainee.department else None,
-                        "year_branch": trainee.year_branch, "supervisor": trainee.supervisor.user.full_name if trainee.supervisor else None}}
+            "trainee": {"type": trainee.current_grade, "grade": trainee.current_grade, "pg_year": trainee.pg_year, "department_id": trainee.department_id, "department_name": trainee.department.name if trainee.department else None,
+                        "year_branch": trainee.pg_branch, "supervisor": trainee.supervisor_name}}

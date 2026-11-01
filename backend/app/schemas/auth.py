@@ -53,6 +53,7 @@ class UserOut(BaseModel):
     must_change_password: bool = False
     has_avatar: bool = False
     avatar_version: str | None = None      # changes whenever the picture changes (so browsers reload it)
+    grade: str | None = None               # a doctor's grade (INTERN, PG_RESIDENT, SENIOR_RESIDENT, CONSULTANT)
 
 
 class TokenResponse(BaseModel):
@@ -71,10 +72,12 @@ class StaffCreate(BaseModel):
     department_id: PositiveId | None = None
     specialization_id: PositiveId | None = None
     specialization: opt_text(120) = None         # old free text, still accepted when no specialization_id is sent
-    # trainee (intern or PG student); the department above is required for them
-    trainee_type: Literal["INTERN", "PG_STUDENT"] | None = None
-    year_branch: opt_text(120) = None
+    # the grade of a doctor (empty = consultant). A junior doctor needs the department above and a supervising consultant of that department.
+    grade: Literal["INTERN", "PG_RESIDENT", "SENIOR_RESIDENT", "CONSULTANT"] | None = None
+    pg_year: int | None = Field(default=None, ge=1, le=3)
+    pg_branch: opt_text(120) = None
     supervisor_id: PositiveId | None = None
+    can_prescribe_independently: bool = False
     # employee
     designation: opt_text(100) = None
     # pharmacy
@@ -99,6 +102,11 @@ class UserUpdate(BaseModel):
     full_name: PersonName | None = None
     department_id: PositiveId | None = None         # doctors only; sent together with specialization_id
     specialization_id: PositiveId | None = None
+    can_prescribe_independently: bool | None = None  # doctors only, the administrator only
+    grade: Literal["INTERN", "PG_RESIDENT", "SENIOR_RESIDENT", "CONSULTANT"] | None = None
+    pg_year: int | None = Field(default=None, ge=1, le=3)
+    pg_branch: opt_text(120) = None
+    supervisor_id: PositiveId | None = None
 
 
 class DepartmentCreate(BaseModel):

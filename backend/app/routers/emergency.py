@@ -13,7 +13,7 @@ from app.core.security import hash_password
 from app.database.connection import get_db
 from app.database.models import Bed, ClinicalAlert, ClinicalOrder, Doctor, EdTimelineEntry, EdVisit, Patient, User, VitalSet
 from app.schemas.clinical import AssignIn, DispositionIn, EdVisitIn, OrderIn, TimelineIn, TriageIn
-from app.services import audit_service, encounter_service as enc, hospital_service, ipd_service as ipd, registry_service
+from app.services import audit_service, encounter_service as enc, grade_service, hospital_service, ipd_service as ipd, registry_service
 from app.services.access_service import permissions_of, require_permission
 from app.utils.validators import PathId
 
@@ -185,8 +185,12 @@ def add_order(visit_id: PathId, data: OrderIn, request: Request, user: User = De
     _clinical(db, user, v)
     if v.status == "DISPOSED":
         raise HTTPException(409, "This visit is finished.")
-    row = ClinicalOrder(encounter_id=v.encounter_id, patient_id=v.patient_id, kind=data.kind, text=data.text, priority=data.priority, ordered_by=user.id)
+    doctor = get_doctor_profile(db, user)
+    row = ClinicalOrder(encounter_id=v.encounter_id, patient_id=v.patient_id, kind=data.kind, text=data.text, priority=data.priority, ordered_by=user.id, status=grade_service.order_status(doctor))
     db.add(row)
+    db.flush()
+    if row.status == "DRAFT":
+        grade_service.request_countersign(db, "ORDER", row.id, v.patient_id, doctor, f"Emergency {data.kind.lower()} order: {data.text}")
     _timeline(db, v, "ORDER", f"{data.kind.title()} ordered ({data.priority.lower()}): {data.text}", user)
     db.commit()
     audit_service.log_action(db, user, audit_service.ORDER_PLACED, "clinical_order", row.id, request, f"ED {data.kind} {data.priority}")
@@ -201,6 +205,8 @@ def disposition(visit_id: PathId, data: DispositionIn, request: Request, user: U
     if v.status == "DISPOSED":
         raise HTTPException(409, "This visit is already finished.")
     me = get_doctor_profile(db, user)
+    if me.current_grade == "INTERN":
+        raise HTTPException(403, "An intern does not decide the outcome of an emergency visit. Please ask your consultant.")
     admission = None
     if data.disposition in ("ADMIT", "ICU"):
         doctor = db.get(Doctor, data.attending_doctor_id) if data.attending_doctor_id else (v.encounter.attending_doctor or me)

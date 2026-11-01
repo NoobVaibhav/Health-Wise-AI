@@ -618,7 +618,7 @@ def test_referral_request_rules(client, cw):
 
 
 def test_a_trainee_referral_puts_the_patient_in_the_doctors_opd_queue(client, cw):
-    intern = client.post("/api/admin/trainees", headers=cw.admin, json={"email": "intern@hospital.example.com", "full_name": "Neha Kulkarni", "password": PASSWORD, "department_id": cw.department_id, "trainee_type": "INTERN"})
+    intern = client.post("/api/admin/doctors", headers=cw.admin, json={"email": "intern@hospital.example.com", "full_name": "Neha Kulkarni", "password": PASSWORD, "department_id": cw.department_id, "grade": "INTERN", "supervisor_id": cw.doctor_id})
     assert intern.status_code == 201
     auth = login(client, "intern@hospital.example.com")
     hid = client.post("/api/trainee/histories", headers=auth, json={"patient_id": cw.patient_id}).json()["id"]

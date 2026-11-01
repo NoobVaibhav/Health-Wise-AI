@@ -83,7 +83,7 @@ export function AuthShell({ title, subtitle, children, shake = false, onShakeEnd
 // Demo shortcuts are shown ONLY when running `npm run dev` (never in a production build).
 const DEMO = [
   ["Patient", "rahul.patil@healthwise.demo.com"], ["Doctor", "anjali.sharma@healthwise.demo.com"],
-  ["Employee", "priya.joshi@healthwise.demo.com"], ["Pharmacy", "pharmacy@healthwise.demo.com"], ["Lab", "lab@healthwise.demo.com"], ["Nurse", "nurse@healthwise.demo.com"], ["Intern", "intern@healthwise.demo.com"], ["PG student", "pg.student@healthwise.demo.com"], ["Admin", "admin@healthwise.demo.com"],
+  ["Employee", "priya.joshi@healthwise.demo.com"], ["Pharmacy", "pharmacy@healthwise.demo.com"], ["Lab", "lab@healthwise.demo.com"], ["Nurse", "nurse@healthwise.demo.com"], ["Intern", "intern@healthwise.demo.com"], ["PG resident", "pg.student@healthwise.demo.com"], ["Admin", "admin@healthwise.demo.com"],
 ];
 
 // Login: the e-mail must look like an e-mail and the password must not be empty. Whether the account and password are right is the server's answer,

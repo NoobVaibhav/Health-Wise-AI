@@ -4,15 +4,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.permissions import ADMIN, TRAINEE, get_trainee_profile, require_roles
+from app.core.permissions import ADMIN, DOCTOR, get_junior_profile as get_trainee_profile, require_roles
 from app.database.connection import get_db
-from app.database.models import Department, Doctor, Patient, Referral, Trainee, TraineeHistory, User
+from app.database.models import Department, Doctor, Patient, Referral, TraineeHistory, User
 from app.schemas.trainee import ReferralCreate, TraineeHistorySave, TraineeHistoryStart
 from app.services import audit_service, trainee_service as service
 from app.utils.validators import PathId, QueryId, SearchText
 
 router = APIRouter(prefix="/api/trainee", tags=["trainee"])
-trainee_only = require_roles(TRAINEE)
+trainee_only = require_roles(DOCTOR)             # the junior-doctor check (a grade other than consultant) is get_junior_profile
 
 
 @router.get("/dashboard")
@@ -115,9 +115,8 @@ def my_referrals(user: User = Depends(trainee_only), db: Session = Depends(get_d
 @router.get("/admin/overview")
 def admin_overview(_: User = Depends(require_roles(ADMIN)), db: Session = Depends(get_db)):
     """Read-only for the administrator: who the trainees are and the referrals they sent (no medical content)."""
-    trainees = db.scalars(select(Trainee)).all()
+    trainees = db.scalars(select(Doctor).where(Doctor.grade.in_(("INTERN", "PG_RESIDENT", "SENIOR_RESIDENT")))).all()
     referrals = db.scalars(select(Referral).order_by(Referral.id.desc()).limit(100)).all()
-    return {"trainees": [{"id": t.id, "full_name": t.user.full_name, "type": t.trainee_type, "year_branch": t.year_branch,
-                          "department_name": t.department.name if t.department else None,
-                          "supervisor": t.supervisor.user.full_name if t.supervisor else None} for t in trainees],
+    return {"trainees": [{"id": t.id, "full_name": t.user.full_name, "type": t.current_grade, "grade": t.current_grade, "year_branch": t.pg_branch,
+                          "department_name": t.department.name if t.department else None, "supervisor": t.supervisor_name} for t in trainees],
             "referrals": [service.referral_out(r) for r in referrals]}

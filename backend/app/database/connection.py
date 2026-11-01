@@ -43,6 +43,8 @@ def init_db() -> None:
         registry_service.backfill_uhids(db)
         from app.services import encounter_service
         encounter_service.seed_rules(db)
+        from app.services import grade_service
+        grade_service.migrate(db)
         encounter_service.seed_templates(db)
 
 

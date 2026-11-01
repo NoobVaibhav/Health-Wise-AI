@@ -10,7 +10,11 @@ from app.core.permissions import (
 )
 from app.database.models import Doctor, HealthReport, Patient, Prescription, PrescriptionItem, User
 from app.schemas.prescription import PrescriptionCreate
+from app.services import grade_service
 from app.services.serializers import effective_status
+
+
+HIDDEN_STATUSES = ("PENDING_COUNTERSIGN", "RETURNED")      # not for the patient, the pharmacy or the lab until a consultant has countersigned
 
 
 def create_prescription(db: Session, doctor: Doctor, data: PrescriptionCreate) -> Prescription:
@@ -30,13 +34,19 @@ def create_prescription(db: Session, doctor: Doctor, data: PrescriptionCreate) -
             raise HTTPException(422, "The visit does not belong to this patient.")
         if encounter.attending_doctor_id not in (None, doctor.id):
             raise forbidden()
+    rx_status = grade_service.prescription_status(doctor)          # an intern cannot prescribe (403); a resident's waits for the consultant
     rx = Prescription(
         patient_id=patient.id, doctor_id=doctor.id, report_id=data.report_id, encounter_id=data.encounter_id, prescription_date=date.today(),
-        clinical_indication=data.clinical_indication, notes=data.notes, status="ACTIVE",
+        clinical_indication=data.clinical_indication, notes=data.notes, status=rx_status,
         tests_advised="\n".join(data.tests) or None,
     )
     rx.items = [PrescriptionItem(**item.model_dump(), dispense_status="PENDING") for item in data.items]
     db.add(rx)
+    db.flush()
+    if rx_status == "PENDING_COUNTERSIGN":
+        names = ", ".join(item.medicine_name for item in data.items)[:200]
+        grade_service.request_countersign(db, "PRESCRIPTION", rx.id, patient.id, doctor, f"Prescription RX-{rx.id:05d}: {names}",
+                                          {"items": [i.model_dump(mode="json") for i in data.items], "notes": data.notes, "indication": data.clinical_indication})
     db.commit()
     db.refresh(rx)
     return rx
@@ -48,11 +58,11 @@ def list_prescriptions_for_user(db: Session, user: User, q: str | None = None,
     - patient: own      - doctor: the ones they wrote      - pharmacy: all except cancelled (search by q)"""
     query = select(Prescription)
     if user.role == PATIENT:
-        query = query.where(Prescription.patient_id == get_patient_profile(db, user).id)
+        query = query.where(Prescription.patient_id == get_patient_profile(db, user).id, Prescription.status.notin_(HIDDEN_STATUSES))
     elif user.role == DOCTOR:
         query = query.where(Prescription.doctor_id == get_doctor_profile(db, user).id)
     elif user.role == PHARMACY:
-        query = query.where(Prescription.status != "CANCELLED")
+        query = query.where(Prescription.status != "CANCELLED", Prescription.status.notin_(HIDDEN_STATUSES))
     else:
         raise forbidden()
     if patient_id is not None:
@@ -70,13 +80,13 @@ def get_prescription_for_user(db: Session, user: User, prescription_id: int) -> 
     if rx is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No active prescription found.")
     if user.role == PATIENT:
-        if rx.patient.user_id != user.id:
+        if rx.patient.user_id != user.id or rx.status in HIDDEN_STATUSES:
             raise forbidden()
     elif user.role == DOCTOR:
         if rx.doctor_id != get_doctor_profile(db, user).id:
             raise forbidden()
     elif user.role == PHARMACY:
-        if rx.status == "CANCELLED":
+        if rx.status == "CANCELLED" or rx.status in HIDDEN_STATUSES:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "No active prescription found.")
     else:
         raise forbidden()

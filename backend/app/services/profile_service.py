@@ -21,14 +21,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, TRAINEE, NURSE
-from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, Trainee, Nurse, User
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, NURSE
+from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, Nurse, User
 from app.utils.validators import clean_text, normalise_phone
 from app.schemas.profile import ProfileField, ProfileOut, ProfileUpdate, ProfileUser
 
 ROLE_LABELS = {ADMIN: "Administrator", DOCTOR: "Doctor", EMPLOYEE: "Hospital employee", PATIENT: "Patient",
-               PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", TRAINEE: "Intern / PG student", NURSE: "Nurse"}
-PROFILE_MODEL = {DOCTOR: Doctor, EMPLOYEE: Employee, PATIENT: Patient, PHARMACY: PharmacyStaff, LAB: LabStaff, TRAINEE: Trainee, NURSE: Nurse}
+               PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", NURSE: "Nurse"}
+PROFILE_MODEL = {DOCTOR: Doctor, EMPLOYEE: Employee, PATIENT: Patient, PHARMACY: PharmacyStaff, LAB: LabStaff, NURSE: Nurse}
 PHONE_RE = re.compile(r"^[0-9+\-() ]{7,20}$")
 
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
@@ -60,6 +60,8 @@ FIELDS: dict[str, list[Spec]] = {
     ADMIN: [],
     DOCTOR: [
         Spec("phone", "Phone", editable=True, max_length=20),
+        Spec("grade", "Grade", help="Set by the hospital admin.", getter=lambda d: d.grade_label),
+        Spec("supervisor", "Supervising consultant", help="Set by the hospital admin.", getter=lambda d: d.supervisor_name),
         Spec("specialization", "Specialization", help="Set by the hospital admin.", getter=lambda d: d.specialization_name),
         Spec("department", "Department", help="Set by the hospital admin.", getter=lambda d: d.department.name if d.department else None),
         Spec("qualification", "Qualification (for example MBBS, MD)", editable=True),
@@ -87,13 +89,6 @@ FIELDS: dict[str, list[Spec]] = {
         Spec("phone", "Phone", editable=True, max_length=20),
         Spec("designation", "Job title", help="Set by the hospital admin."),
         Spec("registration_number", "Nursing registration number", editable=True, max_length=50),
-    ],
-    TRAINEE: [
-        Spec("phone", "Phone", editable=True, max_length=20),
-        Spec("trainee_type", "Role", help="Set by the hospital admin.", getter=lambda t: "Intern" if t.trainee_type == "INTERN" else "PG student"),
-        Spec("year_branch", "Year and branch", help="Set by the hospital admin."),
-        Spec("department", "Department", help="Set by the hospital admin.", getter=lambda t: t.department.name if t.department else None),
-        Spec("supervisor", "Supervising doctor", help="Set by the hospital admin.", getter=lambda t: t.supervisor.user.full_name if t.supervisor else None),
     ],
     PATIENT: [
         Spec("patient_code", "Patient ID"),

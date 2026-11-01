@@ -12,7 +12,7 @@ from app.database.models import (
     Appointment, ClinicalOrder, Consultation, ConsultationAddendum, ConsultationTemplate, Department, Diagnosis, Doctor, Encounter, EncounterCharge, Patient, Prescription, QueueToken, User, VitalSet,
 )
 from app.schemas.clinical import AddendumIn, CheckInIn, ConsultationIn, DiagnosisIn, OrderIn, OrderStatusIn, TemplateIn, VitalsIn, WalkInIn
-from app.services import audit_service, encounter_service as svc
+from app.services import audit_service, encounter_service as svc, grade_service
 from app.services.access_service import permissions_of, require_permission
 from app.utils.validators import PathId, QueryId
 
@@ -204,6 +204,8 @@ def sign(encounter_id: PathId, request: Request, user: User = Depends(consult_pe
     """The doctor reviews and signs. After this the consultation cannot be changed, only added to."""
     encounter = svc.encounter_for_user(db, user, encounter_id, write=True)
     doctor = get_doctor_profile(db, user)
+    if not grade_service.can_sign_consultation(doctor):
+        raise HTTPException(403, "An intern does not sign a consultation. Please save it as a draft for your consultant.")
     consultation = db.scalar(select(Consultation).where(Consultation.encounter_id == encounter.id))
     if consultation is None or consultation.doctor_id != doctor.id:
         raise HTTPException(409, "There is no consultation of yours to sign. Please save it first.")
@@ -244,7 +246,8 @@ def add_diagnosis(encounter_id: PathId, data: DiagnosisIn, user: User = Depends(
     consultation = db.scalar(select(Consultation).where(Consultation.encounter_id == encounter.id))
     if consultation is not None and consultation.status == "SIGNED":
         raise HTTPException(409, "This consultation is signed. Please add an addendum.")
-    row = Diagnosis(encounter_id=encounter.id, patient_id=encounter.patient_id, text=data.text, code=data.code, kind=data.kind, added_by=get_doctor_profile(db, user).id)
+    doctor = get_doctor_profile(db, user)
+    row = Diagnosis(encounter_id=encounter.id, patient_id=encounter.patient_id, text=data.text, code=data.code, kind=grade_service.diagnosis_kind(doctor, data.kind), added_by=doctor.id)
     db.add(row)
     db.commit()
     return {"id": row.id, "text": row.text, "code": row.code, "kind": row.kind}
@@ -270,10 +273,14 @@ def add_order(encounter_id: PathId, data: OrderIn, request: Request, user: User 
     encounter = svc.encounter_for_user(db, user, encounter_id, write=True)
     if encounter.status != "OPEN":
         raise HTTPException(409, "This visit is closed.")
-    row = ClinicalOrder(encounter_id=encounter.id, patient_id=encounter.patient_id, kind=data.kind, text=data.text, priority=data.priority, ordered_by=user.id)
+    doctor = get_doctor_profile(db, user)
+    row = ClinicalOrder(encounter_id=encounter.id, patient_id=encounter.patient_id, kind=data.kind, text=data.text, priority=data.priority, ordered_by=user.id, status=grade_service.order_status(doctor))
     db.add(row)
+    db.flush()
+    if row.status == "DRAFT":                                  # an intern's order waits for the supervising consultant
+        grade_service.request_countersign(db, "ORDER", row.id, encounter.patient_id, doctor, f"{data.kind.title()} order: {data.text}")
     db.commit()
-    audit_service.log_action(db, user, audit_service.ORDER_PLACED, "clinical_order", row.id, request, f"{data.kind} {data.priority}")
+    audit_service.log_action(db, user, audit_service.ORDER_PLACED, "clinical_order", row.id, request, f"{data.kind} {data.priority} {row.status}")
     return {"id": row.id, "kind": row.kind, "text": row.text, "priority": row.priority, "status": row.status}
 
 

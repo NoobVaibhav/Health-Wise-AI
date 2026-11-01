@@ -42,8 +42,8 @@ def tokens(client, world):
     add_report(client, world, "r.txt", report("03/07/2026", "Hemoglobin 12.1 g/dL 13.0 - 17.0"))
     client.post("/api/prescriptions", headers=world.doctor, json={"patient_id": world.patient_id, "clinical_indication": "Check", "items": [
         {"medicine_name": "Tab. Test", "dosage": "5 mg", "frequency": "Daily", "duration": "5 days", "quantity": 5}]})
-    client.post("/api/admin/trainees", headers=world.admin, json={"email": "intern@hospital.example.com", "full_name": "Intern Person", "password": PASSWORD,
-                                                                "department_id": world.department_id, "trainee_type": "INTERN"})
+    client.post("/api/admin/doctors", headers=world.admin, json={"email": "intern@hospital.example.com", "full_name": "Intern Person", "password": PASSWORD,
+                                                                "department_id": world.department_id, "grade": "INTERN", "supervisor_id": world.doctor_id})
     intern = login(client, "intern@hospital.example.com")
     history = client.post("/api/trainee/histories", headers=intern, json={"patient_id": world.patient_id}).json()["id"]      # so id 1 exists for the trainee and the doctor
     client.put(f"/api/trainee/histories/{history}", headers=intern, json={"data": {"chief_complaint": "Fever", "duration": "2 days", "allergies": "NONE"}})

@@ -1,11 +1,11 @@
 import { NavLink } from "react-router-dom";
 import { Circle, HeartPulse, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { ICONS, NAV, ROLE_LABEL } from "./navigation";
+import { ICONS, ROLE_LABEL, menuFor } from "./navigation";
 
 export default function Sidebar({ open, onClose }) {
   const { user, logout } = useAuth();
-  const links = NAV[user.role] || [];
+  const links = menuFor(user);
   const home = links[0]?.[0];
   return (
     <>

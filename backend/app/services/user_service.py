@@ -7,13 +7,13 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, TRAINEE, NURSE
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, NURSE
 from app.core.security import hash_password
 from app.database.models import (
-    AuditLog, Department, Doctor, Employee, HistoryRevision, LabStaff, Patient, PatientAssistantConversation, PharmacyStaff, Trainee, Nurse, User,
+    AuditLog, Department, Doctor, Employee, HistoryRevision, LabStaff, Patient, PatientAssistantConversation, PharmacyStaff, Nurse, User,
 )
 from app.schemas.auth import StaffCreate
-from app.services import catalog_service
+from app.services import catalog_service, grade_service
 from app.schemas.patient import PatientCreate
 
 
@@ -49,40 +49,23 @@ def create_admin(db: Session, email: str, full_name: str, password: str) -> User
     return user
 
 
-def _check_trainee(db: Session, data: StaffCreate) -> None:
-    """422 with a clear sentence when the trainee's details do not fit together."""
-    if data.department_id is None:
-        raise HTTPException(422, "Please choose a department for the trainee.")
-    catalog_service.check_choice(db, data.department_id, None)
-    if data.trainee_type is None:
-        raise HTTPException(422, "Please choose Intern or PG student.")
-    if data.trainee_type == "PG_STUDENT" and not data.year_branch:
-        raise HTTPException(422, "Please enter the year and branch of the PG student, for example MD Medicine, Year 2.")
-    if data.supervisor_id is not None:
-        supervisor = db.get(Doctor, data.supervisor_id)
-        if supervisor is None or not supervisor.user.is_active:
-            raise HTTPException(422, "The selected supervising doctor does not exist.")
-        if supervisor.department_id != data.department_id:
-            raise HTTPException(422, "The supervising doctor must belong to the same department as the trainee.")
-
-
 def create_staff(db: Session, role: str, data: StaffCreate) -> tuple[User, str | None]:
     """Create a doctor, employee or pharmacy staff account."""
     if role == DOCTOR:
         catalog_service.check_choice(db, data.department_id, data.specialization_id)
-    if role == TRAINEE:
-        _check_trainee(db, data)
+        grade_service.check_grade_fields(db, data.grade, data.department_id, data.pg_year, data.pg_branch, data.supervisor_id)
     user, temporary = _new_user(db, data.email, data.full_name, role, data.password)
     if role == DOCTOR:
-        doctor = Doctor(user_id=user.id, department_id=data.department_id, specialization_id=data.specialization_id,
-                        specialization=None if data.specialization_id else data.specialization, phone=data.phone)
+        grade = data.grade or "CONSULTANT"
+        junior = grade != "CONSULTANT"
+        doctor = Doctor(user_id=user.id, department_id=data.department_id, specialization_id=None if grade == "INTERN" else data.specialization_id,
+                        specialization=None if (data.specialization_id or grade == "INTERN") else data.specialization, phone=data.phone, grade=grade,
+                        pg_year=data.pg_year if grade == "PG_RESIDENT" else None, pg_branch=data.pg_branch if grade in ("PG_RESIDENT", "SENIOR_RESIDENT") else None,
+                        supervisor_id=data.supervisor_id if junior else None, can_prescribe_independently=bool(data.can_prescribe_independently) and junior)
         db.add(doctor)
         if not data.specialization_id:
             db.flush()
             catalog_service.backfill_doctors(db)         # old-style free text that matches a listed specialization gets its id
-    elif role == TRAINEE:
-        db.add(Trainee(user_id=user.id, department_id=data.department_id, trainee_type=data.trainee_type,
-                       year_branch=data.year_branch if data.trainee_type == "PG_STUDENT" else None, supervisor_id=data.supervisor_id, phone=data.phone))
     elif role == EMPLOYEE:
         db.add(Employee(user_id=user.id, designation=data.designation, phone=data.phone))
     elif role == PHARMACY:
@@ -135,7 +118,7 @@ def age_from_dob(dob: date | None) -> int | None:
 # ------------------------------------------------------------------ deleting an account
 # An account can be deleted only when NOTHING is linked to it. A person with reports, prescriptions, history, appointments, bills ...
 # can only be deactivated: the medical and billing records must never lose their author or their patient.
-PROFILE_MODELS = (("patients", Patient), ("doctors", Doctor), ("employees", Employee), ("pharmacy_staff", PharmacyStaff), ("lab_staff", LabStaff), ("trainees", Trainee), ("nurses", Nurse))
+PROFILE_MODELS = (("patients", Patient), ("doctors", Doctor), ("employees", Employee), ("pharmacy_staff", PharmacyStaff), ("lab_staff", LabStaff), ("nurses", Nurse))
 # links that do not count: the audit trail is kept (its user link is cleared), and these belong to the patient and are removed with them
 NOT_BLOCKING = {("audit_logs", "user_id"), ("history_revisions", "patient_id"), ("patient_assistant_conversations", "patient_id")}
 WORDS = {"health_reports": "reports", "health_parameters": "test results", "appointments": "appointments", "prescriptions": "prescriptions", "doctor_notes": "doctor's notes",

@@ -4,18 +4,18 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.services.profile_service import avatar_version
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PHARMACY, TRAINEE, require_roles
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PHARMACY, require_roles
 from app.database.connection import get_db
 from app.database.models import (
     Appointment, AuditLog, Department, Doctor, DoctorNote, DoctorRecommendation, Employee, HealthReport, Patient,
-    LabStaff, Nurse, PharmacyStaff, Prescription, Trainee, User,
+    LabStaff, Nurse, PharmacyStaff, Prescription, User,
 )
 from app.services.user_service import age_from_dob
 from app.routers.auth import user_out
 from app.schemas.auth import CreatedUserResponse, DepartmentCreate, StaffCreate, UserOut, UserUpdate
-from app.services import audit_service, catalog_service, dashboard_service, user_service
+from app.services import audit_service, catalog_service, dashboard_service, grade_service, user_service
 from app.utils.validators import Limit, PathId, SearchText, one_of
-ROLE_FILTER = one_of("ADMIN", "DOCTOR", "EMPLOYEE", "PATIENT", "PHARMACY", "LAB", "TRAINEE", "NURSE", name="role")
+ROLE_FILTER = one_of("ADMIN", "DOCTOR", "EMPLOYEE", "PATIENT", "PHARMACY", "LAB", "NURSE", name="role")
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 admin_only = require_roles(ADMIN)
@@ -52,7 +52,6 @@ def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(adm
     employees = {e.user_id: e for e in db.scalars(select(Employee))}
     pharmacy = {p.user_id: p for p in db.scalars(select(PharmacyStaff))}
     lab = {l.user_id: l for l in db.scalars(select(LabStaff))}
-    trainees = {t.user_id: t for t in db.scalars(select(Trainee))}
     nurses = {n.user_id: n for n in db.scalars(select(Nurse))}
     patients = {p.user_id: p for p in db.scalars(select(Patient))}
 
@@ -64,8 +63,12 @@ def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(adm
         if u.id in doctors:
             d = doctors[u.id]
             phone = d.phone
-            details = [["Specialization", d.specialization_name], ["Department", d.department.name if d.department else None]]
-            extra = {"department_id": d.department_id, "specialization_id": d.specialization_id, "legacy_specialization": d.specialization if not d.specialization_id else None}
+            from app.core.permissions import GRADE_LABEL
+            grade_text = GRADE_LABEL[d.current_grade] + (f", year {d.pg_year}" if d.pg_year else "") + (f", {d.pg_branch}" if d.pg_branch else "")
+            details = [["Grade", grade_text], ["Specialization", d.specialization_name], ["Department", d.department.name if d.department else None],
+                       ["Supervisor", d.supervisor_name if d.supervisor_id else None]]
+            extra = {"department_id": d.department_id, "specialization_id": d.specialization_id, "legacy_specialization": d.specialization if not d.specialization_id else None,
+                     "grade": d.current_grade, "pg_year": d.pg_year, "pg_branch": d.pg_branch, "supervisor_id": d.supervisor_id, "can_prescribe_independently": bool(d.can_prescribe_independently)}
         elif u.id in employees:
             e = employees[u.id]
             phone = e.phone
@@ -74,12 +77,6 @@ def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(adm
             ph = pharmacy[u.id]
             phone = ph.phone
             details = [["Pharmacy", ph.pharmacy_name]]
-        elif u.id in trainees:
-            t = trainees[u.id]
-            phone = t.phone
-            details = [["Type", "Intern" if t.trainee_type == "INTERN" else "PG student"], ["Year / branch", t.year_branch],
-                       ["Department", t.department.name if t.department else None], ["Supervisor", t.supervisor.user.full_name if t.supervisor else None]]
-            extra = {"department_id": t.department_id, "trainee_type": t.trainee_type, "supervisor_id": t.supervisor_id}
         elif u.id in nurses:
             n = nurses[u.id]
             phone = n.phone
@@ -118,12 +115,6 @@ def create_doctor(data: StaffCreate, request: Request, admin: User = Depends(adm
 @router.post("/nurses", response_model=CreatedUserResponse, status_code=status.HTTP_201_CREATED)
 def create_nurse(data: StaffCreate, request: Request, admin: User = Depends(admin_only), db: Session = Depends(get_db)):
     return _create(NURSE, data, admin, request, db)
-
-
-@router.post("/trainees", response_model=CreatedUserResponse, status_code=status.HTTP_201_CREATED)
-def create_trainee(data: StaffCreate, request: Request, admin: User = Depends(admin_only), db: Session = Depends(get_db)):
-    """An intern or a PG student: takes patient histories and refers patients to doctors."""
-    return _create(TRAINEE, data, admin, request, db)
 
 
 @router.post("/employees", response_model=CreatedUserResponse, status_code=status.HTTP_201_CREATED)
@@ -165,6 +156,22 @@ def update_user(user_id: PathId, data: UserUpdate, request: Request, admin: User
         doctor.specialization_id = data.specialization_id
         if data.specialization_id:
             doctor.specialization = None
+    grade_fields = {"can_prescribe_independently", "grade", "pg_year", "pg_branch", "supervisor_id"} & data.model_fields_set
+    if grade_fields:
+        doctor = db.scalar(select(Doctor).where(Doctor.user_id == user.id))
+        if doctor is None:
+            raise HTTPException(422, "Only a doctor has a grade.")
+        new_grade = data.grade if "grade" in data.model_fields_set and data.grade else doctor.current_grade
+        pg_year = data.pg_year if "pg_year" in data.model_fields_set else doctor.pg_year
+        pg_branch = data.pg_branch if "pg_branch" in data.model_fields_set else doctor.pg_branch
+        supervisor_id = data.supervisor_id if "supervisor_id" in data.model_fields_set else doctor.supervisor_id
+        grade_service.check_grade_fields(db, new_grade, doctor.department_id, pg_year, pg_branch, supervisor_id)
+        if new_grade != doctor.current_grade:
+            audit_service.log_action(db, admin, audit_service.GRADE_CHANGED, "doctor", doctor.id, request, f"{doctor.current_grade} to {new_grade}")
+        doctor.grade, doctor.pg_year, doctor.pg_branch = new_grade, pg_year if new_grade == "PG_RESIDENT" else None, pg_branch if new_grade in ("PG_RESIDENT", "SENIOR_RESIDENT") else None
+        doctor.supervisor_id = supervisor_id if new_grade != "CONSULTANT" else None
+        if "can_prescribe_independently" in data.model_fields_set and data.can_prescribe_independently is not None:
+            doctor.can_prescribe_independently = bool(data.can_prescribe_independently) and new_grade != "CONSULTANT"     # a consultant needs no flag
     db.commit()
     audit_service.log_action(db, admin, audit_service.USER_CHANGED, "user", user.id, request,
                              f"active={user.is_active}")

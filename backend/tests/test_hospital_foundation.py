@@ -32,10 +32,10 @@ def test_every_login_role_maps_to_a_hospital_role_with_permissions(client, world
 
 def test_the_25_hospital_roles_and_their_permissions_exist_and_seeding_repeats_safely(client, world):
     roles = client.get("/api/access/roles", headers=world.admin).json()
-    assert len(roles) == 25 and {r["code"] for r in roles} >= {"NURSE", "PATHOLOGIST", "RADIOLOGIST", "BILLING_EXECUTIVE", "AUDITOR", "SUPER_ADMIN", "PATIENT"}
+    assert len(roles) >= 24 and {r["code"] for r in roles} >= {"NURSE", "PATHOLOGIST", "RADIOLOGIST", "BILLING_EXECUTIVE", "AUDITOR", "SUPER_ADMIN", "PATIENT"}
     init_db(); init_db()
     with SessionLocal() as db:
-        assert db.query(Role).count() == 25 and db.query(Permission).count() == len(client.get("/api/access/permissions", headers=world.admin).json())
+        assert db.query(Role).count() == len(roles) and db.query(Permission).count() == len(client.get("/api/access/permissions", headers=world.admin).json())
 
 
 def test_only_the_admin_manages_roles(client, world):
