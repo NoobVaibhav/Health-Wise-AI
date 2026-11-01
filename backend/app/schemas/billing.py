@@ -65,6 +65,7 @@ class SaleCreate(BaseModel):
 
 
 class SaleItemOut(BaseModel):
+    id: int | None = None   # the line of the bill (needed to return a medicine)
     medicine_name: str
     batch_number: str | None
     expiry_date: date | None

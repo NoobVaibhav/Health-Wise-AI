@@ -366,6 +366,11 @@ class MedicineInventory(Base):
     unit_price: Mapped[float | None] = mapped_column(Float)       # selling price of ONE unit, before GST
     barcode: Mapped[str | None] = mapped_column(String(64), index=True)   # printed on the pack (or made by the system)
     gst_percent: Mapped[float | None] = mapped_column(Float)
+    generic_name: Mapped[str | None] = mapped_column(String(200), index=True)      # the generic (salt) name; the medicine_name is the brand or trade name
+    reorder_level: Mapped[int | None] = mapped_column(Integer)                      # below this total quantity of the medicine the pharmacy is warned
+    supplier_id: Mapped[int | None] = mapped_column(ForeignKey("suppliers.id"))
+    recalled: Mapped[bool | None] = mapped_column(Boolean, default=False)           # a recalled batch is never dispensed or sold
+    recall_reason: Mapped[str | None] = mapped_column(String(300))
 
 
 class Sale(Base):
@@ -1674,3 +1679,192 @@ class RadiologyAttachment(Base):
     stored_path: Mapped[str] = mapped_column(String(300))
     uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+# ------------------------------------------------------------------ Phase 5A: stock history, suppliers, returns, IPD medicine requests, inventory and procurement
+class Supplier(Base):
+    __tablename__ = "suppliers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(150), unique=True)
+    contact_person: Mapped[str | None] = mapped_column(String(100))
+    phone: Mapped[str | None] = mapped_column(String(30))
+    email: Mapped[str | None] = mapped_column(String(254))
+    gstin: Mapped[str | None] = mapped_column(String(20))
+    address: Mapped[str | None] = mapped_column(String(300))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class InventoryItem(Base):
+    """A consumable, a piece of equipment or a supply kept in the hospital store (medicines have their own batches in MedicineInventory)."""
+    __tablename__ = "inventory_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(30), unique=True)
+    name: Mapped[str] = mapped_column(String(200), index=True)
+    category: Mapped[str] = mapped_column(String(12))                                  # CONSUMABLE / EQUIPMENT / SUPPLY
+    unit: Mapped[str] = mapped_column(String(20), default="piece")
+    quantity: Mapped[int] = mapped_column(Integer, default=0)
+    min_level: Mapped[int] = mapped_column(Integer, default=0)
+    reorder_quantity: Mapped[int] = mapped_column(Integer, default=0)
+    supplier_id: Mapped[int | None] = mapped_column(ForeignKey("suppliers.id"))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class StockMovement(Base):
+    """Every change of stock, once, never edited or deleted: a receipt, a dispense, a sale, a return, an adjustment, a write-off, a recall, a consumable used in theatre."""
+    __tablename__ = "stock_movements"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    medicine_inventory_id: Mapped[int | None] = mapped_column(ForeignKey("medicine_inventory.id"), index=True)
+    inventory_item_id: Mapped[int | None] = mapped_column(ForeignKey("inventory_items.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(16), index=True)                         # RECEIPT / DISPENSE / SALE / RETURN / ADJUST / WRITE_OFF / RECALL / ISSUE / CONSUME
+    quantity: Mapped[int] = mapped_column(Integer)                                     # signed: + into stock, - out of stock
+    balance_after: Mapped[int] = mapped_column(Integer)
+    reference_type: Mapped[str | None] = mapped_column(String(20))
+    reference_id: Mapped[int | None] = mapped_column(Integer)
+    note: Mapped[str | None] = mapped_column(String(300))
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class MedicineReturn(Base):
+    __tablename__ = "medicine_returns"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    sale_item_id: Mapped[int] = mapped_column(ForeignKey("sale_items.id"), index=True)
+    quantity: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(String(300))
+    restocked: Mapped[bool] = mapped_column(Boolean, default=False)                   # a returned medicine goes back on the shelf only if it is still in date and not recalled
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class MedicineRequest(Base):
+    """A ward asks the pharmacy for medicines for an admitted patient. Requested, issued (dispensed) and given (MAR) stay three different things."""
+    __tablename__ = "medicine_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admission_id: Mapped[int] = mapped_column(ForeignKey("admissions.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    requested_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[str] = mapped_column(String(12), default="PENDING", index=True)    # PENDING / ISSUED / PARTIAL / REJECTED / CANCELLED
+    note: Mapped[str | None] = mapped_column(String(300))
+    decided_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime)
+    decision_note: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    items: Mapped[list["MedicineRequestItem"]] = relationship(cascade="all, delete-orphan", order_by="MedicineRequestItem.id")
+    patient: Mapped[Patient] = relationship()
+
+
+class MedicineRequestItem(Base):
+    __tablename__ = "medicine_request_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    request_id: Mapped[int] = mapped_column(ForeignKey("medicine_requests.id"), index=True)
+    medicine_name: Mapped[str] = mapped_column(String(200))
+    quantity: Mapped[int] = mapped_column(Integer)
+    issued_quantity: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class Requisition(Base):
+    __tablename__ = "requisitions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str] = mapped_column(String(20), unique=True)
+    requested_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"))
+    status: Mapped[str] = mapped_column(String(10), default="PENDING", index=True)    # PENDING / APPROVED / REJECTED / ORDERED
+    note: Mapped[str | None] = mapped_column(String(300))
+    decided_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime)
+    decision_note: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    items: Mapped[list["RequisitionItem"]] = relationship(cascade="all, delete-orphan", order_by="RequisitionItem.id")
+
+
+class RequisitionItem(Base):
+    __tablename__ = "requisition_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    requisition_id: Mapped[int] = mapped_column(ForeignKey("requisitions.id"), index=True)
+    inventory_item_id: Mapped[int | None] = mapped_column(ForeignKey("inventory_items.id"))
+    medicine_name: Mapped[str | None] = mapped_column(String(200))
+    quantity: Mapped[int] = mapped_column(Integer)
+
+
+class PurchaseOrder(Base):
+    __tablename__ = "purchase_orders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str] = mapped_column(String(20), unique=True)
+    supplier_id: Mapped[int] = mapped_column(ForeignKey("suppliers.id"))
+    requisition_id: Mapped[int | None] = mapped_column(ForeignKey("requisitions.id"))
+    status: Mapped[str] = mapped_column(String(10), default="DRAFT", index=True)      # DRAFT / APPROVED / PARTIAL / RECEIVED / CANCELLED
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    note: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    supplier: Mapped[Supplier] = relationship()
+    items: Mapped[list["PurchaseOrderItem"]] = relationship(cascade="all, delete-orphan", order_by="PurchaseOrderItem.id")
+
+
+class PurchaseOrderItem(Base):
+    __tablename__ = "purchase_order_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("purchase_orders.id"), index=True)
+    inventory_item_id: Mapped[int | None] = mapped_column(ForeignKey("inventory_items.id"))
+    medicine_name: Mapped[str | None] = mapped_column(String(200))
+    ordered_quantity: Mapped[int] = mapped_column(Integer)
+    received_quantity: Mapped[int] = mapped_column(Integer, default=0)
+    unit_cost: Mapped[float | None] = mapped_column(Float)
+
+
+class GoodsReceipt(Base):
+    """Goods received against a purchase order (a GRN). A receipt adds stock once; a receipt is never edited."""
+    __tablename__ = "goods_receipts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str] = mapped_column(String(20), unique=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("purchase_orders.id"), index=True)
+    received_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    received_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    note: Mapped[str | None] = mapped_column(String(300))
+
+    items: Mapped[list["GoodsReceiptItem"]] = relationship(cascade="all, delete-orphan", order_by="GoodsReceiptItem.id")
+
+
+class GoodsReceiptItem(Base):
+    __tablename__ = "goods_receipt_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    receipt_id: Mapped[int] = mapped_column(ForeignKey("goods_receipts.id"), index=True)
+    order_item_id: Mapped[int] = mapped_column(ForeignKey("purchase_order_items.id"))
+    quantity: Mapped[int] = mapped_column(Integer)
+    batch_number: Mapped[str | None] = mapped_column(String(50))
+    expiry_date: Mapped[date | None] = mapped_column(Date)
+    selling_price: Mapped[float | None] = mapped_column(Float)                         # medicines only: the price per unit before GST
+    gst_percent: Mapped[float | None] = mapped_column(Float)
+
+
+class StockCount(Base):
+    """A physical count. A difference changes the stock only after a second person approves it, and always with a reason."""
+    __tablename__ = "stock_counts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    medicine_inventory_id: Mapped[int | None] = mapped_column(ForeignKey("medicine_inventory.id"))
+    inventory_item_id: Mapped[int | None] = mapped_column(ForeignKey("inventory_items.id"))
+    system_quantity: Mapped[int] = mapped_column(Integer)
+    counted_quantity: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str | None] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(10), default="PENDING", index=True)   # PENDING / APPLIED / REJECTED
+    counted_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    counted_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    decided_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime)

@@ -13,15 +13,16 @@ from sqlalchemy.orm import Session
 
 from app.database.models import MedicineDispensing, MedicineInventory, PharmacyStaff, Prescription, PrescriptionItem
 from app.schemas.pharmacy import DispenseRequest
+from app.services import stock_service
 from app.services.prescription_service import is_open
 from app.services.serializers import dispensed_quantity, effective_status
 
 
-def _deduct_stock(db: Session, medicine_name: str, quantity: int) -> None:
+def _deduct_stock(db: Session, medicine_name: str, quantity: int, rx_id: int | None = None, user_id: int | None = None) -> None:
     """Take `quantity` from inventory batches (earliest expiry first). Does nothing if no stock is tracked."""
     batches = db.scalars(
         select(MedicineInventory).where(func.lower(MedicineInventory.medicine_name) == medicine_name.lower(),
-                                        MedicineInventory.quantity > 0)
+                                        MedicineInventory.quantity > 0, MedicineInventory.recalled.isnot(True))
         .order_by(MedicineInventory.expiry_date.is_(None), MedicineInventory.expiry_date)
     ).all()
     tracked = db.scalar(select(func.count(MedicineInventory.id)).where(
@@ -38,6 +39,7 @@ def _deduct_stock(db: Session, medicine_name: str, quantity: int) -> None:
             continue  # never dispense expired stock
         take = min(batch.quantity, remaining)
         batch.quantity -= take
+        stock_service.record(db, medicine=batch, kind="DISPENSE", quantity=-take, reference_type="prescription", reference_id=rx_id, user_id=user_id)
         remaining -= take
         if remaining == 0:
             break
@@ -80,7 +82,7 @@ def dispense(db: Session, staff: PharmacyStaff, data: DispenseRequest, *, deduct
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 f"Only {remaining} remaining to dispense for {item.medicine_name}.")
         if deduct_stock:
-            _deduct_stock(db, item.medicine_name, quantity)
+            _deduct_stock(db, item.medicine_name, quantity, rx.id, staff.user_id)
         item.dispense_status = "DISPENSED" if already + quantity >= item.quantity else "PARTIALLY_DISPENSED"
 
     record = MedicineDispensing(

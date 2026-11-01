@@ -49,6 +49,19 @@ PERMISSIONS: dict[str, str] = {
     "ward.manage": "Add wards and beds",
     "template.manage": "Change consultation templates",
     "escalation.manage": "Change the alert thresholds",
+    # Phase 5: pharmacy stock, procurement, operation theatre, blood bank
+    "stock.view": "See medicine stock history, alerts and the ward medicine requests",
+    "stock.manage": "Add suppliers, recall and write off batches, count stock, issue medicines to wards",
+    "inventory.manage": "Manage the hospital store (consumables, equipment, supplies)",
+    "procure.request": "Raise a requisition for items or medicines",
+    "procure.order": "Make purchase orders and receive goods",
+    "procure.approve": "Approve requisitions and purchase orders",
+    "ot.view": "See the operation theatre schedule",
+    "ot.schedule": "Book surgeries in the operation theatre",
+    "ot.record": "Fill the theatre records: pre-op, consent, checklist, notes, consumables",
+    "bloodbank.manage": "Run the blood bank: donors, units, cross-match, issue",
+    "bloodbank.request": "Ask the blood bank for blood for a patient",
+    "transfusion.give": "Give a transfusion and record it",
 }
 ALL = list(PERMISSIONS)
 DOCTOR_PERMISSIONS = ["hospital.view", "service.view", "breakglass.use", "opd.queue", "consult.write", "orders.write", "vitals.record", "alert.ack", "ed.register", "ed.triage", "ed.treat",
@@ -81,6 +94,23 @@ ROLES: dict[str, tuple[str, str, list[str]]] = {
     "PATIENT": ("Patient", "A patient sees only their own data", []),
     "AUDITOR": ("Hospital Auditor", "Reads audit trails and reviews emergency access", ["hospital.view", "audit.view", "breakglass.review"]),
 }
+
+_EXTRA = {
+    "PHARMACIST": ["stock.view", "stock.manage", "procure.request", "procure.order"],
+    "PHARMACY_ASSISTANT": ["stock.view"],
+    "INVENTORY_MANAGER": ["stock.view", "stock.manage", "inventory.manage", "procure.request", "procure.order", "procure.approve"],
+    "DOCTOR": ["ot.view", "ot.schedule", "bloodbank.request"],
+    "SPECIALIST_DOCTOR": ["ot.view", "ot.schedule", "bloodbank.request"],
+    "NURSE": ["ot.view", "procure.request", "transfusion.give"],
+    "ICU_STAFF": ["transfusion.give", "procure.request"],
+    "WARD_STAFF": ["transfusion.give", "procure.request"],
+    "OT_STAFF": ["ot.view", "ot.schedule", "ot.record", "procure.request", "stock.view"],
+    "BLOOD_BANK_STAFF": ["bloodbank.manage", "procure.request"],
+    "AUDITOR": ["stock.view"],
+}
+for _code, _perms in _EXTRA.items():
+    _name, _description, _have = ROLES[_code]
+    ROLES[_code] = (_name, _description, _have + [p for p in _perms if p not in _have])
 
 # the login role -> the hospital role it means
 BASE_ROLE = {ADMIN: "HOSPITAL_ADMIN", DOCTOR: "DOCTOR", EMPLOYEE: "RECEPTIONIST", PATIENT: "PATIENT", PHARMACY: "PHARMACIST", LAB: "LAB_TECHNICIAN", NURSE: "NURSE", RADIOLOGY: "RADIOLOGY_TECHNICIAN"}

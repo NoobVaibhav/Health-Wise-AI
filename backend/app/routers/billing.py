@@ -33,8 +33,8 @@ def lookup_barcode(code: str, _: User = Depends(pharmacy_only), db: Session = De
 
 
 @router.post("/inventory/receive", response_model=InventoryOut, status_code=status.HTTP_201_CREATED)
-def receive_stock(data: ReceiveStock, _: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
-    return billing_service.receive_stock(db, data)
+def receive_stock(data: ReceiveStock, user: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
+    return billing_service.receive_stock(db, data, user.id)
 
 
 @router.post("/sales", response_model=SaleOut, status_code=status.HTTP_201_CREATED)

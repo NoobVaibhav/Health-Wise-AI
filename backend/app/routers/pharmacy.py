@@ -11,7 +11,7 @@ from app.schemas.pharmacy import (
     DispenseRequest, DispensingOut, InventoryCreate, InventoryOut, InventoryUpdate,
 )
 from app.schemas.prescription import PrescriptionOut
-from app.services import audit_service, dashboard_service, dispensing_service, prescription_service
+from app.services import audit_service, dashboard_service, dispensing_service, prescription_service, stock_service
 from app.services.serializers import prescription_out
 from app.utils.validators import PathId, SearchText, one_of
 STATUS_FILTER = one_of("ACTIVE", "PARTIALLY_DISPENSED", "DISPENSED", "CANCELLED", "EXPIRED", "UNAVAILABLE", name="status")
@@ -77,22 +77,28 @@ def list_inventory(q: SearchText = None, _: User = Depends(pharmacy_only), db: S
 
 
 @router.post("/inventory", response_model=InventoryOut, status_code=status.HTTP_201_CREATED)
-def add_inventory(data: InventoryCreate, _: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
+def add_inventory(data: InventoryCreate, user: User = Depends(pharmacy_only), db: Session = Depends(get_db)):
     item = MedicineInventory(**data.model_dump())
     db.add(item)
+    db.flush()
+    if item.quantity:
+        stock_service.record(db, medicine=item, kind="RECEIPT", quantity=item.quantity, reference_type="manual", user_id=user.id)
     db.commit()
     db.refresh(item)
     return item
 
 
 @router.put("/inventory/{item_id}", response_model=InventoryOut)
-def update_inventory(item_id: PathId, data: InventoryUpdate, _: User = Depends(pharmacy_only),
+def update_inventory(item_id: PathId, data: InventoryUpdate, user: User = Depends(pharmacy_only),
                      db: Session = Depends(get_db)):
     item = db.get(MedicineInventory, item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Medicine not found in stock.")
+    before = item.quantity
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(item, field, value)
+    if item.quantity != before:
+        stock_service.record(db, medicine=item, kind="ADJUST", quantity=item.quantity - before, reference_type="manual", note="quantity edited by hand", user_id=user.id)
     db.commit()
     db.refresh(item)
     return item

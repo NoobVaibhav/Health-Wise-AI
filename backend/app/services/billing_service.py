@@ -21,13 +21,14 @@ from app.schemas.billing import (
 from app.schemas.pharmacy import DispenseRequest
 from app.services import dispensing_service
 from app.services.prescription_service import is_open
+from app.services import stock_service
 from app.services.serializers import dispensed_quantity
 
 DEFAULT_SHOP = "HealthWise Pharmacy"
 
 
 def _usable(row: MedicineInventory) -> bool:
-    return row.quantity > 0 and (row.expiry_date is None or row.expiry_date >= date.today())
+    return row.quantity > 0 and not row.recalled and (row.expiry_date is None or row.expiry_date >= date.today())
 
 
 def _order(rows: list[MedicineInventory]) -> list[MedicineInventory]:
@@ -68,7 +69,7 @@ def lookup(db: Session, code: str) -> StockLookup:
 
 
 # ------------------------------------------------------------------ adding stock
-def receive_stock(db: Session, data: ReceiveStock) -> MedicineInventory:
+def receive_stock(db: Session, data: ReceiveStock, user_id: int | None = None, reference: tuple[str, int] | None = None) -> MedicineInventory:
     """New delivery. Same product + same batch already on the shelf -> add to it. Otherwise a new batch is created.
     A new batch of a known medicine reuses its barcode; a brand-new medicine without a barcode gets one automatically."""
     barcode = (data.barcode or "").strip() or None
@@ -81,6 +82,7 @@ def receive_stock(db: Session, data: ReceiveStock) -> MedicineInventory:
     existing = next((r for r in batch_rows if (r.batch_number or None) == batch and r.expiry_date == data.expiry_date), None)
     if existing:
         existing.quantity += data.quantity
+        stock_service.record(db, medicine=existing, kind="RECEIPT", quantity=data.quantity, reference_type=reference[0] if reference else "receipt", reference_id=reference[1] if reference else None, user_id=user_id)
         if data.unit_price is not None:
             existing.unit_price = data.unit_price
         if data.gst_percent is not None:
@@ -102,6 +104,7 @@ def receive_stock(db: Session, data: ReceiveStock) -> MedicineInventory:
     db.flush()
     if not item.barcode:
         item.barcode = f"HW{item.id:08d}"
+    stock_service.record(db, medicine=item, kind="RECEIPT", quantity=data.quantity, reference_type=reference[0] if reference else "receipt", reference_id=reference[1] if reference else None, user_id=user_id)
     db.commit()
     db.refresh(item)
     return item
@@ -146,6 +149,7 @@ def create_sale(db: Session, staff: PharmacyStaff, data: SaleCreate) -> Sale:
                 customer_phone=data.customer_phone, prescription_id=data.prescription_id,
                 payment_method=data.payment_method, subtotal=0, discount=0, tax=0, total=0)
     given_for_rx: dict[int, int] = defaultdict(int)
+    moves = []
 
     for line in data.items:
         if line.inventory_id is None and not (line.barcode or "").strip():
@@ -156,7 +160,7 @@ def create_sale(db: Session, staff: PharmacyStaff, data: SaleCreate) -> Sale:
         available = sum(r.quantity for r in usable)
         if available < line.quantity:
             if not usable and any(r.quantity > 0 for r in rows):
-                raise HTTPException(status.HTTP_409_CONFLICT, f"{name} is expired and cannot be sold.")
+                raise HTTPException(status.HTTP_409_CONFLICT, f"{name} is expired or recalled and cannot be sold.")
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 f"Not enough stock for {name}: {available} available, {line.quantity} requested.")
 
@@ -183,6 +187,7 @@ def create_sale(db: Session, staff: PharmacyStaff, data: SaleCreate) -> Sale:
                 expiry_date=row.expiry_date, quantity=take, unit_price=row.unit_price, gst_percent=gst,
                 line_total=net, tax_amount=tax))
             row.quantity -= take
+            moves.append(stock_service.record(db, medicine=row, kind="SALE", quantity=-take, reference_type="sale", user_id=staff.user_id))
             remaining -= take
         if line.prescription_item_id is not None:
             given_for_rx[line.prescription_item_id] += line.quantity
@@ -195,6 +200,9 @@ def create_sale(db: Session, staff: PharmacyStaff, data: SaleCreate) -> Sale:
     sale.total = round(sale.subtotal + sale.tax - sale.discount, 2)
     sale.bill_number = _next_bill_number(db)
     db.add(sale)
+    db.flush()
+    for move in moves:
+        move.reference_id = sale.id
 
     # medicines that fill a prescription are also recorded as dispensed (stock was already taken above)
     for rx_item_id, quantity in given_for_rx.items():
@@ -290,7 +298,7 @@ def sale_out(sale: Sale) -> SaleOut:
         customer_name=sale.customer_name, customer_phone=sale.customer_phone,
         prescription_code=f"RX-{sale.prescription_id:05d}" if sale.prescription_id else None,
         payment_method=sale.payment_method,
-        items=[SaleItemOut(medicine_name=i.medicine_name, batch_number=i.batch_number, expiry_date=i.expiry_date,
+        items=[SaleItemOut(id=i.id, medicine_name=i.medicine_name, batch_number=i.batch_number, expiry_date=i.expiry_date,
                            quantity=i.quantity, unit_price=i.unit_price, gst_percent=i.gst_percent,
                            line_total=i.line_total, tax_amount=i.tax_amount, amount=round(i.line_total + i.tax_amount, 2))
                for i in sale.items],
