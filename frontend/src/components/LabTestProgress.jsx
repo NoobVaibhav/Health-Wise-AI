@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 import { FlaskConical } from "lucide-react";
 import useFetch from "../hooks/useFetch";
 import { getMyTests, getPatientTests } from "../services/labApi";
+import { markLabSeen } from "../services/diagnosticsApi";
+import useSave from "../hooks/useSave";
+import ResultTable from "./ResultTable";
+import { Button } from "./ui";
 import { Section } from "./HealthCard";
 import { fmtUtc } from "./ui";
 
@@ -10,7 +14,8 @@ const TONE = { ORDERED: "bg-amber-100 text-amber-900", SAMPLE_COLLECTED: "bg-sky
 
 export default function LabTestProgress({ patientId, base }) {
   const doctor = patientId != null;
-  const { data } = useFetch(() => (doctor ? getPatientTests(patientId) : getMyTests()), [patientId]);
+  const { data, reload } = useFetch(() => (doctor ? getPatientTests(patientId) : getMyTests()), [patientId]);
+  const { busy, run } = useSave();
   if (!data || data.length === 0) return null;
   return (
     <Section title="Laboratory tests">
@@ -25,8 +30,11 @@ export default function LabTestProgress({ patientId, base }) {
             </div>
             <div className="flex items-center gap-2">
               <span className={`rounded-full px-3 py-1 text-sm font-bold ${TONE[t.status]}`}>{doctor ? t.status_label : t.status === "COMPLETED" && t.result_reviewed ? "Result ready" : t.status_label}</span>
+              {t.has_critical && doctor && t.result_status === "APPROVED" && <span className="rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-bold text-white">Critical value</span>}
               {t.report_id && <Link to={`${base}/${t.report_id}`} className="text-sm font-bold text-brand-700 hover:underline">Open the result</Link>}
             </div>
+            {t.results?.length > 0 && <div className="w-full pt-2"><ResultTable results={t.results} />
+              {doctor && !t.doctor_seen_at && <Button className="mt-2" variant="secondary" disabled={busy} onClick={async () => { if (await run(() => markLabSeen(t.id), "Marked as seen: the patient can now see it")) reload(); }}>I have seen this result</Button>}</div>}
           </li>))}
       </ul>
     </Section>

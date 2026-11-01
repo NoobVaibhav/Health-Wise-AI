@@ -8,7 +8,7 @@ from datetime import date, timedelta
 
 from sqlalchemy import select
 
-from app.core.permissions import DOCTOR, EMPLOYEE, LAB, NURSE, PHARMACY
+from app.core.permissions import DOCTOR, EMPLOYEE, LAB, NURSE, PHARMACY, RADIOLOGY
 from app.database.connection import SessionLocal, init_db
 from app.database.models import Department, Doctor, MedicineInventory, Bed, ServiceCatalog, Specialization, User, Ward
 from app.schemas.auth import StaffCreate
@@ -16,6 +16,34 @@ from app.schemas.patient import PatientCreate
 from app.services import catalog_service, user_service
 
 DEMO_PASSWORD = "Demo@12345"  # demo accounts only. Change/remove them before any real use.
+
+
+# Typical adult limits so the demo shows flags. They are demo values, NOT medical advice: a hospital sets its own limits (Admin, Diagnostics) with its pathologist.
+DEMO_TESTS = (
+    ("Complete Blood Count", "HAEMATOLOGY", "Blood", (("Haemoglobin", "g/dL", "Automated analyser", 12.0, 16.0, 7.0, 20.0), ("WBC count", "x10^3/uL", "Automated analyser", 4.0, 11.0, 2.0, 30.0),
+                                                       ("Platelet count", "x10^3/uL", "Automated analyser", 150, 450, 50, 1000))),
+    ("Serum Electrolytes", "BIOCHEMISTRY", "Blood", (("Sodium", "mmol/L", "ISE", 135, 145, 120, 160), ("Potassium", "mmol/L", "ISE", 3.5, 5.0, 2.8, 6.0))),
+    ("Blood Glucose (Fasting)", "BIOCHEMISTRY", "Blood", (("Glucose (fasting)", "mg/dL", "GOD-POD", 70, 100, 40, 500),)),
+    ("Serum Creatinine", "BIOCHEMISTRY", "Blood", (("Creatinine", "mg/dL", "Jaffe", 0.6, 1.3, None, 10.0),)),
+    ("Troponin I", "CARDIAC_MARKERS", "Blood", (("Troponin I", "ng/mL", "CLIA", None, 0.04, None, 0.4),)),
+    ("Urine Routine", "URINE", "Urine", ()),
+)
+DEMO_SCANS = (("Chest X-ray", "XRAY"), ("Ultrasound Abdomen", "ULTRASOUND"), ("CT Head", "CT"), ("MRI Brain", "MRI"), ("Mammography", "MAMMOGRAPHY"), ("2D Echo", "ECHO"), ("ECG", "ECG"))
+
+
+def seed_diagnostic_catalogue(db) -> None:
+    from app.database.models import DiagnosticAnalyte, DiagnosticTest
+    if db.scalar(select(DiagnosticTest.id).limit(1)) is not None:
+        return
+    for name, category, sample, analytes in DEMO_TESTS:
+        test = DiagnosticTest(kind="LAB", name=name, category=category, sample_type=sample)
+        db.add(test)
+        db.flush()
+        for order, (aname, unit, method, low, high, clow, chigh) in enumerate(analytes):
+            db.add(DiagnosticAnalyte(test_id=test.id, name=aname, unit=unit, method=method, ref_low=low, ref_high=high, critical_low=clow, critical_high=chigh, sort_order=order))
+    for name, modality in DEMO_SCANS:
+        db.add(DiagnosticTest(kind="RADIOLOGY", name=name, category=modality))
+    db.commit()
 
 
 def main() -> None:
@@ -47,6 +75,13 @@ def main() -> None:
             user_service.create_staff(db, LAB, StaffCreate(
                 email="lab@healthwise.demo.com", full_name="City Lab Technician", password=DEMO_PASSWORD,
                 lab_name="City Diagnostic Lab"))
+        if not exists("pathologist@healthwise.demo.com"):
+            user_service.create_staff(db, LAB, StaffCreate(email="pathologist@healthwise.demo.com", full_name="Dr. Kavita Rane", password=DEMO_PASSWORD, lab_name="City Diagnostic Lab", staff_type="PATHOLOGIST"))
+        if not exists("radiology.tech@healthwise.demo.com"):
+            user_service.create_staff(db, RADIOLOGY, StaffCreate(email="radiology.tech@healthwise.demo.com", full_name="Sunil Gaikwad", password=DEMO_PASSWORD, staff_type="TECHNICIAN"))
+        if not exists("radiologist@healthwise.demo.com"):
+            user_service.create_staff(db, RADIOLOGY, StaffCreate(email="radiologist@healthwise.demo.com", full_name="Dr. Vikram Nair", password=DEMO_PASSWORD, staff_type="RADIOLOGIST"))
+        seed_diagnostic_catalogue(db)
         anjali = db.scalar(select(Doctor).join(User, Doctor.user_id == User.id).where(User.email == "anjali.sharma@healthwise.demo.com"))
         if not exists("nurse@healthwise.demo.com"):
             user_service.create_staff(db, NURSE, StaffCreate(email="nurse@healthwise.demo.com", full_name="Meera Pawar", password=DEMO_PASSWORD, designation="Staff nurse"))
@@ -92,7 +127,7 @@ def main() -> None:
     print("Demo accounts ready (password for all: %s)" % DEMO_PASSWORD)
     for role, email in (("Admin", "admin@healthwise.demo.com"), ("Doctor", "anjali.sharma@healthwise.demo.com"),
                         ("Employee", "priya.joshi@healthwise.demo.com"), ("Patient", "rahul.patil@healthwise.demo.com"),
-                        ("Pharmacy", "pharmacy@healthwise.demo.com"), ("Lab", "lab@healthwise.demo.com"),
+                        ("Pharmacy", "pharmacy@healthwise.demo.com"), ("Lab", "lab@healthwise.demo.com"), ("Pathologist", "pathologist@healthwise.demo.com"), ("Radiology tech", "radiology.tech@healthwise.demo.com"), ("Radiologist", "radiologist@healthwise.demo.com"),
                         ("Nurse", "nurse@healthwise.demo.com"), ("Intern", "intern@healthwise.demo.com"), ("PG resident", "pg.student@healthwise.demo.com")):
         print(f"  {role:9s} {email}")
 

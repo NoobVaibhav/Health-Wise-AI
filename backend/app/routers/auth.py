@@ -28,7 +28,14 @@ def user_out(user: User, db: Session | None = None) -> UserOut:
         from app.database.models import Doctor
         session = db or object_session(user)
         grade = (session.scalar(select(Doctor.grade).where(Doctor.user_id == user.id)) if session is not None else None) or "CONSULTANT"
-    return UserOut(id=user.id, email=user.email, full_name=user.full_name, role=user.role,
+    staff_type = None
+    if user.role in ("LAB", "RADIOLOGY"):
+        from sqlalchemy.orm import object_session
+        from app.database.models import LabStaff, RadiologyStaff
+        session = db or object_session(user)
+        model = LabStaff if user.role == "LAB" else RadiologyStaff
+        staff_type = (session.scalar(select(model.staff_type).where(model.user_id == user.id)) if session is not None else None) or "TECHNICIAN"
+    return UserOut(id=user.id, staff_type=staff_type, email=user.email, full_name=user.full_name, role=user.role,
                    is_active=user.is_active, must_change_password=user.must_change_password,
                    has_avatar=bool(user.avatar_path), avatar_version=avatar_version(user), grade=grade)
 

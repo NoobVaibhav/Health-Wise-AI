@@ -237,6 +237,25 @@
   }
  },
  {
+  "method": "POST",
+  "path": "/api/admin/radiology-staff",
+  "public": false,
+  "roles": [
+   "ADMIN"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "INTERN": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 422,
+   "DOCTOR": 403
+  }
+ },
+ {
   "method": "PUT",
   "path": "/api/admin/users/{user_id}",
   "public": false,
@@ -1268,7 +1287,8 @@
    "LAB",
    "NURSE",
    "PATIENT",
-   "PHARMACY"
+   "PHARMACY",
+   "RADIOLOGY"
   ],
   "results": {
    "none": 401,
@@ -1293,7 +1313,8 @@
    "LAB",
    "NURSE",
    "PATIENT",
-   "PHARMACY"
+   "PHARMACY",
+   "RADIOLOGY"
   ],
   "results": {
    "none": 401,
@@ -1573,6 +1594,120 @@
    "EMPLOYEE": 403,
    "ADMIN": 403,
    "DOCTOR": 200
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/lab/pending-approval",
+  "public": false,
+  "roles": [
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 200,
+   "INTERN": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "GET",
+  "path": "/api/lab/tests/{order_id}",
+  "public": false,
+  "roles": [
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 404,
+   "INTERN": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/lab/tests/{order_id}/results",
+  "public": false,
+  "roles": [
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 422,
+   "INTERN": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/lab/tests/{order_id}/approve",
+  "public": false,
+  "roles": [
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "INTERN": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/lab/tests/{order_id}/return",
+  "public": false,
+  "roles": [
+   "LAB"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 422,
+   "INTERN": 403,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 403
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/lab/tests/{order_id}/seen",
+  "public": false,
+  "roles": [
+   "DOCTOR"
+  ],
+  "results": {
+   "none": 401,
+   "PATIENT": 403,
+   "PHARMACY": 403,
+   "LAB": 403,
+   "INTERN": 404,
+   "NURSE": 403,
+   "EMPLOYEE": 403,
+   "ADMIN": 403,
+   "DOCTOR": 404
   }
  },
  {
@@ -2941,7 +3076,8 @@
    "EMPLOYEE",
    "LAB",
    "NURSE",
-   "PHARMACY"
+   "PHARMACY",
+   "RADIOLOGY"
   ],
   "results": {
    "none": 401,
@@ -2984,7 +3120,8 @@
    "EMPLOYEE",
    "LAB",
    "NURSE",
-   "PHARMACY"
+   "PHARMACY",
+   "RADIOLOGY"
   ],
   "results": {
    "none": 401,
@@ -3046,7 +3183,8 @@
    "EMPLOYEE",
    "LAB",
    "NURSE",
-   "PHARMACY"
+   "PHARMACY",
+   "RADIOLOGY"
   ],
   "results": {
    "none": 401,

@@ -1,7 +1,7 @@
-import { BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, Hospital as HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
+import { BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, ScanLine, BadgeCheck, FileText, GraduationCap, History, Hospital as HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
 
 // Icon lookup (only the icons used in menus are bundled).
-export const ICONS = { BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
+export const ICONS = { ScanLine, BadgeCheck, BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
 
 // Sidebar menu for each role: [path, label, icon name]. The backend enforces the same permissions.
 export const NAV = {
@@ -12,6 +12,7 @@ export const NAV = {
     ["/admin/employees", "Employees", "Briefcase"],
     ["/admin/pharmacy-staff", "Pharmacy Staff", "Pill"],
     ["/admin/lab-staff", "Laboratory Staff", "FlaskConical"],
+    ["/admin/radiology-staff", "Radiology Staff", "ScanLine"],
     ["/admin/nurses", "Nurses", "Stethoscope"],
     ["/admin/patients", "Patients", "UserRound"],
     ["/admin/appointments", "Appointments", "CalendarClock"],
@@ -77,14 +78,19 @@ export const NAV = {
     ["/nurse/beds", "Bed board", "BedDouble"],
     ["/nurse/profile", "My Profile", "CircleUser"],
   ],
+  RADIOLOGY: [
+    ["/radiology", "Scan work list", "ScanLine"],
+    ["/radiology/profile", "My Profile", "CircleUser"],
+  ],
   LAB: [
     ["/lab", "Work list", "FlaskConical"],
+    ["/lab/approvals", "Approvals", "BadgeCheck"],
     ["/lab/advised", "Tests advised", "ClipboardList"],
     ["/lab/profile", "My Profile", "CircleUser"],
   ],
 };
 
-export const ROLE_LABEL = { ADMIN: "Admin", DOCTOR: "Doctor", EMPLOYEE: "Hospital Employee", PATIENT: "Patient", PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", NURSE: "Nurse" };
+export const ROLE_LABEL = { ADMIN: "Admin", DOCTOR: "Doctor", EMPLOYEE: "Hospital Employee", PATIENT: "Patient", PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", NURSE: "Nurse", RADIOLOGY: "Radiology staff" };
 
 // Menu items added to the doctor menu by grade: a junior doctor gets the history and referral workspace, a consultant gets the countersign queue.
 export const JUNIOR_MENU = [

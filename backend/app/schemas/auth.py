@@ -53,6 +53,7 @@ class UserOut(BaseModel):
     must_change_password: bool = False
     has_avatar: bool = False
     avatar_version: str | None = None      # changes whenever the picture changes (so browsers reload it)
+    staff_type: str | None = None          # laboratory: TECHNICIAN / PATHOLOGIST; radiology: TECHNICIAN / RADIOLOGIST
     grade: str | None = None               # a doctor's grade (INTERN, PG_RESIDENT, SENIOR_RESIDENT, CONSULTANT)
 
 
@@ -84,6 +85,7 @@ class StaffCreate(BaseModel):
     pharmacy_name: opt_text(150) = None
     # laboratory
     lab_name: opt_text(150) = None
+    staff_type: Literal["TECHNICIAN", "PATHOLOGIST", "RADIOLOGIST"] | None = None       # lab: technician or pathologist; radiology: technician or radiologist
 
     @model_validator(mode="after")
     def not_the_email(self):

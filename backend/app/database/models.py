@@ -161,6 +161,19 @@ class LabStaff(Base):
     phone: Mapped[str | None] = mapped_column(String(30))
     registration_number: Mapped[str | None] = mapped_column(String(50))
     address: Mapped[str | None] = mapped_column(String(300))
+    staff_type: Mapped[str | None] = mapped_column(String(12), default="TECHNICIAN")       # TECHNICIAN / PATHOLOGIST (only a pathologist approves a result)
+
+    user: Mapped[User] = relationship()
+
+
+class RadiologyStaff(Base):
+    __tablename__ = "radiology_staff"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
+    staff_type: Mapped[str] = mapped_column(String(12), default="TECHNICIAN")             # TECHNICIAN / RADIOLOGIST (only a radiologist reports and approves)
+    phone: Mapped[str | None] = mapped_column(String(30))
+    registration_number: Mapped[str | None] = mapped_column(String(50))
 
     user: Mapped[User] = relationship()
 
@@ -591,10 +604,20 @@ class LabTestOrder(Base):
     __table_args__ = (UniqueConstraint("prescription_id", "test_name", name="uq_lab_order_test"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    prescription_id: Mapped[int] = mapped_column(ForeignKey("prescriptions.id"), index=True)
+    prescription_id: Mapped[int | None] = mapped_column(ForeignKey("prescriptions.id"), index=True)   # empty for a test ordered inside an encounter (clinical_order_id is set then)
     patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
     doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
     test_name: Mapped[str] = mapped_column(String(200))
+    clinical_order_id: Mapped[int | None] = mapped_column(ForeignKey("clinical_orders.id"), unique=True)
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"), index=True)
+    test_id: Mapped[int | None] = mapped_column(ForeignKey("diagnostic_tests.id"))               # the catalogue entry, when the name matches one
+    assigned_to: Mapped[int | None] = mapped_column(ForeignKey("users.id"))                      # the technician working on it
+    result_status: Mapped[str | None] = mapped_column(String(16))                                # DRAFT / PENDING_APPROVAL / APPROVED
+    has_critical: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    approval_note: Mapped[str | None] = mapped_column(String(500))
+    doctor_seen_at: Mapped[datetime | None] = mapped_column(DateTime)                           # the ordering doctor has seen the approved result: only then does the patient
     status: Mapped[str] = mapped_column(String(20), default="ORDERED", index=True)   # ORDERED / SAMPLE_COLLECTED / IN_PROGRESS / COMPLETED / REJECTED / CANCELLED
     urgent: Mapped[bool | None] = mapped_column(Boolean, default=False)
     sample_type: Mapped[str | None] = mapped_column(String(40))
@@ -611,9 +634,10 @@ class LabTestOrder(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
-    prescription: Mapped[Prescription] = relationship()
+    prescription: Mapped["Prescription | None"] = relationship()
     patient: Mapped[Patient] = relationship()
     doctor: Mapped[Doctor] = relationship()
+    results: Mapped[list["LabResult"]] = relationship(back_populates="order", order_by="LabResult.id")
 
 
 # ------------------------------------------------------------------ detailed past medical history
@@ -1537,3 +1561,116 @@ class CountersignRequest(Base):
 
     patient: Mapped[Patient] = relationship()
     requester: Mapped["Doctor"] = relationship(foreign_keys=[requested_by])
+
+
+# ------------------------------------------------------------------ Phase 4: diagnostics (laboratory results, radiology)
+class DiagnosticTest(Base):
+    """The hospital's list of tests and scans. A lab test has analytes (the measured values); a scan has a modality."""
+    __tablename__ = "diagnostic_tests"
+    __table_args__ = (UniqueConstraint("kind", "name", name="uq_diagnostic_test"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kind: Mapped[str] = mapped_column(String(10), index=True)                                  # LAB / RADIOLOGY
+    name: Mapped[str] = mapped_column(String(150))
+    category: Mapped[str] = mapped_column(String(30))                                         # lab: HAEMATOLOGY, BIOCHEMISTRY...; radiology: XRAY, ULTRASOUND, CT, MRI, MAMMOGRAPHY, ECHO, ECG
+    sample_type: Mapped[str | None] = mapped_column(String(40))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    analytes: Mapped[list["DiagnosticAnalyte"]] = relationship(back_populates="test", order_by="DiagnosticAnalyte.sort_order")
+
+
+class DiagnosticAnalyte(Base):
+    """One measured value of a lab test, with the unit, method and the reference and critical limits that THIS hospital decided. Nothing here is guessed by AI."""
+    __tablename__ = "diagnostic_analytes"
+    __table_args__ = (UniqueConstraint("test_id", "name", name="uq_diagnostic_analyte"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    test_id: Mapped[int] = mapped_column(ForeignKey("diagnostic_tests.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    unit: Mapped[str | None] = mapped_column(String(30))
+    method: Mapped[str | None] = mapped_column(String(100))
+    ref_low: Mapped[float | None] = mapped_column(Float)
+    ref_high: Mapped[float | None] = mapped_column(Float)
+    critical_low: Mapped[float | None] = mapped_column(Float)
+    critical_high: Mapped[float | None] = mapped_column(Float)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+    test: Mapped[DiagnosticTest] = relationship(back_populates="analytes")
+
+
+class LabResult(Base):
+    """One entered value. Unit, method and range are copied at entry time, so a later change of the catalogue never changes an old report."""
+    __tablename__ = "lab_results"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("lab_test_orders.id"), index=True)
+    analyte_id: Mapped[int | None] = mapped_column(ForeignKey("diagnostic_analytes.id"))
+    analyte_name: Mapped[str] = mapped_column(String(100))
+    value_text: Mapped[str] = mapped_column(String(100))
+    value_num: Mapped[float | None] = mapped_column(Float)
+    unit: Mapped[str | None] = mapped_column(String(30))
+    method: Mapped[str | None] = mapped_column(String(100))
+    ref_low: Mapped[float | None] = mapped_column(Float)
+    ref_high: Mapped[float | None] = mapped_column(Float)
+    flag: Mapped[str] = mapped_column(String(12), default="NORMAL")                          # NORMAL / LOW / HIGH / CRITICAL_LOW / CRITICAL_HIGH / UNRATED (no range known)
+    comment: Mapped[str | None] = mapped_column(String(300))
+    entered_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    entered_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    order: Mapped[LabTestOrder] = relationship(back_populates="results")
+
+
+class RadiologyOrder(Base):
+    __tablename__ = "radiology_orders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    clinical_order_id: Mapped[int | None] = mapped_column(ForeignKey("clinical_orders.id"), unique=True)
+    encounter_id: Mapped[int | None] = mapped_column(ForeignKey("encounters.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    test_id: Mapped[int | None] = mapped_column(ForeignKey("diagnostic_tests.id"))
+    study: Mapped[str] = mapped_column(String(200))
+    modality: Mapped[str] = mapped_column(String(20), index=True)
+    priority: Mapped[str] = mapped_column(String(8), default="ROUTINE")
+    clinical_info: Mapped[str | None] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(12), default="ORDERED", index=True)           # ORDERED / SCHEDULED / IN_PROGRESS / REPORTED / APPROVED / CANCELLED
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime)
+    technician_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    radiologist_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    performed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    doctor_seen_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    patient: Mapped[Patient] = relationship()
+    doctor: Mapped[Doctor] = relationship()
+    report: Mapped["RadiologyReport | None"] = relationship(back_populates="order", uselist=False)
+    attachments: Mapped[list["RadiologyAttachment"]] = relationship(order_by="RadiologyAttachment.id")
+
+
+class RadiologyReport(Base):
+    __tablename__ = "radiology_reports"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("radiology_orders.id"), unique=True)
+    technique: Mapped[str | None] = mapped_column(String(300))
+    findings: Mapped[str] = mapped_column(Text)
+    impression: Mapped[str] = mapped_column(Text)
+    reported_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    reported_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    order: Mapped[RadiologyOrder] = relationship(back_populates="report")
+
+
+class RadiologyAttachment(Base):
+    """An image or document of a study (JPG, PNG or PDF). This is not DICOM or PACS."""
+    __tablename__ = "radiology_attachments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("radiology_orders.id"), index=True)
+    filename: Mapped[str] = mapped_column(String(200))
+    stored_path: Mapped[str] = mapped_column(String(300))
+    uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

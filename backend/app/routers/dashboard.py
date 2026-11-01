@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, PATIENT, NURSE, get_current_user
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, PATIENT, NURSE, RADIOLOGY, get_current_user
 from app.database.connection import get_db
 from app.database.models import User
 from app.services import dashboard_service
@@ -23,6 +23,9 @@ def dashboard(user: User = Depends(get_current_user), db: Session = Depends(get_
         data = dashboard_service.patient_dashboard(db, user)
     elif user.role == NURSE:
         data = dashboard_service.nurse_dashboard(db)
+    elif user.role == RADIOLOGY:
+        from app.services import diagnostic_service
+        data = diagnostic_service.radiology_dashboard(db)
     else:
         data = dashboard_service.pharmacy_dashboard(db)
     return {"role": user.role, **data}

@@ -20,6 +20,7 @@ const KINDS = {
   employees: { role: "EMPLOYEE", title: "Employees", single: "employee" },
   "pharmacy-staff": { role: "PHARMACY", title: "Pharmacy Staff", single: "pharmacy staff member" },
   "lab-staff": { role: "LAB", title: "Laboratory Staff", single: "laboratory staff member" },
+  "radiology-staff": { role: "RADIOLOGY", title: "Radiology Staff", single: "radiology staff member" },
   nurses: { role: "NURSE", title: "Nurses", single: "nurse" },
 };
 
@@ -63,7 +64,7 @@ const STAFF_RULES = {
 };
 
 function CreateModal({ kind, cfg, onClose, onCreated }) {
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", department_id: "", specialization_id: "", grade: "CONSULTANT", pg_year: "", pg_branch: "", supervisor_id: "", designation: "", pharmacy_name: "", lab_name: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", phone: "", department_id: "", specialization_id: "", grade: "CONSULTANT", pg_year: "", pg_branch: "", supervisor_id: "", designation: "", pharmacy_name: "", lab_name: "", staff_type: "TECHNICIAN" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const { data: allDoctors } = useFetch(kind === "doctors" ? listDoctors : () => Promise.resolve([]), [kind]);
@@ -81,6 +82,7 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
     try {
       const payload = Object.fromEntries(Object.entries(form).map(([k, val]) => [k, String(val).trim() === "" ? null : (typeof val === "string" ? val.trim() : val)]));
       payload.email = payload.email.toLowerCase();
+      if (kind !== "lab-staff" && kind !== "radiology-staff") payload.staff_type = null;
       if (payload.department_id) payload.department_id = Number(payload.department_id);
       if (payload.specialization_id) payload.specialization_id = Number(payload.specialization_id);
       if (payload.supervisor_id) payload.supervisor_id = Number(payload.supervisor_id);
@@ -130,6 +132,13 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
         </>)}
         {(kind === "employees" || kind === "nurses") && <FormField label="Designation" name="designation" error={check.errors.designation}><Input placeholder={kind === "nurses" ? "Staff nurse, ICU nurse, ward staff ..." : "Receptionist, lab assistant ..."} maxLength={100} value={form.designation} onChange={set("designation")} onBlur={blur("designation")} /></FormField>}
         {kind === "pharmacy-staff" && <FormField label="Pharmacy name" name="pharmacy_name" error={check.errors.pharmacy_name}><Input maxLength={150} value={form.pharmacy_name} onChange={set("pharmacy_name")} onBlur={blur("pharmacy_name")} /></FormField>}
+        {(kind === "lab-staff" || kind === "radiology-staff") && (
+          <FormField label="Role" name="staff_type" hint={kind === "lab-staff" ? "Only a pathologist approves a result." : "Only a radiologist writes and approves a report."}>
+            <Select aria-label="Role" value={form.staff_type} onChange={set("staff_type")}>
+              <option value="TECHNICIAN">Technician</option>
+              <option value={kind === "lab-staff" ? "PATHOLOGIST" : "RADIOLOGIST"}>{kind === "lab-staff" ? "Pathologist" : "Radiologist"}</option>
+            </Select>
+          </FormField>)}
         {kind === "lab-staff" && <FormField label="Laboratory name" name="lab_name" error={check.errors.lab_name}><Input maxLength={150} value={form.lab_name} onChange={set("lab_name")} onBlur={blur("lab_name")} /></FormField>}
         {error && <ErrorBox message={error} />}
         <Button disabled={busy}>{busy ? "Creating..." : "Create account"}</Button>

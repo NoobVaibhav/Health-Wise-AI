@@ -8,6 +8,7 @@ import { getLabDashboard, getWorklist, setTestStatus, setTestUrgent, uploadTestR
 import { EmptyState, ErrorBox, Hint, Loading, PageTitle } from "../../components/Feedback";
 import { Button, Field, Modal, Select, Textarea, fmtUtc, inputClass } from "../../components/ui";
 import { useToast } from "../../components/Toast";
+import ResultEntry from "./ResultEntry";
 
 const TABS = [["OPEN", "To do"], ["ORDERED", "Waiting for sample"], ["SAMPLE_COLLECTED", "Sample taken"], ["IN_PROGRESS", "Being tested"], ["COMPLETED", "Done"], ["REJECTED", "Rejected"], ["", "All"]];
 const TONE = { ORDERED: "bg-amber-100 text-amber-900", SAMPLE_COLLECTED: "bg-sky-100 text-sky-900", IN_PROGRESS: "bg-violet-100 text-violet-900", COMPLETED: "bg-emerald-100 text-emerald-900", REJECTED: "bg-red-100 text-red-900", CANCELLED: "bg-slate-200 text-slate-700" };
@@ -70,13 +71,15 @@ export default function Worklist() {
                 {t.waiting_hours != null && <>Waiting for {waiting(t.waiting_hours)}.</>}
               </p>
             )}
+            {t.result_status === "PENDING_APPROVAL" && <p className="mt-2 rounded-xl bg-indigo-50 p-2.5 text-sm font-semibold text-indigo-900">Result entered{t.has_critical ? " (critical value: the doctor was alerted)" : ""}. Waiting for the pathologist.</p>}
             {t.status === "REJECTED" && <p className="mt-2 rounded-xl bg-red-50 p-2.5 text-sm text-red-800"><b>Rejected:</b> {t.rejection_reason}</p>}
             {t.status === "COMPLETED" && <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-emerald-800"><CheckCircle2 size={16} /> Result uploaded {fmtUtc(t.completed_at)} and sent to {t.doctor_name} for review.</p>}
 
             <div className="mt-3 flex flex-wrap gap-2">
               {t.status === "ORDERED" && <Button disabled={busy === t.id} onClick={() => setDialog({ kind: "sample", test: t })}><TestTube2 size={16} />Collect the sample</Button>}
               {t.status === "SAMPLE_COLLECTED" && <Button disabled={busy === t.id} onClick={() => run(t, () => setTestStatus(t.id, { status: "IN_PROGRESS" }), "Testing started")}><Play size={16} />Start testing</Button>}
-              {["SAMPLE_COLLECTED", "IN_PROGRESS"].includes(t.status) && <Button variant={t.status === "IN_PROGRESS" ? "primary" : "secondary"} onClick={() => setDialog({ kind: "result", test: t })}><Upload size={16} />Upload the result</Button>}
+              {["SAMPLE_COLLECTED", "IN_PROGRESS"].includes(t.status) && t.result_status !== "PENDING_APPROVAL" && <Button onClick={() => setDialog({ kind: "entry", test: t })}><FlaskConical size={16} />{t.result_status === "DRAFT" ? "Continue the result" : "Enter the result"}</Button>}
+              {["SAMPLE_COLLECTED", "IN_PROGRESS"].includes(t.status) && t.result_status !== "PENDING_APPROVAL" && <Button variant="secondary" onClick={() => setDialog({ kind: "result", test: t })}><Upload size={16} />Upload a result file</Button>}
               {["SAMPLE_COLLECTED", "IN_PROGRESS"].includes(t.status) && <Button variant="secondary" onClick={() => setDialog({ kind: "reject", test: t })}><XCircle size={16} />Reject the sample</Button>}
               {t.status === "REJECTED" && <Button variant="secondary" disabled={busy === t.id} onClick={() => run(t, () => setTestStatus(t.id, { status: "ORDERED" }), "Ordered again: the patient gives a new sample")}><RotateCcw size={16} />Order again</Button>}
               {["ORDERED", "SAMPLE_COLLECTED", "IN_PROGRESS"].includes(t.status) && <Button variant="soft" disabled={busy === t.id} onClick={() => run(t, () => setTestUrgent(t.id, !t.urgent), t.urgent ? "Not urgent" : "Marked urgent")}>{t.urgent ? "Not urgent" : "Mark urgent"}</Button>}
@@ -87,6 +90,7 @@ export default function Worklist() {
 
       {dialog?.kind === "sample" && <SampleDialog test={dialog.test} types={data?.sample_types || ["Blood", "Urine", "Other"]} onClose={() => setDialog(null)} onSave={(type) => run(dialog.test, () => setTestStatus(dialog.test.id, { status: "SAMPLE_COLLECTED", sample_type: type }), "Sample taken: write the code on the sample")} />}
       {dialog?.kind === "reject" && <RejectDialog test={dialog.test} onClose={() => setDialog(null)} onSave={(note) => run(dialog.test, () => setTestStatus(dialog.test.id, { status: "REJECTED", note }), "Sample rejected")} />}
+      {dialog?.kind === "entry" && <ResultEntry test={dialog.test} onClose={() => setDialog(null)} onDone={(sent) => { toast(sent ? "Sent to the pathologist for approval" : "Draft saved"); setDialog(null); reload(); stats.reload(); }} />}
       {dialog?.kind === "result" && <ResultDialog test={dialog.test} onClose={() => setDialog(null)} onDone={() => { toast("Result uploaded and sent to the doctor"); setDialog(null); reload(); stats.reload(); }} />}
 
       <Hint title="Please note">Check the patient's name and ID on the sample and on the result. A result with a different name is not saved unless you confirm it on purpose.</Hint>

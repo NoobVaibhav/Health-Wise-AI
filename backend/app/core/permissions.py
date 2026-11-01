@@ -25,7 +25,8 @@ PATIENT = "PATIENT"
 PHARMACY = "PHARMACY"
 LAB = "LAB"   # laboratory staff: sees the tests doctors advise, never medicines or reports
 NURSE = "NURSE"   # nurses: vitals, nursing notes, medication administration, intake and output
-ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB, NURSE)
+RADIOLOGY = "RADIOLOGY"   # radiology technicians and radiologists (staff_type): the scan worklist, never medicines or lab results
+ALL_ROLES = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB, NURSE, RADIOLOGY)
 
 # Doctor is one role family. The grade decides what a doctor may finish alone (see docs/DOCTOR_GRADES.md).
 INTERN, PG_RESIDENT, SENIOR_RESIDENT, CONSULTANT = "INTERN", "PG_RESIDENT", "SENIOR_RESIDENT", "CONSULTANT"

@@ -4,18 +4,18 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.services.profile_service import avatar_version
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PHARMACY, require_roles
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PHARMACY, RADIOLOGY, require_roles
 from app.database.connection import get_db
 from app.database.models import (
     Appointment, AuditLog, Department, Doctor, DoctorNote, DoctorRecommendation, Employee, HealthReport, Patient,
-    LabStaff, Nurse, PharmacyStaff, Prescription, User,
+    LabStaff, Nurse, PharmacyStaff, Prescription, RadiologyStaff, User,
 )
 from app.services.user_service import age_from_dob
 from app.routers.auth import user_out
 from app.schemas.auth import CreatedUserResponse, DepartmentCreate, StaffCreate, UserOut, UserUpdate
 from app.services import audit_service, catalog_service, dashboard_service, grade_service, user_service
 from app.utils.validators import Limit, PathId, SearchText, one_of
-ROLE_FILTER = one_of("ADMIN", "DOCTOR", "EMPLOYEE", "PATIENT", "PHARMACY", "LAB", "NURSE", name="role")
+ROLE_FILTER = one_of("ADMIN", "DOCTOR", "EMPLOYEE", "PATIENT", "PHARMACY", "LAB", "NURSE", "RADIOLOGY", name="role")
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 admin_only = require_roles(ADMIN)
@@ -52,6 +52,7 @@ def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(adm
     employees = {e.user_id: e for e in db.scalars(select(Employee))}
     pharmacy = {p.user_id: p for p in db.scalars(select(PharmacyStaff))}
     lab = {l.user_id: l for l in db.scalars(select(LabStaff))}
+    radiology = {r.user_id: r for r in db.scalars(select(RadiologyStaff))}
     nurses = {n.user_id: n for n in db.scalars(select(Nurse))}
     patients = {p.user_id: p for p in db.scalars(select(Patient))}
 
@@ -84,7 +85,10 @@ def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(adm
         elif u.id in lab:
             lb = lab[u.id]
             phone = lb.phone
-            details = [["Laboratory", lb.lab_name]]
+            details = [["Laboratory", lb.lab_name], ["Role", (lb.staff_type or "TECHNICIAN").title()]]
+        elif u.id in radiology:
+            phone = radiology[u.id].phone
+            details = [["Role", radiology[u.id].staff_type.title()]]
         elif u.id in patients:
             pt = patients[u.id]
             phone = pt.phone
@@ -133,6 +137,11 @@ def create_pharmacy_staff(data: StaffCreate, request: Request, admin: User = Dep
 def create_lab_staff(data: StaffCreate, request: Request, admin: User = Depends(admin_only),
                      db: Session = Depends(get_db)):
     return _create(LAB, data, admin, request, db)
+
+
+@router.post("/radiology-staff", response_model=CreatedUserResponse, status_code=status.HTTP_201_CREATED)
+def create_radiology_staff(data: StaffCreate, request: Request, admin: User = Depends(admin_only), db: Session = Depends(get_db)):
+    return _create(RADIOLOGY, data, admin, request, db)
 
 
 @router.put("/users/{user_id}", response_model=UserOut)

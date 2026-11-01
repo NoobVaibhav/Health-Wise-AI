@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PATIENT, PHARMACY, require_roles
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PATIENT, PHARMACY, RADIOLOGY, require_roles
 from app.database.connection import get_db
 from app.database.models import Department, Specialization, User
 from app.services import audit_service, catalog_service, hospital_catalog
@@ -25,7 +25,7 @@ def tests(user: User = Depends(require_roles(DOCTOR))):
 
 
 # ------------------------------------------------------------------ departments and specializations
-ANY_SIGNED_IN = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB, NURSE)
+ANY_SIGNED_IN = (ADMIN, DOCTOR, EMPLOYEE, PATIENT, PHARMACY, LAB, NURSE, RADIOLOGY)
 admin_only = require_roles(ADMIN)
 
 

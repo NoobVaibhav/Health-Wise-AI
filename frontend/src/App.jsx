@@ -44,6 +44,8 @@ import PatientPrescriptions from "./pages/patient/Prescriptions";
 
 import TestOrders from "./pages/lab/TestOrders";
 import LabWorklist from "./pages/lab/Worklist";
+import LabApprovals from "./pages/lab/Approvals";
+import RadiologyWorklist from "./pages/radiology/Worklist";
 import TraineeDashboard from "./pages/trainee/Dashboard";
 import TraineeTakeHistory from "./pages/trainee/TakeHistory";
 import TraineeSelectDoctor from "./pages/trainee/SelectDoctor";
@@ -94,6 +96,7 @@ export default function App() {
             <Route path="employees" element={<StaffManager kind="employees" />} />
             <Route path="pharmacy-staff" element={<StaffManager kind="pharmacy-staff" />} />
             <Route path="lab-staff" element={<StaffManager kind="lab-staff" />} />
+            <Route path="radiology-staff" element={<StaffManager kind="radiology-staff" />} />
             <Route path="nurses" element={<StaffManager kind="nurses" />} />
             <Route path="beds" element={<Beds />} />
             <Route path="profile" element={<Profile />} />
@@ -162,8 +165,14 @@ export default function App() {
             <Route path="profile" element={<Profile />} />
           </Route>
 
+          <Route path="/radiology" element={<RoleRoute roles={["RADIOLOGY"]} />}>
+            <Route index element={<RadiologyWorklist />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
+
           <Route path="/lab" element={<RoleRoute roles={["LAB"]} />}>
             <Route index element={<LabWorklist />} />
+            <Route path="approvals" element={<LabApprovals />} />
             <Route path="advised" element={<TestOrders />} />
             <Route path="profile" element={<Profile />} />
           </Route>

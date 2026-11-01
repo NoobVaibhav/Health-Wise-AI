@@ -24,6 +24,19 @@ CREATE TABLE departments (
 );
 
 
+CREATE TABLE diagnostic_tests (
+	id SERIAL NOT NULL, 
+	kind VARCHAR(10) NOT NULL, 
+	name VARCHAR(150) NOT NULL, 
+	category VARCHAR(30) NOT NULL, 
+	sample_type VARCHAR(40), 
+	is_active BOOLEAN NOT NULL, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_diagnostic_test UNIQUE (kind, name)
+);
+
+CREATE INDEX ix_diagnostic_tests_kind ON diagnostic_tests (kind);
+
 CREATE TABLE medicine_inventory (
 	id SERIAL NOT NULL, 
 	medicine_name VARCHAR(200) NOT NULL, 
@@ -107,6 +120,24 @@ CREATE TABLE consultation_templates (
 
 CREATE INDEX ix_consultation_templates_department_id ON consultation_templates (department_id);
 
+CREATE TABLE diagnostic_analytes (
+	id SERIAL NOT NULL, 
+	test_id INTEGER NOT NULL, 
+	name VARCHAR(100) NOT NULL, 
+	unit VARCHAR(30), 
+	method VARCHAR(100), 
+	ref_low FLOAT, 
+	ref_high FLOAT, 
+	critical_low FLOAT, 
+	critical_high FLOAT, 
+	sort_order INTEGER NOT NULL, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_diagnostic_analyte UNIQUE (test_id, name), 
+	FOREIGN KEY(test_id) REFERENCES diagnostic_tests (id)
+);
+
+CREATE INDEX ix_diagnostic_analytes_test_id ON diagnostic_analytes (test_id);
+
 CREATE TABLE employees (
 	id SERIAL NOT NULL, 
 	user_id INTEGER NOT NULL, 
@@ -172,6 +203,7 @@ CREATE TABLE lab_staff (
 	phone VARCHAR(30), 
 	registration_number VARCHAR(50), 
 	address VARCHAR(300), 
+	staff_type VARCHAR(12), 
 	PRIMARY KEY (id), 
 	UNIQUE (user_id), 
 	FOREIGN KEY(user_id) REFERENCES users (id)
@@ -211,6 +243,18 @@ CREATE TABLE pharmacy_staff (
 	phone VARCHAR(30), 
 	license_number VARCHAR(50), 
 	address VARCHAR(300), 
+	PRIMARY KEY (id), 
+	UNIQUE (user_id), 
+	FOREIGN KEY(user_id) REFERENCES users (id)
+);
+
+
+CREATE TABLE radiology_staff (
+	id SERIAL NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	staff_type VARCHAR(12) NOT NULL, 
+	phone VARCHAR(30), 
+	registration_number VARCHAR(50), 
 	PRIMARY KEY (id), 
 	UNIQUE (user_id), 
 	FOREIGN KEY(user_id) REFERENCES users (id)
@@ -1340,43 +1384,6 @@ CREATE TABLE intake_output (
 CREATE INDEX ix_intake_output_admission_id ON intake_output (admission_id);
 CREATE INDEX ix_intake_output_patient_id ON intake_output (patient_id);
 
-CREATE TABLE lab_test_orders (
-	id SERIAL NOT NULL, 
-	prescription_id INTEGER NOT NULL, 
-	patient_id INTEGER NOT NULL, 
-	doctor_id INTEGER NOT NULL, 
-	test_name VARCHAR(200) NOT NULL, 
-	status VARCHAR(20) NOT NULL, 
-	urgent BOOLEAN, 
-	sample_type VARCHAR(40), 
-	sample_code VARCHAR(30), 
-	collected_at TIMESTAMP WITHOUT TIME ZONE, 
-	collected_by INTEGER, 
-	started_at TIMESTAMP WITHOUT TIME ZONE, 
-	completed_at TIMESTAMP WITHOUT TIME ZONE, 
-	completed_by INTEGER, 
-	report_id INTEGER, 
-	note TEXT, 
-	rejection_reason TEXT, 
-	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
-	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
-	updated_by INTEGER, 
-	PRIMARY KEY (id), 
-	CONSTRAINT uq_lab_order_test UNIQUE (prescription_id, test_name), 
-	FOREIGN KEY(prescription_id) REFERENCES prescriptions (id), 
-	FOREIGN KEY(patient_id) REFERENCES patients (id), 
-	FOREIGN KEY(doctor_id) REFERENCES doctors (id), 
-	UNIQUE (sample_code), 
-	FOREIGN KEY(collected_by) REFERENCES users (id), 
-	FOREIGN KEY(completed_by) REFERENCES users (id), 
-	FOREIGN KEY(report_id) REFERENCES health_reports (id), 
-	FOREIGN KEY(updated_by) REFERENCES users (id)
-);
-
-CREATE INDEX ix_lab_test_orders_patient_id ON lab_test_orders (patient_id);
-CREATE INDEX ix_lab_test_orders_prescription_id ON lab_test_orders (prescription_id);
-CREATE INDEX ix_lab_test_orders_status ON lab_test_orders (status);
-
 CREATE TABLE medication_orders (
 	id SERIAL NOT NULL, 
 	admission_id INTEGER NOT NULL, 
@@ -1599,6 +1606,60 @@ CREATE TABLE ed_timeline (
 
 CREATE INDEX ix_ed_timeline_ed_visit_id ON ed_timeline (ed_visit_id);
 
+CREATE TABLE lab_test_orders (
+	id SERIAL NOT NULL, 
+	prescription_id INTEGER, 
+	patient_id INTEGER NOT NULL, 
+	doctor_id INTEGER NOT NULL, 
+	test_name VARCHAR(200) NOT NULL, 
+	clinical_order_id INTEGER, 
+	encounter_id INTEGER, 
+	test_id INTEGER, 
+	assigned_to INTEGER, 
+	result_status VARCHAR(16), 
+	has_critical BOOLEAN, 
+	approved_by INTEGER, 
+	approved_at TIMESTAMP WITHOUT TIME ZONE, 
+	approval_note VARCHAR(500), 
+	doctor_seen_at TIMESTAMP WITHOUT TIME ZONE, 
+	status VARCHAR(20) NOT NULL, 
+	urgent BOOLEAN, 
+	sample_type VARCHAR(40), 
+	sample_code VARCHAR(30), 
+	collected_at TIMESTAMP WITHOUT TIME ZONE, 
+	collected_by INTEGER, 
+	started_at TIMESTAMP WITHOUT TIME ZONE, 
+	completed_at TIMESTAMP WITHOUT TIME ZONE, 
+	completed_by INTEGER, 
+	report_id INTEGER, 
+	note TEXT, 
+	rejection_reason TEXT, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_by INTEGER, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_lab_order_test UNIQUE (prescription_id, test_name), 
+	FOREIGN KEY(prescription_id) REFERENCES prescriptions (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(doctor_id) REFERENCES doctors (id), 
+	UNIQUE (clinical_order_id), 
+	FOREIGN KEY(clinical_order_id) REFERENCES clinical_orders (id), 
+	FOREIGN KEY(encounter_id) REFERENCES encounters (id), 
+	FOREIGN KEY(test_id) REFERENCES diagnostic_tests (id), 
+	FOREIGN KEY(assigned_to) REFERENCES users (id), 
+	FOREIGN KEY(approved_by) REFERENCES users (id), 
+	UNIQUE (sample_code), 
+	FOREIGN KEY(collected_by) REFERENCES users (id), 
+	FOREIGN KEY(completed_by) REFERENCES users (id), 
+	FOREIGN KEY(report_id) REFERENCES health_reports (id), 
+	FOREIGN KEY(updated_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_lab_test_orders_encounter_id ON lab_test_orders (encounter_id);
+CREATE INDEX ix_lab_test_orders_patient_id ON lab_test_orders (patient_id);
+CREATE INDEX ix_lab_test_orders_prescription_id ON lab_test_orders (prescription_id);
+CREATE INDEX ix_lab_test_orders_status ON lab_test_orders (status);
+
 CREATE TABLE mar_entries (
 	id SERIAL NOT NULL, 
 	medication_order_id INTEGER NOT NULL, 
@@ -1635,6 +1696,44 @@ CREATE TABLE medicine_dispensing (
 
 CREATE INDEX ix_medicine_dispensing_prescription_id ON medicine_dispensing (prescription_id);
 
+CREATE TABLE radiology_orders (
+	id SERIAL NOT NULL, 
+	clinical_order_id INTEGER, 
+	encounter_id INTEGER, 
+	patient_id INTEGER NOT NULL, 
+	doctor_id INTEGER NOT NULL, 
+	test_id INTEGER, 
+	study VARCHAR(200) NOT NULL, 
+	modality VARCHAR(20) NOT NULL, 
+	priority VARCHAR(8) NOT NULL, 
+	clinical_info VARCHAR(300), 
+	status VARCHAR(12) NOT NULL, 
+	scheduled_at TIMESTAMP WITHOUT TIME ZONE, 
+	technician_id INTEGER, 
+	radiologist_id INTEGER, 
+	performed_at TIMESTAMP WITHOUT TIME ZONE, 
+	approved_by INTEGER, 
+	approved_at TIMESTAMP WITHOUT TIME ZONE, 
+	doctor_seen_at TIMESTAMP WITHOUT TIME ZONE, 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (clinical_order_id), 
+	FOREIGN KEY(clinical_order_id) REFERENCES clinical_orders (id), 
+	FOREIGN KEY(encounter_id) REFERENCES encounters (id), 
+	FOREIGN KEY(patient_id) REFERENCES patients (id), 
+	FOREIGN KEY(doctor_id) REFERENCES doctors (id), 
+	FOREIGN KEY(test_id) REFERENCES diagnostic_tests (id), 
+	FOREIGN KEY(technician_id) REFERENCES users (id), 
+	FOREIGN KEY(radiologist_id) REFERENCES users (id), 
+	FOREIGN KEY(approved_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_radiology_orders_encounter_id ON radiology_orders (encounter_id);
+CREATE INDEX ix_radiology_orders_modality ON radiology_orders (modality);
+CREATE INDEX ix_radiology_orders_patient_id ON radiology_orders (patient_id);
+CREATE INDEX ix_radiology_orders_status ON radiology_orders (status);
+
 CREATE TABLE sale_items (
 	id SERIAL NOT NULL, 
 	sale_id INTEGER NOT NULL, 
@@ -1656,4 +1755,56 @@ CREATE TABLE sale_items (
 
 CREATE INDEX ix_sale_items_prescription_item_id ON sale_items (prescription_item_id);
 CREATE INDEX ix_sale_items_sale_id ON sale_items (sale_id);
+
+CREATE TABLE lab_results (
+	id SERIAL NOT NULL, 
+	order_id INTEGER NOT NULL, 
+	analyte_id INTEGER, 
+	analyte_name VARCHAR(100) NOT NULL, 
+	value_text VARCHAR(100) NOT NULL, 
+	value_num FLOAT, 
+	unit VARCHAR(30), 
+	method VARCHAR(100), 
+	ref_low FLOAT, 
+	ref_high FLOAT, 
+	flag VARCHAR(12) NOT NULL, 
+	comment VARCHAR(300), 
+	entered_by INTEGER, 
+	entered_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(order_id) REFERENCES lab_test_orders (id), 
+	FOREIGN KEY(analyte_id) REFERENCES diagnostic_analytes (id), 
+	FOREIGN KEY(entered_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_lab_results_order_id ON lab_results (order_id);
+
+CREATE TABLE radiology_attachments (
+	id SERIAL NOT NULL, 
+	order_id INTEGER NOT NULL, 
+	filename VARCHAR(200) NOT NULL, 
+	stored_path VARCHAR(300) NOT NULL, 
+	uploaded_by INTEGER NOT NULL, 
+	uploaded_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(order_id) REFERENCES radiology_orders (id), 
+	FOREIGN KEY(uploaded_by) REFERENCES users (id)
+);
+
+CREATE INDEX ix_radiology_attachments_order_id ON radiology_attachments (order_id);
+
+CREATE TABLE radiology_reports (
+	id SERIAL NOT NULL, 
+	order_id INTEGER NOT NULL, 
+	technique VARCHAR(300), 
+	findings TEXT NOT NULL, 
+	impression TEXT NOT NULL, 
+	reported_by INTEGER NOT NULL, 
+	reported_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (order_id), 
+	FOREIGN KEY(order_id) REFERENCES radiology_orders (id), 
+	FOREIGN KEY(reported_by) REFERENCES users (id)
+);
+
 

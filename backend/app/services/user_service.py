@@ -7,10 +7,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, NURSE
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, NURSE, RADIOLOGY
 from app.core.security import hash_password
 from app.database.models import (
-    AuditLog, Department, Doctor, Employee, HistoryRevision, LabStaff, Patient, PatientAssistantConversation, PharmacyStaff, Nurse, User,
+    AuditLog, Department, Doctor, Employee, HistoryRevision, LabStaff, Patient, PatientAssistantConversation, PharmacyStaff, Nurse, RadiologyStaff, User,
 )
 from app.schemas.auth import StaffCreate
 from app.services import catalog_service, grade_service
@@ -71,7 +71,13 @@ def create_staff(db: Session, role: str, data: StaffCreate) -> tuple[User, str |
     elif role == PHARMACY:
         db.add(PharmacyStaff(user_id=user.id, pharmacy_name=data.pharmacy_name, phone=data.phone))
     elif role == LAB:
-        db.add(LabStaff(user_id=user.id, lab_name=data.lab_name, phone=data.phone))
+        if data.staff_type == "RADIOLOGIST":
+            raise HTTPException(422, "A laboratory staff member is a technician or a pathologist.")
+        db.add(LabStaff(user_id=user.id, lab_name=data.lab_name, phone=data.phone, staff_type=data.staff_type or "TECHNICIAN"))
+    elif role == RADIOLOGY:
+        if data.staff_type == "PATHOLOGIST":
+            raise HTTPException(422, "Radiology staff are technicians or radiologists.")
+        db.add(RadiologyStaff(user_id=user.id, phone=data.phone, staff_type=data.staff_type or "TECHNICIAN"))
     elif role == NURSE:
         from app.services import hospital_service
         db.add(Nurse(user_id=user.id, branch_id=hospital_service.default_branch(db).id, designation=data.designation, phone=data.phone))
@@ -118,13 +124,13 @@ def age_from_dob(dob: date | None) -> int | None:
 # ------------------------------------------------------------------ deleting an account
 # An account can be deleted only when NOTHING is linked to it. A person with reports, prescriptions, history, appointments, bills ...
 # can only be deactivated: the medical and billing records must never lose their author or their patient.
-PROFILE_MODELS = (("patients", Patient), ("doctors", Doctor), ("employees", Employee), ("pharmacy_staff", PharmacyStaff), ("lab_staff", LabStaff), ("nurses", Nurse))
+PROFILE_MODELS = (("patients", Patient), ("doctors", Doctor), ("employees", Employee), ("pharmacy_staff", PharmacyStaff), ("lab_staff", LabStaff), ("radiology_staff", RadiologyStaff), ("nurses", Nurse))
 # links that do not count: the audit trail is kept (its user link is cleared), and these belong to the patient and are removed with them
 NOT_BLOCKING = {("audit_logs", "user_id"), ("history_revisions", "patient_id"), ("patient_assistant_conversations", "patient_id")}
 WORDS = {"health_reports": "reports", "health_parameters": "test results", "appointments": "appointments", "prescriptions": "prescriptions", "doctor_notes": "doctor's notes",
          "doctor_recommendations": "recommendations", "medical_history": "history entries", "patient_history": "health history", "patient_medications": "regular medicines",
          "clinical_assessments": "assessments", "chronic_conditions": "illness records", "hospital_admissions": "hospital admissions", "surgery_records": "operations",
-         "emergency_events": "emergency visits", "follow_up_tasks": "follow-up tasks", "lab_test_orders": "laboratory tests", "sales": "bills", "medicine_dispensing": "dispensed medicines",
+         "emergency_events": "emergency visits", "follow_up_tasks": "follow-up tasks", "lab_test_orders": "laboratory tests", "lab_results": "lab results", "radiology_orders": "scans", "radiology_reports": "radiology reports", "radiology_attachments": "scan files", "sales": "bills", "medicine_dispensing": "dispensed medicines",
          "history_revisions": "history changes", "trainee_histories": "histories taken", "referrals": "referrals", "encounters": "visits", "vital_sets": "vital signs", "admissions": "admissions", "consultations": "consultations", "nursing_notes": "nursing notes", "summary_reviews": "summary reviews", "report_comparisons": "comparisons"}
 
 

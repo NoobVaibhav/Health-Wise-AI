@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PATIENT, PHARMACY, forbidden, get_current_user
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, NURSE, PATIENT, PHARMACY, RADIOLOGY, forbidden, get_current_user
 from app.database.connection import get_db
 from app.database.models import Permission, Role, RolePermission, User, UserRole
 
@@ -83,7 +83,7 @@ ROLES: dict[str, tuple[str, str, list[str]]] = {
 }
 
 # the login role -> the hospital role it means
-BASE_ROLE = {ADMIN: "HOSPITAL_ADMIN", DOCTOR: "DOCTOR", EMPLOYEE: "RECEPTIONIST", PATIENT: "PATIENT", PHARMACY: "PHARMACIST", LAB: "LAB_TECHNICIAN", NURSE: "NURSE"}
+BASE_ROLE = {ADMIN: "HOSPITAL_ADMIN", DOCTOR: "DOCTOR", EMPLOYEE: "RECEPTIONIST", PATIENT: "PATIENT", PHARMACY: "PHARMACIST", LAB: "LAB_TECHNICIAN", NURSE: "NURSE", RADIOLOGY: "RADIOLOGY_TECHNICIAN"}
 
 
 def seed_access(db: Session) -> None:

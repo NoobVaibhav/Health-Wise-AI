@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database.models import HealthReport, LabTestOrder, Patient, Prescription, User, utcnow
+from app.services import diagnostic_service
 from app.services.serializers import tests_of
 
 LABELS = {"ORDERED": "Waiting for the sample", "SAMPLE_COLLECTED": "Sample taken", "IN_PROGRESS": "Being tested", "COMPLETED": "Result ready",
@@ -127,14 +128,16 @@ def order_out(o: LabTestOrder, for_lab: bool = True) -> dict:
            "collected_at": o.collected_at.isoformat() if o.collected_at else None, "started_at": o.started_at.isoformat() if o.started_at else None,
            "completed_at": o.completed_at.isoformat() if o.completed_at else None, "rejection_reason": o.rejection_reason, "note": o.note,
            "ordered_on": o.created_at.date().isoformat(), "waiting_hours": _hours(o.created_at) if o.status in OPEN else None,
-           "prescription_code": f"RX-{o.prescription_id:05d}", "doctor_name": o.doctor.user.full_name}
+           "prescription_code": f"RX-{o.prescription_id:05d}" if o.prescription_id else "Encounter order", "doctor_name": o.doctor.user.full_name,
+           "result_status": o.result_status, "has_critical": bool(o.has_critical)}
     if for_lab:
-        out.update({"patient_name": o.patient.user.full_name, "patient_code": o.patient.patient_code, "reason": o.prescription.clinical_indication, "transitions": sorted(TRANSITIONS.get(o.status, set()))})
+        out.update({"patient_name": o.patient.user.full_name, "patient_code": o.patient.patient_code, "reason": o.prescription.clinical_indication if o.prescription else None, "transitions": sorted(TRANSITIONS.get(o.status, set()))})
     return out
 
 
 def worklist(db: Session, status_filter: str | None, q: str | None, urgent_only: bool = False) -> list[dict]:
     sync_orders(db)
+    diagnostic_service.sync_clinical_orders(db)
     query = select(LabTestOrder).order_by(LabTestOrder.urgent.desc(), LabTestOrder.id.desc()).limit(500)
     if status_filter == "OPEN":
         query = query.where(LabTestOrder.status.in_(OPEN))
@@ -154,6 +157,7 @@ def worklist(db: Session, status_filter: str | None, q: str | None, urgent_only:
 
 def dashboard(db: Session) -> dict:
     sync_orders(db)
+    diagnostic_service.sync_clinical_orders(db)
     rows = db.scalars(select(LabTestOrder)).all()
     counts = {k: 0 for k in LABELS}
     for o in rows:
@@ -171,6 +175,7 @@ def dashboard(db: Session) -> dict:
 def for_patient(db: Session, patient: Patient, as_doctor: bool) -> list[dict]:
     """A patient's tests. The patient gets plain wording and a link to the result only after the doctor has reviewed it."""
     sync_orders(db)
+    diagnostic_service.sync_clinical_orders(db)
     out = []
     for o in db.scalars(select(LabTestOrder).where(LabTestOrder.patient_id == patient.id).order_by(LabTestOrder.id.desc())):
         row = order_out(o, for_lab=False)
@@ -178,7 +183,12 @@ def for_patient(db: Session, patient: Patient, as_doctor: bool) -> list[dict]:
         reviewed = bool(report and report.doctor_review_status == "REVIEWED")
         row["report_id"] = report.id if report and (as_doctor or reviewed) else None
         row["result_reviewed"] = reviewed
-        row["patient_message"] = PATIENT_LABELS[o.status] if not (o.status == "COMPLETED" and reviewed) else "Result reviewed by your doctor"
+        detail = diagnostic_service.lab_detail(db, o, "DOCTOR" if as_doctor else "PATIENT")
+        row.update({k: detail[k] for k in ("result_status", "has_critical", "doctor_seen_at", "results")})
+        structured = o.result_status == "APPROVED"
+        row["patient_message"] = PATIENT_LABELS[o.status] if not (o.status == "COMPLETED" and (reviewed or (structured and o.doctor_seen_at))) else "Result reviewed by your doctor"
+        if structured and not as_doctor and not o.doctor_seen_at:
+            row["patient_message"] = "Result ready: your doctor will review it"
         if not as_doctor:
             for k in ("sample_code", "note"):
                 row.pop(k, None)

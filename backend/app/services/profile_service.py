@@ -21,14 +21,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, NURSE
-from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, Nurse, User
+from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, NURSE, RADIOLOGY
+from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, Nurse, RadiologyStaff, User
 from app.utils.validators import clean_text, normalise_phone
 from app.schemas.profile import ProfileField, ProfileOut, ProfileUpdate, ProfileUser
 
 ROLE_LABELS = {ADMIN: "Administrator", DOCTOR: "Doctor", EMPLOYEE: "Hospital employee", PATIENT: "Patient",
-               PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", NURSE: "Nurse"}
-PROFILE_MODEL = {DOCTOR: Doctor, EMPLOYEE: Employee, PATIENT: Patient, PHARMACY: PharmacyStaff, LAB: LabStaff, NURSE: Nurse}
+               PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", NURSE: "Nurse", RADIOLOGY: "Radiology staff"}
+PROFILE_MODEL = {DOCTOR: Doctor, EMPLOYEE: Employee, PATIENT: Patient, PHARMACY: PharmacyStaff, LAB: LabStaff, NURSE: Nurse, RADIOLOGY: RadiologyStaff}
 PHONE_RE = re.compile(r"^[0-9+\-() ]{7,20}$")
 
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
@@ -82,8 +82,14 @@ FIELDS: dict[str, list[Spec]] = {
     LAB: [
         Spec("phone", "Phone", editable=True, max_length=20),
         Spec("lab_name", "Laboratory name", help="Set by the hospital admin."),
+        Spec("staff_type", "Role", help="Technician or pathologist. Set by the hospital admin."),
         Spec("registration_number", "Registration number", editable=True, max_length=50),
         Spec("address", "Address", kind="textarea", editable=True, max_length=300),
+    ],
+    RADIOLOGY: [
+        Spec("phone", "Phone", editable=True, max_length=20),
+        Spec("staff_type", "Role", help="Technician or radiologist. Set by the hospital admin."),
+        Spec("registration_number", "Registration number", editable=True, max_length=50),
     ],
     NURSE: [
         Spec("phone", "Phone", editable=True, max_length=20),

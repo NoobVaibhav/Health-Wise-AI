@@ -45,6 +45,8 @@ def init_db() -> None:
         encounter_service.seed_rules(db)
         from app.services import grade_service
         grade_service.migrate(db)
+        from app.services import diagnostic_service
+        diagnostic_service.migrate(db)
         encounter_service.seed_templates(db)
 
 
