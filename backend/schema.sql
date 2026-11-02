@@ -257,6 +257,23 @@ CREATE TABLE lab_staff (
 );
 
 
+CREATE TABLE login_otps (
+	id SERIAL NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	phone_tail VARCHAR(4) NOT NULL, 
+	code_hash VARCHAR(64) NOT NULL, 
+	expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	attempts INTEGER NOT NULL, 
+	used BOOLEAN NOT NULL, 
+	ip_address VARCHAR(45), 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(user_id) REFERENCES users (id)
+);
+
+CREATE INDEX ix_login_otps_created_at ON login_otps (created_at);
+CREATE INDEX ix_login_otps_user_id ON login_otps (user_id);
+
 CREATE TABLE medicine_inventory (
 	id SERIAL NOT NULL, 
 	medicine_name VARCHAR(200) NOT NULL, 
@@ -280,6 +297,29 @@ CREATE TABLE medicine_inventory (
 CREATE INDEX ix_medicine_inventory_barcode ON medicine_inventory (barcode);
 CREATE INDEX ix_medicine_inventory_generic_name ON medicine_inventory (generic_name);
 CREATE INDEX ix_medicine_inventory_medicine_name ON medicine_inventory (medicine_name);
+
+CREATE TABLE notification_outbox (
+	id SERIAL NOT NULL, 
+	channel VARCHAR(10) NOT NULL, 
+	recipient_user_id INTEGER, 
+	address VARCHAR(254) NOT NULL, 
+	template_key VARCHAR(30) NOT NULL, 
+	subject VARCHAR(150) NOT NULL, 
+	body VARCHAR(600) NOT NULL, 
+	related_type VARCHAR(20) NOT NULL, 
+	related_id INTEGER NOT NULL, 
+	status VARCHAR(8) NOT NULL, 
+	attempts INTEGER NOT NULL, 
+	error VARCHAR(250), 
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	sent_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(recipient_user_id) REFERENCES users (id)
+);
+
+CREATE INDEX ix_notification_outbox_channel ON notification_outbox (channel);
+CREATE INDEX ix_notification_outbox_status ON notification_outbox (status);
+CREATE INDEX ix_notification_outbox_template_key ON notification_outbox (template_key);
 
 CREATE TABLE number_counters (
 	id SERIAL NOT NULL, 

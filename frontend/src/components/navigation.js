@@ -1,7 +1,7 @@
-import { BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, ScanLine, BadgeCheck, Boxes, Droplets, Scissors, Warehouse, FileText, GraduationCap, History, Hospital as HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
+import { BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, Plug, ScanLine, BadgeCheck, Boxes, Droplets, Scissors, Warehouse, FileText, GraduationCap, History, Hospital as HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users } from "lucide-react";
 
 // Icon lookup (only the icons used in menus are bundled).
-export const ICONS = { Boxes, Droplets, Scissors, Warehouse, ScanLine, BadgeCheck, BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
+export const ICONS = { Plug, Boxes, Droplets, Scissors, Warehouse, ScanLine, BadgeCheck, BedDouble, ListOrdered, Siren, Share2, UserCheck, CircleUser, Briefcase, CalendarClock, ClipboardList, ReceiptText, FileSearch, FlaskConical, FileText, GraduationCap, History, HospitalIcon, Send, ShieldAlert, LayoutDashboard, ListChecks, MessageCircle, NotebookPen, Package, Pill, ScrollText, Settings, Stethoscope, Upload, UserPlus, UserRound, Users };
 
 // Sidebar menu for each role: [path, label, icon name]. The backend enforces the same permissions.
 export const NAV = {
@@ -12,6 +12,7 @@ export const NAV = {
     ["/admin/employees", "Employees", "Briefcase"],
     ["/admin/pharmacy-staff", "Pharmacy Staff", "Pill"],
     ["/admin/lab-staff", "Laboratory Staff", "FlaskConical"],
+    ["/admin/integrations", "Integrations", "Plug"],
     ["/admin/radiology-staff", "Radiology Staff", "ScanLine"],
     ["/admin/nurses", "Nurses", "Stethoscope"],
     ["/admin/patients", "Patients", "UserRound"],

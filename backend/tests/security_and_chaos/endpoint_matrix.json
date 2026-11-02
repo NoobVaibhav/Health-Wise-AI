@@ -51,6 +51,40 @@
   }
  },
  {
+  "method": "POST",
+  "path": "/api/auth/otp/request",
+  "public": true,
+  "roles": "PUBLIC",
+  "results": {
+   "none": 422,
+   "PATIENT": 422,
+   "PHARMACY": 422,
+   "LAB": 422,
+   "INTERN": 422,
+   "NURSE": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "POST",
+  "path": "/api/auth/otp/verify",
+  "public": true,
+  "roles": "PUBLIC",
+  "results": {
+   "none": 422,
+   "PATIENT": 422,
+   "PHARMACY": 422,
+   "LAB": 422,
+   "INTERN": 422,
+   "NURSE": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
   "method": "GET",
   "path": "/api/auth/me",
   "public": false,

@@ -57,6 +57,7 @@ import FinanceBilling from "./pages/finance/Billing";
 import Claims from "./pages/finance/Claims";
 import FinanceReports from "./pages/finance/FinanceReports";
 import MyBills from "./pages/patient/MyBills";
+import Integrations from "./pages/admin/Integrations";
 import TraineeDashboard from "./pages/trainee/Dashboard";
 import TraineeTakeHistory from "./pages/trainee/TakeHistory";
 import TraineeSelectDoctor from "./pages/trainee/SelectDoctor";
@@ -108,6 +109,7 @@ export default function App() {
             <Route path="pharmacy-staff" element={<StaffManager kind="pharmacy-staff" />} />
             <Route path="lab-staff" element={<StaffManager kind="lab-staff" />} />
             <Route path="radiology-staff" element={<StaffManager kind="radiology-staff" />} />
+            <Route path="integrations" element={<Integrations />} />
             <Route path="nurses" element={<StaffManager kind="nurses" />} />
             <Route path="beds" element={<Beds />} />
             <Route path="profile" element={<Profile />} />

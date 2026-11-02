@@ -58,16 +58,36 @@ describe("Login with a mobile code", () => {
     expect(requestOtp).not.toHaveBeenCalled();
   });
 
-  it("the demo list fills the e-mail, the password and the phone of the chosen account, and can be searched", async () => {
+  it("the demo accounts are a dropdown under the button: closed until asked for, every account in one list grouped by role, a click fills the e-mail, the password and the phone, and it can be searched", async () => {
     open();
+    const toggle = screen.getByRole("button", { name: /Demo accounts/ });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(document.getElementById("demo-sheet").getAttribute("aria-hidden")).toBe("true");                // closed: nothing in it can be tabbed to
+    expect(screen.getByLabelText("Email")).toBeTruthy();                                                   // and the form is always there
+    await userEvent.click(toggle);
+    expect(document.getElementById("demo-sheet").getAttribute("data-open")).toBe("true");
+    expect(document.querySelectorAll("#demo-sheet .hw-demo").length).toBe(20);                              // all of them, no tabs to click through
     await userEvent.click(screen.getByRole("button", { name: /Fill in Billing: Bina Shah/ }));
+    expect(document.getElementById("demo-sheet").getAttribute("data-open")).toBe("false");                 // choosing closes it so the form is in view
     expect(screen.getByLabelText("Email").value).toBe("billing@healthwise.demo.com");
     expect(screen.getByLabelText("Password").value).toBe("Demo@12345");
+    expect(document.querySelectorAll(".hw-flash").length).toBe(2);                                         // both fields flash once
+    await userEvent.click(screen.getByRole("button", { name: /Demo accounts/ }));
     await userEvent.type(screen.getByPlaceholderText("Search a role or name"), "radiolog");
     expect(screen.queryByRole("button", { name: /Fill in Billing/ })).toBeNull();
     expect(screen.getByRole("button", { name: /Fill in Radiologist/ })).toBeTruthy();
+    await userEvent.keyboard("{Escape}");
+    expect(document.getElementById("demo-sheet").getAttribute("data-open")).toBe("false");
     await userEvent.click(screen.getByRole("tab", { name: /Mobile code/ }));
-    expect(screen.getByLabelText("Mobile number").value).toBe("9000000115");                  // the phone of the account picked (Bina Shah)
+    expect(screen.getByLabelText("Mobile number").value).toBe("9000000115");                              // the phone of the account picked (Bina Shah)
+  });
+
+  it("a click outside the dropdown closes it", async () => {
+    open();
+    await userEvent.click(screen.getByRole("button", { name: /Demo accounts/ }));
+    expect(document.getElementById("demo-sheet").getAttribute("data-open")).toBe("true");
+    await userEvent.click(screen.getByLabelText("Email"));
+    expect(document.getElementById("demo-sheet").getAttribute("data-open")).toBe("false");
   });
 });
 
