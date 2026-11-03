@@ -4,7 +4,7 @@
 // small microphone to dictate one question. All of it uses the browser's own free speech features: no outside voice service or key.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, Check, Copy, Loader2, Mic, Pause, Play, RotateCcw, Send, ShieldCheck, Square, Trash2, Volume2 } from "lucide-react";
+import { AlertTriangle, ArrowDown, Check, Copy, Mic, Pause, Play, RotateCcw, Send, ShieldCheck, Square, Trash2, Volume2 } from "lucide-react";
 import { deleteConversation, getAssistantInfo, getSuggestions, sendChat } from "../../services/assistantApi";
 import { getErrorMessage } from "../../services/api";
 import {
@@ -12,6 +12,7 @@ import {
   voiceErrorMessage, voicesFor,
 } from "../../utils/voice";
 import VoicePanel from "./VoicePanel";
+import MicInfo, { MicInfoButton } from "./MicInfo";
 
 const SOURCE_ROUTE = {
   report: (s) => `/patient/reports/${s.id}`,
@@ -27,6 +28,8 @@ const store = {
 };
 const when = (iso) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "");
 const RATES = [0.8, 1, 1.25];
+/** The clock time of a message ("10:42 am"). The server sends UTC without a zone mark, so one is added. */
+const clock = (iso) => (iso ? new Date(/[zZ]|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}Z`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "");
 
 /** The same label and date twice (two pieces of advice from one day) is shown once with a count. */
 function groupSources(sources) {
@@ -101,6 +104,10 @@ export default function AssistantChat() {
   const [speaking, setSpeaking] = useState({ id: null, state: "idle" });
   const [speakNote, setSpeakNote] = useState("");
   const [voices, setVoices] = useState([]);
+  const [micInfo, setMicInfo] = useState(false);          // the (i) sheet "How the microphone works"
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [showJump, setShowJump] = useState(false);        // "Jump to latest" while the person has scrolled up
+  const stick = useRef(true);                             // true while the view is at the bottom: new messages then scroll into view
   const listener = useRef(null);
   const bottom = useRef(null);
   const lastAnswer = useRef(null);
@@ -132,6 +139,7 @@ export default function AssistantChat() {
   useEffect(() => {
     const last = messages[messages.length - 1];
     const answered = last?.role === "ASSISTANT" && !busy && !failed;
+    if (!stick.current && last?.role !== "PATIENT") return;      // someone reading older messages is not pulled away; the jump button is there
     (answered ? lastAnswer.current : bottom.current)?.scrollIntoView?.({ behavior: "smooth", block: answered ? "start" : "end" });
   }, [messages, busy, failed]);
   useEffect(() => () => {
@@ -218,6 +226,13 @@ export default function AssistantChat() {
     }
   }, [busy, conversationId, language, aiConsent, sounds, speaker, finishReply, endHandsFree]);
 
+  const jumpToLatest = () => { stick.current = true; setShowJump(false); bottom.current?.scrollIntoView?.({ behavior: "smooth", block: "end" }); };
+  const onLogScroll = (e) => {
+    const el = e.currentTarget;
+    const near = el.scrollHeight - el.scrollTop - el.clientHeight < 140;
+    stick.current = near;
+    setShowJump(!near && messagesRef.current.length > 0);
+  };
   const clearChat = useCallback(async () => {
     speaker.stop();
     if (conversationId) { try { await deleteConversation(conversationId); } catch { /* the chat on screen is cleared anyway */ } }
@@ -348,42 +363,58 @@ export default function AssistantChat() {
   const orbState = listening ? "listening" : busy ? "thinking" : speaking.state !== "idle" ? "speaking" : "idle";
 
   return (
-    <section className="flex h-[calc(100vh-19rem)] min-h-[34rem] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm" aria-label="Ask HealthWise assistant">
-      <header className="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800" title="Answers use only your own medical records.">
-          <ShieldCheck size={18} /> <span>Answers use your own medical records. Nobody else can see this chat.</span>
-        </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2 text-sm">
-          <label className="flex items-center gap-1.5 font-semibold text-slate-600">Language
-            <select value={language} onChange={(e) => changeLanguage(e.target.value)} className="rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-base">
-              {Object.entries(LANG_NAMES).map(([code, name]) => <option key={code} value={code}>{name}</option>)}
-            </select>
-          </label>
-          <button type="button" onClick={clearChat} className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-            <Trash2 size={16} /> Clear chat
-          </button>
-        </div>
+    <section className="relative flex h-[calc(100dvh-15rem)] min-h-[26rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white sm:h-[calc(100dvh-13rem)] sm:min-h-[34rem] sm:rounded-3xl" aria-label="Ask HealthWise assistant">
+      <header className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-3 py-1.5">
+        <p className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 ring-1 ring-emerald-100" title="Answers use your own medical records. Nobody else can see this chat.">
+          <ShieldCheck size={15} className="shrink-0" aria-hidden="true" />
+          <span className="truncate" aria-hidden="true">Private: your own records only</span>
+          <span className="sr-only">Answers use your own medical records. Nobody else can see this chat.</span>
+        </p>
+        <label className="flex shrink-0 items-center text-sm font-semibold text-slate-600"><span className="sr-only">Language</span>
+          <select value={language} onChange={(e) => changeLanguage(e.target.value)} className="h-11 max-w-[8.5rem] rounded-xl border border-slate-300 bg-white px-2 text-base focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-brand-400">
+            {Object.entries(LANG_NAMES).map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+          </select>
+        </label>
+        <button type="button" onClick={() => setConfirmClear(true)} aria-label="Clear chat" title="Clear chat" aria-haspopup="dialog"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-brand-400"><Trash2 size={19} aria-hidden="true" /></button>
+        <MicInfoButton open={micInfo} onClick={() => setMicInfo(true)} />
       </header>
+      {confirmClear && (
+        <div role="alertdialog" aria-label="Clear this chat?" className="sheet-in flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <span className="font-semibold">Clear this chat? It cannot be brought back.</span>
+          <span className="flex gap-2">
+            <button type="button" onClick={() => { setConfirmClear(false); clearChat(); }} className="min-h-11 rounded-xl bg-red-600 px-4 font-semibold text-white hover:bg-red-700">Yes, clear chat</button>
+            <button type="button" onClick={() => setConfirmClear(false)} className="min-h-11 rounded-xl bg-white px-4 font-semibold text-slate-700 ring-1 ring-slate-300">Keep it</button>
+          </span>
+        </div>)}
 
       <VoicePanel state={orbState} heard={heard} onOrb={onOrb} inputOk={inputOk} outputOk={outputOk} handsFree={handsFree} wakeOn={wakeOn} onWake={changeWake} wakeSupported={inputOk}
         voices={voices} voiceName={voiceName} onVoice={changeVoice} autoRead={autoRead} onAutoRead={changeAutoRead} sounds={sounds} onSounds={changeSounds} rate={rate} onRate={changeRate} />
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4" role="log" aria-live="polite" aria-label="Conversation">
+      <div className="relative min-h-0 flex-1">
+      <div className="h-full space-y-3 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4" role="log" aria-live="polite" aria-label="Conversation" onScroll={onLogScroll}>
         {messages.length === 0 && (
-          <div className="mx-auto max-w-xl rounded-2xl bg-brand-50/60 p-5 text-center text-slate-700">
+          <div className="mx-auto max-w-xl py-2 text-center text-slate-700">
             <p className="text-lg font-bold text-slate-900">Hello! Ask me about your own health records.</p>
-            <p className="mt-1">I can explain your last checkup, reports, medicines and appointments in simple words. You can type, or press the round button and just talk to me.</p>
+            <p className="mt-1 text-base">I can explain your last checkup, reports, medicines and appointments in simple words. Type, or tap the round button and talk to me.</p>
+            {suggestions.length > 0 && (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2" aria-label="Suggested questions">
+                {suggestions.slice(0, 4).map((q) => (
+                  <button key={q.key} type="button" onClick={() => send(q.text)} className="min-h-12 rounded-2xl bg-brand-50 px-4 py-2 text-base font-semibold text-brand-800 ring-1 ring-brand-100 hover:bg-brand-100 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-brand-400">{q.text}</button>
+                ))}
+              </div>)}
           </div>
         )}
         {messages.map((m, index) => {
           const mine = m.role === "PATIENT";
           const emergency = m.safety === "EMERGENCY";
           return (
-            <div key={m.id} ref={index === messages.length - (messages[messages.length - 1]?.role === "ASSISTANT" ? 2 : 1) ? lastAnswer : null} className={`flex scroll-mt-2 ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[92%] rounded-3xl px-4 py-3 text-base leading-relaxed sm:max-w-[80%] ${mine ? "rounded-br-lg bg-brand-600 text-white" : emergency ? "rounded-bl-lg border-2 border-red-400 bg-red-50 text-red-900" : "rounded-bl-lg bg-slate-100 text-slate-900"}`}>
+            <div key={m.id} ref={index === messages.length - (messages[messages.length - 1]?.role === "ASSISTANT" ? 2 : 1) ? lastAnswer : null} className={`msg-in flex scroll-mt-2 ${mine ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[85%] rounded-3xl px-4 py-3 text-base leading-relaxed sm:max-w-[75%] ${mine ? "rounded-br-lg bg-brand-600 text-white" : emergency ? "rounded-bl-lg border-2 border-red-400 bg-red-50 text-red-900" : "rounded-bl-lg bg-slate-100 text-slate-900"}`}>
                 {emergency && <p className="mb-1 flex items-center gap-1.5 font-extrabold"><AlertTriangle size={18} /> Urgent</p>}
                 {mine ? <p className="whitespace-pre-line">{m.text}</p> : <AnswerText text={m.text} />}
                 {!mine && <Sources sources={m.sources} />}
+                {m.created_at && <p className={`mt-1 text-xs ${mine ? "text-right text-brand-100" : "text-slate-500"}`}><time dateTime={m.created_at}>{clock(m.created_at)}</time></p>}
                 {!mine && m.ai_used && <p className="mt-1 text-xs text-slate-500">Wording simplified by an AI service from the facts above.</p>}
                 {!mine && (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -406,7 +437,7 @@ export default function AssistantChat() {
         })}
         {busy && (
           <div className="flex justify-start" role="status">
-            <div className="flex items-center gap-2 rounded-3xl rounded-bl-lg bg-slate-100 px-4 py-3 text-slate-600"><Loader2 className="animate-spin" size={18} /> Looking through your records...</div>
+            <div className="msg-in flex items-center gap-2 rounded-3xl rounded-bl-lg bg-slate-100 px-4 py-3 text-slate-700"><span className="flex gap-1" aria-hidden="true"><i className="typing-dot" /><i className="typing-dot" /><i className="typing-dot" /></span> Looking through your records...</div>
           </div>
         )}
         {failed && (
@@ -417,14 +448,20 @@ export default function AssistantChat() {
         )}
         <div ref={bottom} />
       </div>
+      {showJump && (
+        <button type="button" onClick={jumpToLatest} className="sheet-in absolute bottom-3 left-1/2 flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full bg-brand-700 px-4 text-sm font-bold text-white shadow-lg focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-brand-300"><ArrowDown size={16} aria-hidden="true" /> Jump to latest</button>)}
+      </div>
 
-      <footer className="space-y-2 border-t border-slate-100 bg-white px-4 py-3">
-        {showChips && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1" aria-label="Suggested questions">
+      <footer className="space-y-2 border-t border-slate-100 bg-white px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4">
+        {showChips && messages.length > 0 && (
+          <div className="relative">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pr-10 [scrollbar-width:none]" aria-label="Suggested questions">
             {followUps.length > 0 && <span className="shrink-0 text-sm font-bold text-slate-500">Ask next:</span>}
             {chips.map((s) => (
               <button key={s.key} type="button" onClick={() => send(s.text)} className="shrink-0 whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-1.5 text-sm font-semibold text-brand-700 ring-1 ring-brand-100 hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">{s.text}</button>
             ))}
+          </div>
+          <span className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent" aria-hidden="true" />
           </div>
         )}
         {voiceNotice && (
@@ -438,17 +475,17 @@ export default function AssistantChat() {
         )}
         {voiceMessage && <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">{voiceMessage}</p>}
         {speakNote && <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">{speakNote}</p>}
-        {listening && !handsFree && <p className="flex items-center gap-2 text-sm font-semibold text-red-600" role="status"><span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-600" /> Listening... speak now. You can edit the text before sending.</p>}
+        {listening && !handsFree && <p className="flex items-center gap-2 text-sm font-semibold text-red-700" role="status"><span className="flex h-4 items-end gap-0.5" aria-hidden="true"><i className="wave-bar" /><i className="wave-bar" /><i className="wave-bar" /><i className="wave-bar" /></span> Listening... speak now. You can edit the text before sending.</p>}
         <div className="flex items-end gap-2">
           <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={onKey} rows={1} maxLength={1000}
-            aria-label="Type your question" placeholder="Type your question, or press the microphone..."
-            className="max-h-32 min-h-[3rem] flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200" />
+            aria-label="Type your question" placeholder="Type your question, or tap the mic..."
+            className="max-h-32 min-h-[3.5rem] min-w-0 flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-3.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200" />
           <button type="button" onClick={toggleMic} aria-pressed={listening && !handsFree} aria-label={listening && !handsFree ? "Stop listening" : "Speak your question"}
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${listening && !handsFree ? "animate-pulse bg-red-600 focus-visible:ring-red-500" : "bg-slate-700 hover:bg-slate-800 focus-visible:ring-slate-500"}`}>
-            {listening && !handsFree ? <Square size={18} /> : <Mic size={20} />}
+            className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${listening && !handsFree ? "mic-ring bg-red-600 focus-visible:ring-red-500" : "bg-slate-700 hover:bg-slate-800 focus-visible:ring-slate-500"}`}>
+            {listening && !handsFree ? <Square size={20} aria-hidden="true" /> : <Mic size={22} aria-hidden="true" />}
           </button>
           <button type="button" onClick={() => send(input, false)} disabled={busy || !input.trim()} aria-label="Send question"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40">
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40">
             <Send size={20} />
           </button>
         </div>
@@ -460,6 +497,7 @@ export default function AssistantChat() {
         )}
         <p className="text-xs text-slate-500">{info?.disclaimer || "This assistant gives information from your own records. It is not a doctor. Medical decisions should be made with qualified healthcare professionals."}</p>
       </footer>
+      {micInfo && <MicInfo onClose={() => setMicInfo(false)} />}
     </section>
   );
 }

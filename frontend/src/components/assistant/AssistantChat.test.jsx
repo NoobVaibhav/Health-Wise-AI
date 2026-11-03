@@ -117,6 +117,7 @@ describe("AssistantChat", () => {
     await userEvent.type(screen.getByLabelText("Type your question"), "I have chest pain now{Enter}");
     expect(await screen.findByText("Urgent")).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: /Clear chat/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Yes, clear chat/ }));   // the icon-only button now asks first
     expect(deleteConversation).toHaveBeenCalledWith(7);
     expect(screen.queryByText("Urgent")).toBeNull();
   });

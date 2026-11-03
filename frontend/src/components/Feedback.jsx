@@ -39,15 +39,15 @@ export const EmptyState = ({ message, hint, actionTo, actionText, icon: Icon = I
 );
 
 export const PageTitle = ({ title, subtitle, icon: Icon }) => (
-  <div className="mb-5 flex items-start gap-3">
+  <div className="mb-3 flex items-start gap-3 md:mb-5">
     {Icon && (
       <span className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow">
         <Icon size={22} />
       </span>
     )}
-    <div>
-      <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">{title}</h1>
-      {subtitle && <p className="mt-0.5 text-slate-500">{subtitle}</p>}
+    <div className="min-w-0">
+      <h1 className="text-xl font-extrabold tracking-tight text-slate-900 md:text-3xl">{title}</h1>
+      {subtitle && <p className="mt-0.5 line-clamp-2 text-sm text-slate-600 sm:line-clamp-none sm:text-base sm:text-slate-500">{subtitle}</p>}
     </div>
   </div>
 );

@@ -14,7 +14,7 @@ export default function Layout() {
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
       <div className="md:pl-64">
         <Navbar onMenu={() => setMenuOpen(true)} />
-        <main className="mx-auto max-w-6xl p-4 md:p-8">
+        <main className="mx-auto max-w-6xl p-3 sm:p-4 md:p-8">
           <DisclaimerBanner />
           {/* key = path, so every page fades in when you move to it */}
           <ErrorBoundary key={location.pathname} inFrame><div className="page-enter"><Outlet /></div></ErrorBoundary>
