@@ -2,6 +2,8 @@
 
 employee uploads -> real analysis -> doctor reviews -> note + recommendation + prescription
 -> patient sees everything -> pharmacy dispenses -> patient sees dispensing status."""
+from datetime import date, timedelta
+
 from tests import sample_data as sd
 from tests.conftest import future, login, upload
 
@@ -59,7 +61,7 @@ def test_complete_hospital_workflow(client, world):
     assert note.status_code == 201 and note.json()["label"] == "Doctor's Note"
     rec = client.post("/api/doctor/recommendations", headers=world.doctor, json={
         "patient_id": world.patient_id, "report_id": report_id, "title": "Follow-up monitoring",
-        "recommendation": "Follow the prescribed follow-up schedule.", "follow_up_date": "2030-01-15"})
+        "recommendation": "Follow the prescribed follow-up schedule.", "follow_up_date": (date.today() + timedelta(days=90)).isoformat()})
     assert rec.status_code == 201
     rx = client.post("/api/prescriptions", headers=world.doctor, json={**RX_BODY, "patient_id": world.patient_id,
                                                                        "report_id": report_id})
