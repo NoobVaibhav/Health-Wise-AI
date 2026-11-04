@@ -26,7 +26,9 @@ const ERROR_KIND = {
 export function voiceErrorMessage(kind) {
   switch (kind) {
     case "unsupported": return "Voice input is not available in this browser. Please type your question instead.";
-    case "denied": return "The microphone is blocked. Allow microphone access in your browser's address bar, or type your question instead.";
+    case "denied": return win().Capacitor?.isNativePlatform?.()
+      ? "The microphone is blocked. Open your phone's Settings, then Apps, HealthWise AI, Permissions, and allow Microphone, or type your question instead."
+      : "The microphone is blocked. Allow microphone access in your browser's address bar, or type your question instead.";
     case "no-microphone": return "No microphone was found. Please type your question instead.";
     case "no-speech": return "I did not hear anything. Press the microphone and try again, or type your question.";
     case "network": return "Voice recognition needs an internet connection. Please type your question instead.";

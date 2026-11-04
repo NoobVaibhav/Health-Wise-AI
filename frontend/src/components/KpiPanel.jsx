@@ -55,7 +55,8 @@ function RankedLabKpis({ report }) {
         <p className="mt-4 flex items-center gap-2 rounded-2xl bg-emerald-50 p-4 font-semibold text-emerald-800"><CheckCircle2 size={20} /> No result is far outside its printed range.</p>
       ) : (
         <div className="mt-5">
-          <p className="mb-3 text-sm font-bold text-slate-700">Look at these first (most important first)</p>
+          <p className="mb-1 text-sm font-bold text-slate-700">Look at these first (most important first)</p>
+          <p className="mb-3 text-xs text-slate-500">Ranked by how far each result is from its printed range. A low LDL or triglyceride value (usually reassuring) counts for a quarter, and calculated ratios come after measured results.</p>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {ins.priority.map((e) => {
               const p = params.find((x) => (x.normalized_name || x.test_name) === e.name);

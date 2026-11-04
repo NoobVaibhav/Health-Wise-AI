@@ -133,7 +133,7 @@ export function ReportsTable({ reports, base, showPatient = true, onChanged }) {
             <div className="min-w-0">
               <p className="break-words font-bold text-slate-900">{r.filename}</p>
               <p className="text-sm text-slate-500">
-                {showPatient && <>{r.patient_name} ({r.patient_code}) - </>}{r.report_type_label.split(" (")[0]} - report date {fmtDate(r.report_date)}{r.parameter_count > 0 && ` - ${r.parameter_count} tests`} - uploaded by {r.uploaded_by_name}
+                {showPatient && <>{r.patient_name} ({r.patient_code}) - </>}{r.report_type_label.split(" (")[0]} - report date {r.report_date ? fmtDate(r.report_date) : "not printed"}{r.parameter_count > 0 && ` - ${r.parameter_count} tests`} - uploaded by {r.uploaded_by_name}
               </p>
             </div>
           </div>

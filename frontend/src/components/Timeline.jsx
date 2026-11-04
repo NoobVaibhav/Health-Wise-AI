@@ -36,7 +36,7 @@ export default function Timeline({ events }) {
                   <span className={`absolute -left-[39px] top-0 flex h-8 w-8 items-center justify-center rounded-full text-white ring-4 ring-white ${dot}`}><Icon size={16} /></span>
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-bold text-slate-900">{e.title}</p>
-                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${badge}`}>{label}</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badge}`}>{label}</span>
                   </div>
                   {e.detail && <p className="text-sm text-slate-600">{e.detail}</p>}
                 </li>

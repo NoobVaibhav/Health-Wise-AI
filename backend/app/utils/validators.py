@@ -224,6 +224,26 @@ def _not_future(value):
     return value
 
 
+def _planned_date(value):
+    """A date a doctor sets ahead (follow-up, due date, expected discharge): a real recent-century date, at most 2 years ahead."""
+    if value is None:
+        return value
+    if value < date(1900, 1, 1):
+        raise ValueError("Please enter a valid date.")
+    if value > date.today() + timedelta(days=731):
+        raise ValueError("This date is too far ahead. Please choose a date within 2 years.")
+    return value
+
+
+def _not_far_future(value):
+    """A time recorded after the fact (a timeline entry): not in the future (one hour of grace for clock differences)."""
+    if value is not None and value > datetime.now() + timedelta(hours=1):
+        raise ValueError("This time cannot be in the future.")
+    return value
+
+
+PlannedDate = Annotated[date | None, AfterValidator(_planned_date)]
+RecordedTime = Annotated[datetime, AfterValidator(_not_far_future)]
 PastOrTodayDate = Annotated[date | None, AfterValidator(_not_future)]
 PastOrTodayRequired = Annotated[date, AfterValidator(_not_future)]
 
@@ -351,12 +371,20 @@ def check_duration(value: str) -> str:
     v = clean_text(value)
     if v == "":
         raise ValueError("Please give the duration of the medicine.")
+    if re.match(r"^[-−]\s*\d", v):
+        raise ValueError("The duration must be more than zero.")
     m = re.fullmatch(r"(\d{1,4})\s*([A-Za-z]*)", v)
     if m and (m.group(2).lower() in DURATION_UNITS or m.group(2) == ""):
         days = int(m.group(1)) * DURATION_UNITS.get(m.group(2).lower(), 1)
         if not 1 <= days <= 365:
             raise ValueError("The duration must be between 1 and 365 days.")
     return v
+
+
+def check_blood_pressure(systolic, diastolic):
+    """The upper reading is higher than the lower one (the other way round is a typing mistake)."""
+    if systolic is not None and diastolic is not None and diastolic >= systolic:
+        raise ValueError("The upper blood pressure must be higher than the lower one.")
 
 
 # ------------------------------------------------------------------ ids and query parameters
@@ -382,9 +410,9 @@ def one_of(*allowed: str, name: str = "value"):
     allowed_set = {a.upper() for a in allowed}
 
     def check(value):
-        if value is None or clean_text(value) == "":
+        if value is None or str(value).strip() == "":
             return None
-        v = clean_text(value).upper()
+        v = clean_text(value).upper()               # a value that was only markup cleans to "" and is then refused below, not ignored
         if v not in allowed_set:
             raise ValueError(f"The {name} must be one of: {', '.join(sorted(allowed_set))}.")
         return v

@@ -44,7 +44,7 @@ export default function TraineeDashboard() {
             </li>))}</ul>
         </Section>)}
       {d.recent_referrals.length > 0 && (
-        <Section title="Latest referrals" action={<Link to="/trainee/referrals" className="text-sm font-semibold text-brand-700 underline">See all</Link>}>
+        <Section title="Latest referrals" action={<Link to="/trainee/referrals" className="inline-flex min-h-11 min-w-11 items-center justify-center text-sm font-semibold text-brand-700 underline">See all</Link>}>
           <ul className="divide-y">{d.recent_referrals.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5"><span><b>{r.patient_name}</b> to {r.doctor_name}</span><ReferralStatus r={r} /></li>))}</ul>
         </Section>)}

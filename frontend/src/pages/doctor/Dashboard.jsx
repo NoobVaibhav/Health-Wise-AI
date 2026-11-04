@@ -34,11 +34,11 @@ export default function DoctorDashboard() {
       </div>
 
       {d.trainee_referrals?.length > 0 && (
-        <Section title="Sent by interns and PG students" action={<Link to="/doctor/referrals" className="text-sm font-semibold text-brand-700 underline">See all</Link>}>
+        <Section title="Sent by interns and PG students" action={<Link to="/doctor/referrals" className="inline-flex min-h-11 min-w-11 items-center justify-center text-sm font-semibold text-brand-700 underline">See all</Link>}>
           <ul className="divide-y">{d.trainee_referrals.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-              <span><b>{r.patient_name}</b> · {r.reason} <span className="text-sm text-slate-500">· history taken by {r.taken_by}</span></span>
-              <span className="flex items-center gap-2">{r.urgent && <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">URGENT</span>}{r.history_status === "COMPLETE" && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">Pending your review</span>}</span>
+              <span className="min-w-0 break-words"><b>{r.patient_name}</b> · {r.reason} <span className="text-sm text-slate-500">· history taken by {r.taken_by}</span></span>
+              <span className="flex items-center gap-2">{r.urgent && <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">URGENT</span>}{r.history_status === "COMPLETE" && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">Pending your review</span>}<Link to={`/doctor/patients/${r.patient_id}`} aria-label={`Open case of ${r.patient_name}`} className="inline-flex min-h-11 items-center rounded-xl bg-brand-600 px-4 text-sm font-bold text-white hover:bg-brand-700">Open case</Link></span>
             </li>))}</ul>
         </Section>)}
 
@@ -84,7 +84,7 @@ function AttentionQueue({ items }) {
         {items.map((i) => (
           <Link key={i.report_id} to={`/doctor/reports/${i.report_id}`} className="tile block rounded-2xl border border-slate-200 bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
+              <div className="min-w-0 max-w-full break-words">
                 <p className="font-bold text-slate-900">{i.patient_name} <span className="text-sm font-normal text-slate-400">{i.patient_code}</span></p>
                 <p className="text-sm text-slate-500">{i.report_type_label} - {i.filename}</p>
               </div>

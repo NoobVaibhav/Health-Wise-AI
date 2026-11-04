@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, LayoutGrid, Table2 } from "lucide-react";
 import StatusBadge from "./StatusBadge";
 import RangeBar, { humanRange } from "./RangeBar";
+import { TableNote } from "./ReportCoverage";
 
 const FILTERS = [
   ["ALL", "All"], ["ABOVE_RANGE", "Too high"], ["BELOW_RANGE", "Too low"],
@@ -72,6 +73,7 @@ function ResultCard({ p }) {
       <p className="mt-2 text-3xl font-extrabold text-slate-900">{p.value} <span className="text-base font-semibold text-slate-500">{p.unit}</span></p>
       <RangeBar value={p.value} low={p.reference_low} high={p.reference_high} status={p.status} />
       <p className="mt-2 text-base text-slate-700">{sentence(p)}</p>
+      <TableNote text={e.table_note} />
       <p className="mt-2 rounded-xl bg-slate-50 p-3 text-base text-slate-700"><span className="font-semibold text-slate-700">What is this test? </span>{e.simple}</p>
       <button onClick={() => setOpen(!open)} className="mt-3 inline-flex min-h-10 items-center gap-1 rounded-xl border-2 border-brand-700 bg-white px-4 text-sm font-bold text-brand-800 hover:bg-brand-50">
         {open ? <>Show less <ChevronUp size={16} /></> : <>Tell me more <ChevronDown size={16} /></>}
@@ -95,7 +97,7 @@ function TableView({ rows }) {
         <tbody>
           {rows.map((p) => (
             <tr key={p.id} className="border-b">
-              <td className="py-3 font-semibold text-slate-900">{p.normalized_name}</td>
+              <td className="py-3 font-semibold text-slate-900">{p.normalized_name}{p.ai_explanation?.table_note && <span className="block text-xs font-normal text-indigo-800">Note: {p.ai_explanation.table_note}</span>}</td>
               <td className="font-bold">{p.value} {p.unit}</td>
               <td>{p.reference_text ? humanRange(p.reference_text) : <span className="text-slate-400">Not printed</span>}</td>
               <td><StatusBadge status={p.status} /></td>

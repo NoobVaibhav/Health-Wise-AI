@@ -14,6 +14,8 @@ from datetime import date
 from app.core.errors import InvalidHealthReportError, UnreadableReportError
 from app.services import insight_service, llm_service, ocr_service, pdf_service
 from app.services.analysis_engine import AnalyzedParameter, analyze_parameters, build_summary
+from app.services.report_coverage import analyse_coverage
+from app.services.report_notes import read_interpretation_tables, table_notes
 from app.services.report_parser import extract_parameters, extract_patient_name, extract_report_date
 from app.utils.file_validation import detect_file_type, get_extension
 from app.utils.text_cleaning import clean_text
@@ -95,20 +97,32 @@ def process_report(filename: str, content: bytes) -> ProcessedReport:
 
     parameters = extract_parameters(cleaned)
     visual = ""
+    layout = ""
+    rows_text = clean_text(raw_text, is_csv=get_extension(filename) == "csv", keep_columns=True)    # the text with its column spacing: the table reader and the coverage check need it
     if method == "pdf_text":                                        # the same PDF read in visual column order: finds rows the first reading garbles
         visual = clean_text(pdf_service.extract_pdf_text_visual(content))
         if visual:
             parameters = merge_parameters(parameters, extract_parameters(visual))
-        layout = clean_text(pdf_service.extract_pdf_text_layout(content))    # a third reading, with the printed rows kept whole
+        layout_raw = pdf_service.extract_pdf_text_layout(content)
+        layout = clean_text(layout_raw)                                     # a third reading, with the printed rows kept whole
         if layout:
             parameters = merge_parameters(parameters, extract_parameters(layout))
+            rows_text = clean_text(layout_raw, keep_columns=True)
+    report_date = extract_report_date(cleaned) or extract_report_date(visual) or extract_report_date(layout)   # each reading may order the page header differently
     # a single stray number is not enough: with fewer than two test results the file must still show signs of a report
     if parameters and (len(parameters) >= 2 or insight_service.has_report_signs(cleaned)):
         analyzed = analyze_parameters(parameters)
-        summary = build_summary(analyzed)
+        coverage, other_results = analyse_coverage(rows_text, analyzed)
+        notes = table_notes(read_interpretation_tables(rows_text), analyzed)
+        for a in analyzed:
+            note = next((n["text"] for n in notes if n["name"] == a.extracted.normalized_name), None)
+            if note:
+                a.explanation["table_note"] = note                          # shown beside the result; the status itself is never changed by it
+        summary = build_summary(analyzed, coverage)
         summary = llm_service.enhance_explanations(analyzed, summary)  # no-op when no LLM key
         report_type = "LAB"
-        insights = insight_service.build_lab_insights(lab_items(analyzed))
+        insights = insight_service.build_lab_insights(lab_items(analyzed), coverage)
+        insights.update({"coverage": coverage, "other_results": other_results, "interpretation_notes": notes})
         comment_findings, comment_flags = insight_service.lab_comment_findings(cleaned)   # only what the lab wrote about this patient
         insights["key_findings"] = insights["key_findings"] + comment_findings[:6]
         insights["red_flags"] = insights["red_flags"] + comment_flags
@@ -127,6 +141,6 @@ def process_report(filename: str, content: bytes) -> ProcessedReport:
         summary = insights["summary"]
 
     return ProcessedReport(
-        text=cleaned, method=method, report_date=extract_report_date(cleaned), parameters=analyzed, summary=summary,
+        text=cleaned, method=method, report_date=report_date, parameters=analyzed, summary=summary,
         patient_name=extract_patient_name(cleaned) or (extract_patient_name(visual) if visual else None), report_type=report_type, insights=insights,
     )

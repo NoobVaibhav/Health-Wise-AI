@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass
 from datetime import date
 
-from app.services.normalization_service import match_parameter_name
+from app.services.normalization_service import match_parameter_name, skip_own_names
 
 # A number, with optional thousands separators (also Indian grouping): 4000, 4,000, 1,50,000, 11,000.5, 5.6
 NUMBER = r"(?:\d{1,2}(?:,\d{2})+,\d{3}(?:\.\d+)?|\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)"
@@ -274,6 +274,8 @@ def extract_parameters(text: str) -> list[ExtractedParameter]:
         hit = match_parameter_name(line, context)
         if not hit:
             continue
+        name_end = hit.end
+        hit.end = skip_own_names(hit.info, line, hit.end)         # "Mean Corpuscular Volume, MCV": the abbreviation is part of the name, not of the result
 
         # Column layout with the value LAST ("Test unit range method value"): tried first, it has a very specific shape.
         following = []
@@ -286,7 +288,7 @@ def extract_parameters(text: str) -> list[ExtractedParameter]:
         if unit_first:
             value, unit, reference = unit_first
             param = ExtractedParameter(
-                test_name=line[: hit.end].strip(), normalized_name=hit.info.name, value=value, unit=unit,
+                test_name=line[: (name_end if "(" in line[name_end: hit.end] else hit.end)].strip(), normalized_name=hit.info.name, value=value, unit=unit,
                 reference_text=reference.text if reference else None, reference_low=reference.low if reference else None,
                 reference_high=reference.high if reference else None)
             existing = results.get(param.normalized_name)
@@ -312,7 +314,7 @@ def extract_parameters(text: str) -> list[ExtractedParameter]:
         value, unit, reference = parsed
 
         param = ExtractedParameter(
-            test_name=line[: hit.end].strip(),
+            test_name=line[: (name_end if "(" in line[name_end: hit.end] else hit.end)].strip(),
             normalized_name=hit.info.name,
             value=value,
             unit=unit,
@@ -331,7 +333,6 @@ def extract_parameters(text: str) -> list[ExtractedParameter]:
 # ---------------------------------------------------------------- report date
 _MONTHS = {m: i for i, m in enumerate(
     ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
-_DATE_LABEL = re.compile(r"report(?:ed)?|collect|sample|date|reg", re.IGNORECASE)
 _DATE_PATTERNS = [
     (re.compile(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b"), "ymd"),
     (re.compile(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b"), "dmy"),
@@ -355,25 +356,46 @@ def _try_date(kind: str, g: tuple[str, ...]) -> date | None:
     return None
 
 
-_COLLECTED_LABEL = re.compile(r"collect|sample", re.IGNORECASE)
+_COLLECTED_LABEL = re.compile(r"collected(?:\s+on)?|collection\s+date|sample\s+(?:collected|date|drawn)|sampling\s+date", re.IGNORECASE)
+_GENERAL_DATE_LABEL = re.compile(r"test\s+date|report(?:ed)?\s+(?:on|date)|date\s+of\s+(?:report|test)|(?<![A-Za-z])date(?!\s+of\s+birth)(?![A-Za-z])|registered|reg\.?\s+date", re.IGNORECASE)
+_NOT_THE_TEST_DATE = re.compile(r"birth|dob|born|expir|valid\s+(?:till|until|upto)|due\s+date|next\s+(?:visit|review)|print", re.IGNORECASE)
+LOOK_AHEAD_LINES = 2          # reports that print one cell per line put the date on the line after its label
 
 
-def _date_in_lines(lines: list[str]) -> date | None:
-    for line in lines:
-        for pattern, kind in _DATE_PATTERNS:
-            m = pattern.search(line)
-            if m:
-                found = _try_date(kind, m.groups())
-                if found and 2000 <= found.year <= date.today().year + 1:
-                    return found
+def _first_date(text: str) -> date | None:
+    """The date that appears earliest in `text` (any of the printed formats), or None."""
+    found: list[tuple[int, date]] = []
+    for pattern, kind in _DATE_PATTERNS:
+        for m in pattern.finditer(text):
+            parsed = _try_date(kind, m.groups())
+            if parsed and 2000 <= parsed.year <= date.today().year + 1:
+                found.append((m.start(), parsed))
+    return min(found, key=lambda f: f[0])[1] if found else None
+
+
+def _date_after_label(lines: list[str], label: re.Pattern) -> date | None:
+    """The first date printed right after a label ('Collected on: 14/05/2021'), on the same line or, for one-cell-per-line readings, the next lines."""
+    for index, line in enumerate(lines):
+        if _NOT_THE_TEST_DATE.search(line):
+            continue
+        for m in label.finditer(line):
+            same_line = _first_date(line[m.end():])
+            if same_line:
+                return same_line
+            for following in lines[index + 1: index + 1 + LOOK_AHEAD_LINES]:
+                if _NOT_THE_TEST_DATE.search(following):
+                    break
+                nxt = _first_date(following)
+                if nxt:
+                    return nxt
     return None
 
 
 def extract_report_date(text: str) -> date | None:
-    """Find the collection date (when the sample was taken). If the report has none, fall back to the
-    reported/other dated lines. Only lines that mention a date label are considered."""
-    labelled = [line for line in text.split("\n")[:80] if _DATE_LABEL.search(line)]
-    return _date_in_lines([l for l in labelled if _COLLECTED_LABEL.search(l)]) or _date_in_lines(labelled)
+    """The test date: when the sample was collected ('Collected on'), else the date printed as 'Date', 'Test date' or 'Reported on'.
+    The WHOLE text is read: the page header that holds the date is often the last thing a PDF reader returns, not the first."""
+    lines = text.splitlines()
+    return _date_after_label(lines, _COLLECTED_LABEL) or _date_after_label(lines, _GENERAL_DATE_LABEL)
 
 
 # ---------------------------------------------------------------- patient name (safety check)

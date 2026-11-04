@@ -80,6 +80,17 @@ function CopyAnswer({ text }) {
   );
 }
 
+// One line on a phone (the whole text stays in the page); a tap opens the rest.
+function Disclaimer({ text }) {
+  const [more, setMore] = useState(false);
+  return (
+    <p className="flex items-start gap-1 text-xs text-slate-600 [@media(max-height:32rem)]:hidden">
+      <span className={`min-w-0 flex-1 ${more ? "" : "line-clamp-1 sm:line-clamp-none"}`}>{text}</span>
+      <button type="button" onClick={() => setMore((m) => !m)} aria-expanded={more} className="-my-3 min-w-11 shrink-0 px-1 font-bold underline sm:hidden">{more ? "Less" : "More"}</button>
+    </p>
+  );
+}
+
 export default function AssistantChat() {
   const navigate = useNavigate();
   const [language, setLanguage] = useState(() => store.get("hw_assistant_lang", "en"));
@@ -180,6 +191,20 @@ export default function AssistantChat() {
     setHeard("");
     if (message) setVoiceMessage(message);
   }, []);
+
+  // The phone goes to the background, the screen locks, a call comes in or the page is left: nothing keeps listening or talking, and the screen shows "ready" again.
+  useEffect(() => {
+    const stopAll = () => {
+      timers.current.forEach(clearTimeout);
+      timers.current.clear();
+      endHandsFree();
+      speaker.stop();
+    };
+    const onVisibility = () => { if (document.visibilityState === "hidden") stopAll(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", stopAll);
+    return () => { document.removeEventListener("visibilitychange", onVisibility); window.removeEventListener("pagehide", stopAll); };
+  }, [endHandsFree, speaker]);
 
   /** After an answer: read it aloud when the question was spoken (or the person asked for every answer to be read), then listen again if hands-free. */
   const finishReply = useCallback((reply, viaVoice) => {
@@ -364,11 +389,11 @@ export default function AssistantChat() {
   const orbState = listening ? "listening" : busy ? "thinking" : speaking.state !== "idle" ? "speaking" : "idle";
 
   return (
-    <section className="relative flex h-[calc(100dvh-15rem)] min-h-[26rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white sm:h-[calc(100dvh-17rem)] md:h-[calc(100dvh-24rem)] sm:min-h-[34rem] sm:rounded-3xl" aria-label="Ask HealthWise assistant">
+    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card sm:rounded-3xl" aria-label="Ask HealthWise assistant">
       <header className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-3 py-1.5">
         <p className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 ring-1 ring-emerald-100" title="Answers use your own medical records. Nobody else can see this chat.">
           <ShieldCheck size={15} className="shrink-0" aria-hidden="true" />
-          <span className="truncate" aria-hidden="true">Private: your own records only</span>
+          <span className="truncate" aria-hidden="true"><span className="sm:hidden">Private</span><span className="hidden sm:inline">Private: your own records only</span></span>
           <span className="sr-only">Answers use your own medical records. Nobody else can see this chat.</span>
         </p>
         <label className="flex shrink-0 items-center text-sm font-semibold text-slate-600"><span className="sr-only">Language</span>
@@ -395,13 +420,13 @@ export default function AssistantChat() {
       <div className="relative min-h-0 flex-1">
       <div className="h-full space-y-3 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4" role="log" aria-live="polite" aria-label="Conversation" onScroll={onLogScroll}>
         {messages.length === 0 && (
-          <div className="mx-auto max-w-xl py-2 text-center text-slate-700">
-            <p className="text-lg font-bold text-slate-900">Hello! Ask me about your own health records.</p>
-            <p className="mt-1 text-base">I can explain your last checkup, reports, medicines and appointments in simple words. Type, or tap the round button and talk to me.</p>
+          <div className="mx-auto max-w-xl py-1 text-center text-slate-700">
+            <p className="text-base font-bold text-slate-900 sm:text-lg">Hello! Ask me about your own health records.</p>
+            <p className="mt-1 text-sm sm:text-base">I can explain your last checkup, reports, medicines and appointments in simple words. Type, or tap the round button and talk to me.</p>
             {suggestions.length > 0 && (
-              <div className="mt-4 grid gap-2 sm:grid-cols-2" aria-label="Suggested questions">
+              <div className="mt-3 grid gap-2 sm:grid-cols-2" aria-label="Suggested questions">
                 {suggestions.slice(0, 4).map((q) => (
-                  <button key={q.key} type="button" onClick={() => send(q.text)} className="min-h-12 rounded-2xl bg-brand-50 px-4 py-2 text-base font-semibold text-brand-800 ring-1 ring-brand-100 hover:bg-brand-100 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-brand-400">{q.text}</button>
+                  <button key={q.key} type="button" onClick={() => send(q.text)} className="min-h-11 rounded-2xl bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-800 sm:text-base ring-1 ring-brand-100 hover:bg-brand-100 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-brand-400">{q.text}</button>
                 ))}
               </div>)}
           </div>
@@ -453,9 +478,9 @@ export default function AssistantChat() {
         <button type="button" onClick={jumpToLatest} className="sheet-in absolute bottom-3 left-1/2 flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full bg-brand-700 px-4 text-sm font-bold text-white shadow-lg focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-brand-300"><ArrowDown size={16} aria-hidden="true" /> Jump to latest</button>)}
       </div>
 
-      <footer className="space-y-2 border-t border-slate-100 bg-white px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4">
+      <footer className="shrink-0 space-y-2 border-t border-slate-100 bg-white px-3 pb-[max(0.5rem,var(--safe-bottom))] pt-2 sm:px-4">
         {showChips && messages.length > 0 && (
-          <div className="relative">
+          <div className="relative [@media(max-height:32rem)]:hidden">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 pr-10 [scrollbar-width:none]" aria-label="Suggested questions">
             {followUps.length > 0 && <span className="shrink-0 text-sm font-bold text-slate-500">Ask next:</span>}
             {chips.map((s) => (
@@ -480,25 +505,29 @@ export default function AssistantChat() {
         <div className="flex items-end gap-2">
           <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={onKey} rows={1} maxLength={1000}
             aria-label="Type your question" placeholder="Ask a question..."
-            className="max-h-32 min-h-[3.5rem] min-w-0 flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-3.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200" />
+            className="max-h-28 min-h-12 min-w-0 flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200" />
           <button type="button" onClick={toggleMic} aria-pressed={listening && !handsFree} aria-label={listening && !handsFree ? "Stop listening" : "Speak your question"}
-            className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${listening && !handsFree ? "mic-ring bg-red-600 focus-visible:ring-red-500" : "bg-slate-700 hover:bg-slate-800 focus-visible:ring-slate-500"}`}>
-            {listening && !handsFree ? <Square size={20} aria-hidden="true" /> : <Mic size={22} aria-hidden="true" />}
+            className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${listening && !handsFree ? "bg-red-700 focus-visible:ring-red-500" : "bg-slate-700 hover:bg-slate-800 focus-visible:ring-slate-500"}`}>
+            {listening && !handsFree && <span className="orb-ring orb-ring-listening" aria-hidden="true" />}
+            {listening && !handsFree ? <Square size={20} aria-hidden="true" className="relative" /> : <Mic size={22} aria-hidden="true" className="relative" />}
           </button>
           <button type="button" onClick={() => send(input, false)} disabled={busy || !input.trim()} aria-label="Send question"
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40">
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white hover:bg-brand-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40">
             <Send size={20} />
           </button>
         </div>
-        {info?.ai_wording_available && (
-          <label className="flex items-start gap-2 text-sm text-slate-600">
-            <input type="checkbox" checked={aiConsent} onChange={(e) => changeConsent(e.target.checked)} className="mt-1 h-4 w-4" />
-            <span>Let an outside AI service make answers simpler. It sees only the answer text, without your name, phone or email, and can never change a number or date.</span>
-          </label>
-        )}
-        <p className="text-xs text-slate-500">{info?.disclaimer || "This assistant gives information from your own records. It is not a doctor. Medical decisions should be made with qualified healthcare professionals."}</p>
+        <Disclaimer text={info?.disclaimer || "This assistant gives information from your own records. It is not a doctor. Medical decisions should be made with qualified healthcare professionals."} />
       </footer>
-      {micInfo && <MicInfo onClose={() => setMicInfo(false)} />}
+      {micInfo && (
+        <MicInfo onClose={() => setMicInfo(false)}>
+          {info?.ai_wording_available && (
+            <label className="flex items-start gap-2.5 rounded-2xl bg-slate-50 p-3 text-sm text-slate-700">
+              <input type="checkbox" checked={aiConsent} onChange={(e) => changeConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0" />
+              <span>Let an outside AI service make answers simpler. It sees only the answer text, without your name, phone or email, and can never change a number or date.</span>
+            </label>
+          )}
+        </MicInfo>
+      )}
     </section>
   );
 }

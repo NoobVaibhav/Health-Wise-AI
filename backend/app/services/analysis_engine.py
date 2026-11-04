@@ -14,7 +14,7 @@ STATUS_LABELS = {
     WITHIN: "Within provided range",
     ABOVE: "Above provided range",
     BELOW: "Below provided range",
-    UNKNOWN: "Reference range unavailable",
+    UNKNOWN: "No normal range",
 }
 
 
@@ -86,7 +86,7 @@ def analyze_parameters(params: list[ExtractedParameter]) -> list[AnalyzedParamet
     return analyzed
 
 
-def build_summary(analyzed: list[AnalyzedParameter]) -> str:
+def build_summary(analyzed: list[AnalyzedParameter], coverage: dict | None = None) -> str:
     """Deterministic one-paragraph summary of the report, in plain language: what to look at first, what is only slightly outside."""
     from types import SimpleNamespace
     from app.services.parameter_catalog import get_parameter_info
@@ -96,7 +96,7 @@ def build_summary(analyzed: list[AnalyzedParameter]) -> str:
         info = get_parameter_info(a.extracted.normalized_name)
         items.append(SimpleNamespace(name=a.extracted.normalized_name, category=info.category if info else None, status=a.status, value=a.extracted.value,
                                      unit=a.extracted.unit, low=a.extracted.reference_low, high=a.extracted.reference_high))
-    return summary_text(items)
+    return summary_text(items, coverage)
 
 
 def build_summary_plain(analyzed: list[AnalyzedParameter]) -> str:

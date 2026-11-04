@@ -13,7 +13,7 @@ export function MicInfoButton({ onClick, open }) {
   );
 }
 
-export default function MicInfo({ onClose }) {
+export default function MicInfo({ onClose, children }) {
   const close = useRef(null);
   useEffect(() => {
     close.current?.focus();
@@ -22,8 +22,9 @@ export default function MicInfo({ onClose }) {
     return () => document.removeEventListener("keydown", key);
   }, [onClose]);
   return (
-    <div className="absolute inset-0 z-30 flex items-end bg-slate-900/30" onClick={onClose}>
-      <div role="dialog" aria-label="How the microphone works" onClick={(e) => e.stopPropagation()} className="sheet-in max-h-[80%] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl">
+    <div className="fade-in absolute inset-0 z-30 flex items-end bg-slate-900/40" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label="How the microphone works" onClick={(e) => e.stopPropagation()} className="sheet-up max-h-[85%] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-5 pb-[max(1.25rem,var(--safe-bottom))] shadow-sheet">
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300" aria-hidden="true" />
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-lg font-extrabold text-slate-900">How the microphone works</h3>
           <button ref={close} type="button" onClick={onClose} aria-label="Close" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-brand-400"><X size={20} aria-hidden="true" /></button>
@@ -34,6 +35,7 @@ export default function MicInfo({ onClose }) {
           <li>The small microphone next to the text box dictates one question.</li>
           <li>Typing always works, with or without a microphone.</li>
         </ul>
+        {children && <div className="mt-3">{children}</div>}
       </div>
     </div>
   );

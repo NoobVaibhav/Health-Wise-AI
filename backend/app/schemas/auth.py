@@ -64,7 +64,7 @@ class OtpRequest(BaseModel):
 
 class OtpVerify(BaseModel):
     phone: str = Field(min_length=7, max_length=20)
-    code: str = Field(pattern=r"^\d{6}$")
+    code: str = Field(pattern=r"^[0-9]{6}$")
 
 
 class TokenResponse(BaseModel):

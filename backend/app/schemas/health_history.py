@@ -1,8 +1,8 @@
 """Shapes of the health-history form (what the patient or doctor sends and what comes back)."""
 from typing import Literal
 
-from pydantic import BaseModel, Field
-from app.utils.validators import opt_text, text, PULSE, SYSTOLIC, DIASTOLIC, SPO2, TEMPERATURE_F, RESP_RATE, HEIGHT_CM, WEIGHT_KG
+from pydantic import BaseModel, Field, model_validator
+from app.utils.validators import check_blood_pressure, opt_text, text, PULSE, SYSTOLIC, DIASTOLIC, SPO2, TEMPERATURE_F, RESP_RATE, HEIGHT_CM, WEIGHT_KG
 
 Text120 = Field(default=None, max_length=120)
 
@@ -83,6 +83,12 @@ class Baseline(BaseModel):
     noted_on: opt_text(30) = None               # when these were measured
     note: opt_text(300) = None
 
+    @model_validator(mode="after")
+    def _blood_pressure(self):
+        check_blood_pressure(self.bp_systolic, self.bp_diastolic)
+        return self
+
+
 
 class HistoryIn(BaseModel):
     height_cm: HEIGHT_CM = None
@@ -117,6 +123,12 @@ class Vitals(BaseModel):
     spo2: SPO2 = None
     weight_kg: WEIGHT_KG = None
     height_cm: HEIGHT_CM = None
+
+    @model_validator(mode="after")
+    def _blood_pressure(self):
+        check_blood_pressure(self.bp_systolic, self.bp_diastolic)
+        return self
+
 
 
 class Examination(BaseModel):

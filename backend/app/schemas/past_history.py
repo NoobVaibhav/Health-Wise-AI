@@ -5,7 +5,7 @@ from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
-from app.utils.validators import opt_text, text, PositiveId, PULSE, SYSTOLIC, DIASTOLIC, SPO2, TEMPERATURE_F, RESP_RATE
+from app.utils.validators import check_blood_pressure, opt_text, text, PositiveId, PULSE, SYSTOLIC, DIASTOLIC, SPO2, TEMPERATURE_F, RESP_RATE
 
 # who the information came from. EARLIER_ENTRY is only set by the migration of records written before these screens existed.
 Source = Literal["PATIENT_REPORTED", "DOCTOR_VERIFIED", "HOSPITAL_RECORD"]
@@ -102,6 +102,12 @@ class AdmissionVitals(BaseModel):
     spo2: SPO2 = None
     pain_score: int | None = Field(default=None, ge=0, le=10)
     recorded_at: opt_text(60) = None
+
+    @model_validator(mode="after")
+    def _blood_pressure(self):
+        check_blood_pressure(self.bp_systolic, self.bp_diastolic)
+        return self
+
 
 
 class AdmissionMed(BaseModel):

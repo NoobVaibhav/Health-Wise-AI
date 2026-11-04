@@ -70,7 +70,7 @@ class Patient(Base):
     allergies: Mapped[str | None] = mapped_column(Text)
     medical_history_text: Mapped[str | None] = mapped_column(Text)
     current_medications: Mapped[str | None] = mapped_column(Text)
-    assigned_doctor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
+    assigned_doctor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"), index=True)      # the doctor's patient list filters on it
     uhid: Mapped[str | None] = mapped_column(String(30), unique=True, index=True)     # BRANCH-YY-000123 (the old patient_code stays too)
     branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"))
     abha_id: Mapped[str | None] = mapped_column(String(20))                             # only with an active ABHA consent

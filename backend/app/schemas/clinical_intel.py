@@ -5,13 +5,13 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.health_history import Vitals
-from app.utils.validators import opt_text, text, PositiveId
+from app.utils.validators import PlannedDate, RecordedTime, opt_text, text, PositiveId
 
 TIMELINE_KINDS = ("ARRIVAL", "VITALS", "INVESTIGATION", "RESULT", "ASSESSMENT", "TREATMENT", "REASSESSMENT", "DISPOSITION", "OTHER")
 
 
 class TimelineEntryIn(BaseModel):
-    occurred_at: datetime
+    occurred_at: RecordedTime
     kind: Literal["ARRIVAL", "VITALS", "INVESTIGATION", "RESULT", "ASSESSMENT", "TREATMENT", "REASSESSMENT", "DISPOSITION", "OTHER"] = "OTHER"
     text: text(500, min_length=2, multiline=True)
 
@@ -51,7 +51,7 @@ class EmergencyIn(BaseModel):
 class FollowUpIn(BaseModel):
     title: text(200, min_length=3)
     details: opt_text(1000, multiline=True) = None
-    due_date: date | None = None
+    due_date: PlannedDate = None
     source_type: Literal["recommendation", "emergency", "assessment", "note", "report"] | None = None
     source_id: PositiveId | None = None
 

@@ -3,10 +3,11 @@
 // The same sheet serves the doctor (points to consider) and the patient (tips); the report data already holds only what that role may see.
 import { fmtDate, fmtUtc } from "./ui";
 import SummaryPoints from "./SummaryPoints";
+import { groupOtherResults } from "./ReportCoverage";
 
 const num = (v) => (typeof v === "number" ? v.toLocaleString(undefined, { maximumFractionDigits: 2 }) : v);
 const CONCERN = { attention: "Worth a look", normal: "Looks normal", neutral: "Note" };
-const STATUS = { WITHIN_RANGE: "Normal", ABOVE_RANGE: "High", BELOW_RANGE: "Low", UNKNOWN: "No range" };
+const STATUS = { WITHIN_RANGE: "Normal", ABOVE_RANGE: "High", BELOW_RANGE: "Low", UNKNOWN: "No normal range" };
 
 const Block = ({ title, children }) => (
   <section className="mb-3.5">
@@ -26,6 +27,8 @@ export default function ReportPrintSheet({ report, role, short = false }) {
   const findings = ins.key_findings || [];
   const tips = role === "DOCTOR" ? ins.doctor_suggestions : ins.patient_recommendations;
   const c = report.counts || {};
+  const coverage = ins.coverage;
+  const otherGroups = groupOtherResults(ins.other_results);
   const lookAt = (x) => !short || x.concern === "attention";
   return (
     <div className="print-area hidden text-[12px] leading-snug text-slate-900 print:block" aria-hidden="true">
@@ -65,6 +68,7 @@ export default function ReportPrintSheet({ report, role, short = false }) {
                 <td className="p-1">{e.how_far}</td>
               </tr>))}</tbody>
           </table>
+          <p className="mt-1 text-[10px] text-slate-500">Ranked by how far each result is from its printed range. A low LDL or triglyceride value (usually reassuring) counts for a quarter, and calculated ratios come after measured results.</p>
           {!short && priority.some((e) => e.meaning) && (
             <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-[11px] text-slate-600">{priority.filter((e) => e.meaning).map((e) => <li key={e.name} style={{ breakInside: "avoid" }}><b>{e.name}:</b> {e.meaning}</li>)}</ul>
           )}
@@ -101,7 +105,7 @@ export default function ReportPrintSheet({ report, role, short = false }) {
             <thead><tr className="bg-slate-100"><th className="p-1">Test</th><th className="p-1">Result</th><th className="p-1">Normal range</th><th className="p-1">Status</th></tr></thead>
             <tbody>{params.map((p) => (
               <tr key={p.id} className={`border-b border-slate-200 ${p.status === "ABOVE_RANGE" || p.status === "BELOW_RANGE" ? "font-bold" : ""}`} style={{ breakInside: "avoid" }}>
-                <td className="p-1">{p.normalized_name || p.test_name}</td>
+                <td className="p-1">{p.normalized_name || p.test_name}{p.ai_explanation?.table_note && <span className="block text-[10px] font-normal text-slate-600">Note: {p.ai_explanation.table_note}</span>}</td>
                 <td className="p-1">{num(p.value)} {p.unit}</td>
                 <td className="p-1">{p.reference_text || "not printed"}</td>
                 <td className="p-1">{STATUS[p.status] || p.status_label}</td>
@@ -110,10 +114,27 @@ export default function ReportPrintSheet({ report, role, short = false }) {
         </Block>
       )}
 
+      {!short && otherGroups.length > 0 && (
+        <Block title="Other results (shown as printed, not judged)">
+          {otherGroups.map((g) => (
+            <table key={g.key} className="mb-2 w-full border-collapse text-left text-[11px]">
+              <thead><tr className="bg-slate-100"><th className="p-1" colSpan={4}>{g.title}</th></tr></thead>
+              <tbody>{g.rows.map((r, i) => (
+                <tr key={i} className="border-b border-slate-200" style={{ breakInside: "avoid" }}>
+                  <td className="p-1">{r.name}{r.subgroup ? ` (${r.subgroup})` : ""}</td><td className="p-1 font-bold">{r.value}</td><td className="p-1">{r.unit || ""}</td><td className="p-1">{r.reference || ""}</td>
+                </tr>))}</tbody>
+            </table>))}
+        </Block>
+      )}
+
       {!short && tips?.length > 0 && (
         <Block title={role === "DOCTOR" ? "Points for the doctor to consider" : "General tips"}>
           <ul className="list-disc space-y-0.5 pl-4">{tips.map((t, i) => <li key={i} style={{ breakInside: "avoid" }}>{typeof t === "string" ? t : t.text}</li>)}</ul>
         </Block>
+      )}
+
+      {coverage && !coverage.complete && (
+        <p className="mt-3 rounded border border-slate-500 p-1.5 text-[11px]"><b>{coverage.headline || "Not the whole report was analysed"}.</b> {coverage.message}</p>
       )}
 
       <p className="mt-4 border-t border-slate-400 pt-1.5 text-[10px] text-slate-500">

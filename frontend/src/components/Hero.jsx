@@ -31,7 +31,7 @@ export function QuickActions({ items }) {
       {items.map((item, i) => {
         const Icon = item.icon;
         return (
-          <Link key={item.to + item.label} to={item.to} className="tile flex min-h-24 items-center gap-4 rounded-3xl border-2 border-brand-200 bg-white p-5 shadow-sm hover:border-brand-600">
+          <Link key={item.to + item.label} to={item.to} className="tile flex min-h-24 min-w-0 items-center gap-4 rounded-3xl border-2 border-brand-200 bg-white p-5 shadow-sm hover:border-brand-600">
             <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow ${TILE_TONES[i % TILE_TONES.length]}`}><Icon size={24} /></span>
             <span className="min-w-0 flex-1">
               <span className="block text-lg font-extrabold text-slate-900">{item.label}</span>

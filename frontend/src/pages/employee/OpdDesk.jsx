@@ -46,7 +46,7 @@ export default function OpdDesk() {
           <Field label="Doctor"><Select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}><option value="">Choose a doctor</option>{(doctors || []).map((d) => <option key={d.id} value={d.id}>{d.full_name}{d.department_name ? ` (${d.department_name})` : ""}</option>)}</Select></Field>
           <Button type="button" disabled={busy || !patient || !doctorId} onClick={async () => { if (await run(() => walkIn({ patient_id: patient.id, doctor_id: Number(doctorId), urgent }), "Token given")) { setPatient(null); refresh(); } }}>Give token</Button>
         </div>
-        <label className="mt-2 flex items-center gap-2 text-sm font-semibold text-red-700"><input type="checkbox" className="h-5 w-5" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} /> Urgent: goes ahead in the queue</label>
+        <label className="mt-2 flex min-h-11 items-center gap-2 text-sm font-semibold text-red-700"><input type="checkbox" className="h-5 w-5" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} /> Urgent: goes ahead in the queue</label>
         {problem && <div className="mt-3"><ErrorBox message={problem} /></div>}
       </Section>
       <Section title="Queues of today">

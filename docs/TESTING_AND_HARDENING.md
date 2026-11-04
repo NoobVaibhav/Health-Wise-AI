@@ -138,3 +138,54 @@ The report page has a **Download analysis (PDF)** button (doctor and patient, on
 
 Numbers are judged only against standard adult reference values shown on the card (or the grade the report itself uses). The summary starts with the report's own conclusion; headers, patient banners and titles are removed. Each kind has its own points for the doctor and tips for the patient.
 **Limits:** only the written report is analysed, never the picture itself (the computer does not read an X-ray or CT image). A scanned report or a photo needs OCR (Tesseract), which is not installed on this computer, so such files are refused with a clear message until it is installed. Tests: `tests/test_report_kinds.py` (invented reports in `tests/sample_reports.py`).
+
+
+---
+
+# Validation and testing pass (4 Nov 2026)
+
+A full pass over input validation, roles and data isolation, end-to-end and concurrent workflows, clinical safety, mobile and accessibility, and security and performance. Every gap below was reproduced with a test that failed first, then fixed with the smallest change.
+
+## Input validation: gaps found and fixed
+| Area | Gap | Fix |
+|---|---|---|
+| Dates a doctor sets ahead (follow-up, due date, expected discharge) | Year 1, year 9999 or dates years ahead were accepted | `PlannedDate`: not before 1900, at most 2 years ahead |
+| Timeline entries (emergency) | Could be dated in the future | `RecordedTime`: not in the future (1 hour of grace for clock differences) |
+| Recommendation priority | Free text (HTML, 5,000 characters) | Only `NORMAL`, `IMPORTANT`, `FOLLOW_UP_REQUIRED` |
+| Blood pressure | Upper below lower accepted on the health-history and past-history forms | One shared `check_blood_pressure` rule on all vitals forms |
+| Prescription duration | `-3 days` accepted as free text | A leading minus on a number is refused |
+| Stock expiry | Year 1 and year 9999 accepted | Between 2000 and 20 years ahead |
+| Filters that use `one_of` (admin role, finance status) | A value that was only markup (`<script>`) cleaned to nothing and was ignored, so the list came back unfiltered | A markup-only value is now refused with 422 |
+| Finance invoices | Any word accepted as `status_filter`; unbounded `patient_id` | `DRAFT`/`FINAL`/`CANCELLED` only; bounded `QueryId` |
+| One-time code | Arabic-Indic and other non-ASCII digits matched `\d` | `[0-9]{6}` |
+| Follow-up form (browser) | A double click added the task twice | Busy guard; the date box stops at 2 years like the server |
+
+Checked and sound: password strength and length, e-mail normalisation, generic login error, lockout (429), names, phone, address, gender, blood group, DOB, appointment times, diagnosis and operation years, admission order, vitals/dose/price/GST/quantity/barcode/discount bounds (NaN, Infinity, negatives, absurd sizes), file checks (renamed executables, a PDF named .png, empty, double extension, path traversal, over-long name, oversize), ids and `limit`, search length, HTML/SQL/null-byte text, malformed JSON, wrong content type, extra fields.
+Tests: `test_validation_audit.py`, `test_validation_audit_api.py`, `test_validation_audit_values.py`.
+
+## Roles and isolation
+* `security_and_chaos/test_route_drift.py` compares every route with the reviewed list `routes.snapshot.txt` (258 operations). The matrix test rewrites its own output each run, so it could never notice a new route; this one fails and names it.
+* The matrix test now also fails when a role the code lets in is told it is not logged in (401), or when a route is unreachable by every role (two are listed with their reason: `PUT /api/health-history/me` refuses everyone by design; `POST /api/lab/tests/{id}/approve` needs a pathologist, covered by the acceptance workflow).
+* `test_idor_hms.py`: another patient, the patient using staff actions, and staff outside the workflow try ids of patient 1 in the lab, radiology, IPD, OPD and finance modules. Nothing is reachable. A billing executive may see the stay itself (bed, dates) but never the clinical part.
+
+## Workflows with two actors
+`test_concurrency_flows.py` releases its threads together:
+* **Bug found and fixed:** two users booking the same doctor and time both succeeded (the check and the insert were not one step). The doctor's row is now locked first (`ensure_free` in `routers/appointments.py`), so one booking wins and the other gets 409.
+* **Bug found and fixed:** moving an appointment onto a time the doctor already has was never checked, and neither was bringing a cancelled appointment back onto a taken slot.
+* Eight identical submissions create one appointment; the same e-mail registered six times creates one account; two admins editing one person, and two doctors saving one consultation, never crash.
+
+## Clinical safety
+`test_sample_report_folder.py` sends the real files of `sample_reports/` through the upload API: values and ranges are read as printed, a value with no printed range is "not judged" (never given a range), the report with another patient's name is flagged, a text that is not a health report is refused, scans and narrative documents never crash and never invent a value, and the patient sees no analysis until the doctor has reviewed it. Prompt-injection text in a report and in chat is covered by `security_and_chaos/test_ai_integrity.py` and `test_patient_assistant.py`.
+
+## Mobile and accessibility
+* Patient pages (dashboard, reports, medicines, appointments, bills, timeline, notes, advice, health history, profile, emergency card, assistant) measured at 360 and 412 px (the assistant also at tablet width): no horizontal overflow. Fixed: section links on three dashboards and the emergency card's back link were 20 px tall (now 44 px); the voice settings controls were 37 px / 16 px (now 44 px / 20 px); the assistant page now fits a tablet screen exactly.
+* `__tests__/a11y.axe.test.jsx` runs axe-core on the login page (both tabs), the assistant (empty, microphone sheet open, clear-chat question open) and the disclaimer banner: no violations. A control case proves the audit really finds a nameless button and an unlabelled input. Colour contrast needs a real browser and was not machine-checked.
+
+## Security and performance
+* `pip-audit` on `requirements.txt`: no known vulnerabilities. `bandit`: three findings, all false positives (the sanitiser's own list of direction-override characters; two SQL strings built from database identifiers and integer ids the code produced).
+* `npm audit`: `follow-redirects` (high, via axios) patched to 1.16.2. Left alone because the fix is a major upgrade: `react-router-dom` (moderate, an open-redirect advisory) and the dev-only `vitest`/`vite`/`esbuild`/`tinypool` chain (not shipped).
+* Secrets: no key, token or private key in the working tree or in any commit; `.env` and the database are ignored and untracked. The only placeholder (`change-me-in-production`) is refused at start-up on a non-SQLite database.
+* Performance on a temporary database of 5,000 patients, 10,000 reports and 51,000 report values: almost every endpoint answers in under 130 ms. Four lists send everything with no paging: patients 2.0 s / 1.5 MB, reports 2.4 s / 1.2 MB, a doctor's patients 0.5 s / 0.5 MB, admin people 0.4 s / 1.5 MB. Added the missing index on `patients.assigned_doctor_id` (also in `schema.sql` and applied to old databases at start-up).
+
+## Not verified
+Real phone hardware, a real on-screen keyboard, a real microphone, real SMS, real iOS, OCR quality on poor scans, and colour contrast by tool. There is no PWA yet, so installability and offline behaviour were not tested.

@@ -2,23 +2,78 @@
 @import "./auth.css";
 
 @theme {
+  /* colour: brand + the status colours (each a soft tint with a strong text colour that keeps 4.5:1) */
   --color-brand-50: #ecfeff;
   --color-brand-100: #cffafe;
   --color-brand-200: #a5f3fc;
+  --color-brand-300: #67e8f9;
+  --color-brand-400: #22d3ee;
   --color-brand-500: #06b6d4;
   --color-brand-600: #0891b2;
   --color-brand-700: #0e7490;
   --color-brand-800: #155e75;
   --color-brand-900: #164e63;
+  --color-ok-soft: #ecfdf5;   --color-ok-strong: #065f46;
+  --color-warn-soft: #fffbeb; --color-warn-strong: #92400e;
+  --color-danger-soft: #fef2f2; --color-danger-strong: #991b1b;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* shape and depth */
+  --radius-card: 1rem;
+  --radius-sheet: 1.5rem;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.05), 0 4px 12px -4px rgb(15 23 42 / 0.08);
+  --shadow-sheet: 0 -8px 32px -8px rgb(15 23 42 / 0.25);
+  --shadow-pop: 0 10px 30px -10px rgb(8 145 178 / 0.35);
+  /* motion */
+  --ease-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  /* layout */
+  --height-appbar: 3.5rem;
+  --height-tabbar: 3.5rem;
 }
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+/* A grid with no column list is one column that may shrink (minmax(0, 1fr)), not one that grows to its widest unbroken word and pushes the page sideways. */
+@layer base { .grid { grid-template-columns: minmax(0, 1fr); } h1, h2, h3, h4, p, li { overflow-wrap: break-word; } }
 
 body {
   @apply text-slate-800 antialiased;
   font-size: 16px;
   background: linear-gradient(180deg, #f0fbfd 0%, #f8fafc 260px, #f8fafc 100%);
   background-attachment: fixed;
+  overscroll-behavior-y: contain;                 /* no accidental pull-to-refresh or rubber-band over the app */
+  -webkit-tap-highlight-color: transparent;
 }
+
+/* one visible focus ring everywhere; taps do not zoom the page */
+:focus-visible { outline: 3px solid var(--color-brand-400); outline-offset: 2px; }
+button, a, summary, select, input, textarea, [role="button"] { touch-action: manipulation; }
+
+/* numbers in tables, vitals and money line up */
+.num, table td, table th { font-variant-numeric: tabular-nums; }
+
+/* touch screens: every button, select and summary is at least 44 px tall; icon-only buttons are 44 px wide as well */
+@media (pointer: coarse) {
+  button, summary, select, [role="button"], input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) { min-height: 2.75rem; }
+  button[aria-label], summary[aria-label] { min-width: 2.75rem; }
+}
+
+/* pressed feedback on buttons: transform only */
+button:not(:disabled):active, [role="button"]:active { transform: scale(0.97); }
+button, [role="button"] { transition-property: transform, background-color, border-color, color, box-shadow, opacity; transition-duration: var(--duration-fast); transition-timing-function: var(--ease-soft); }
+
+/* skeleton loaders: a calm pulse on opacity only */
+@keyframes skeleton { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.skeleton { background: #e2e8f0; border-radius: 0.75rem; animation: skeleton 1.4s ease-in-out infinite; }
+
+/* the bottom padding that keeps content above the tab bar and the phone's home indicator */
+.pb-tabbar { padding-bottom: calc(var(--height-tabbar) + var(--safe-bottom) + 0.75rem); }
 
 /* gentle entrance for every page */
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -26,10 +81,8 @@ body {
 
 /* soft card hover for clickable tiles */
 .tile { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.tile:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -10px rgba(8, 145, 178, 0.35); }
+@media (hover: hover) { .tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-pop); } }
 
-@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.5); } 100% { box-shadow: 0 0 0 12px rgba(8, 145, 178, 0); } }
-.pulse-ring { animation: pulse-ring 1.6s ease-out infinite; }
 
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
 .toast-in { animation: toast-in 0.25s ease-out; }
@@ -49,7 +102,7 @@ body {
 /* printing (the emergency card, a doctor's summary): no menus, no coloured backgrounds that waste ink */
 @media print {
   aside, header, nav, .print-hide { display: none !important; }
-  .md\:pl-64 { padding-left: 0 !important; }
+  .lg\:pl-64 { padding-left: 0 !important; }
   body { background: white !important; }
   main { max-width: none !important; padding: 0 !important; }
 }
@@ -66,22 +119,21 @@ body {
   .print-compact { zoom: 0.82; }
 }
 
-/* The voice orb of Ask HealthWise: it breathes when idle, ripples when listening, spins when thinking, and its bars move when speaking */
-.voice-orb { transition: transform 0.15s ease; }
+/* The voice orb of Ask HealthWise. Everything moves with transform and opacity only: a ring behind the button breathes when idle, ripples when
+   listening or speaking, a spinner turns when thinking, and the bars move when speaking. */
+.voice-orb { transition: transform var(--duration-fast) var(--ease-soft); }
 .voice-orb:active { transform: scale(0.95); }
-.voice-orb-idle { animation: orb-breathe 3.2s ease-in-out infinite; }
-.voice-orb-listening { animation: orb-ripple 1.4s ease-out infinite; }
-.voice-orb-speaking { animation: orb-ripple-green 1.6s ease-out infinite; }
+.orb-ring { position: absolute; inset: 0; border-radius: 9999px; background: #06b6d4; opacity: 0; pointer-events: none; }
+.orb-ring-idle { animation: orb-pulse 3.2s ease-out infinite; }
+.orb-ring-listening { background: #e11d48; animation: orb-pulse 1.4s ease-out infinite; }
+.orb-ring-speaking { background: #0d9488; animation: orb-pulse 1.6s ease-out infinite; }
 .voice-orb-thinking::after { content: ""; position: absolute; inset: -6px; border-radius: 9999px; border: 4px solid transparent; border-top-color: #f59e0b; animation: orb-spin 0.9s linear infinite; }
 .voice-bars { position: absolute; inset: auto 0 10px 0; display: flex; justify-content: center; gap: 3px; height: 14px; align-items: flex-end; opacity: 0.9; }
-.voice-bars i { display: block; width: 3px; background: rgba(255,255,255,0.9); border-radius: 2px; animation: orb-bar 0.9s ease-in-out infinite; }
+.voice-bars i { display: block; width: 3px; height: 13px; background: rgba(255,255,255,0.9); border-radius: 2px; transform-origin: bottom; animation: orb-bar 0.9s ease-in-out infinite; }
 .voice-bars i:nth-child(2) { animation-delay: 0.12s; } .voice-bars i:nth-child(3) { animation-delay: 0.24s; } .voice-bars i:nth-child(4) { animation-delay: 0.36s; } .voice-bars i:nth-child(5) { animation-delay: 0.48s; }
-@keyframes orb-breathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.35); transform: scale(1); } 50% { box-shadow: 0 0 0 10px rgba(8, 145, 178, 0); transform: scale(1.04); } }
-@keyframes orb-ripple { 0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.55), 0 0 0 0 rgba(225, 29, 72, 0.3); } 100% { box-shadow: 0 0 0 16px rgba(225, 29, 72, 0), 0 0 0 30px rgba(225, 29, 72, 0); } }
-@keyframes orb-ripple-green { 0% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.5); } 100% { box-shadow: 0 0 0 22px rgba(13, 148, 136, 0); } }
+@keyframes orb-pulse { 0% { opacity: 0.45; transform: scale(1); } 100% { opacity: 0; transform: scale(1.55); } }
 @keyframes orb-spin { to { transform: rotate(360deg); } }
-@keyframes orb-bar { 0%, 100% { height: 3px; } 50% { height: 13px; } }
-@media (prefers-reduced-motion: reduce) { .voice-orb, .voice-orb::after, .voice-bars i { animation: none !important; } }
+@keyframes orb-bar { 0%, 100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
 
 /* assistant (phone first): everything below moves only with transform and opacity, and stops with reduced motion */
 @keyframes sheet-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -97,6 +149,21 @@ body {
 .wave-bar:nth-child(2) { animation-delay: 0.15s; }
 .wave-bar:nth-child(3) { animation-delay: 0.3s; }
 .wave-bar:nth-child(4) { animation-delay: 0.45s; }
-@keyframes mic-ring { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); } 100% { box-shadow: 0 0 0 14px rgba(220, 38, 38, 0); } }
-.mic-ring { animation: mic-ring 1.3s ease-out infinite; }
-@media (prefers-reduced-motion: reduce) { .sheet-in, .msg-in, .typing-dot, .wave-bar, .mic-ring { animation: none; } }
+
+
+
+/* a bottom sheet rises from the edge; the dim backdrop fades */
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+.sheet-up { animation: sheet-up var(--duration-base) var(--ease-soft); }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fade-in var(--duration-fast) ease-out; }
+
+/* people who ask for less motion get none (a spinner keeps turning: it is a signal, not decoration) */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  .animate-spin { animation-duration: 1.2s !important; animation-iteration-count: infinite !important; }
+}
+
+/* the current step of a report's journey */
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.5); } 100% { box-shadow: 0 0 0 12px rgba(8, 145, 178, 0); } }
+.pulse-ring { animation: pulse-ring 1.6s ease-out infinite; }

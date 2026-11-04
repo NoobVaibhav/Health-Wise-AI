@@ -12,7 +12,9 @@ from app.database.connection import get_db
 from app.database.models import BillingPackage, Deposit, Invoice, Patient, Payment, Refund, User
 from app.services import audit_service, finance_service as fin
 from app.services.access_service import permissions_of, require_permission
-from app.utils.validators import PathId, SearchText, opt_text, text
+from app.utils.validators import PathId, QueryId, SearchText, one_of, opt_text, text
+
+INVOICE_STATUS = one_of("DRAFT", "FINAL", "CANCELLED", name="status")
 
 router = APIRouter(prefix="/api/finance", tags=["finance"])
 view = require_permission("billing.view", "billing.create", "billing.collect", "billing.approve", "billing.report")
@@ -134,7 +136,7 @@ def collect_charges(patient_id: PathId, request: Request, user: User = Depends(c
 
 # ------------------------------------------------------------------ invoices
 @router.get("/invoices")
-def invoices(status_filter: str | None = None, patient_id: int | None = None, q: SearchText = None, user: User = Depends(view), db: Session = Depends(get_db)):
+def invoices(status_filter: INVOICE_STATUS = None, patient_id: QueryId = None, q: SearchText = None, user: User = Depends(view), db: Session = Depends(get_db)):
     query = select(Invoice).order_by(Invoice.id.desc()).limit(200)
     if status_filter:
         query = query.where(Invoice.status == status_filter)

@@ -47,9 +47,9 @@ export default function Inventory() {
             const soon = days !== null && days >= 0 && days <= 30;
             return (
               <div key={i.id} className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200/70 bg-white p-4 shadow-sm">
-                <div className="flex items-center gap-4">
+                <div className="flex min-w-0 items-center gap-4">
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white"><Pill size={24} /></span>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-lg font-extrabold text-slate-900">{i.medicine_name}</p>
                     <p className="text-base text-slate-600">
                       {i.batch_number ? `Batch ${i.batch_number}` : "No batch number"}{i.manufacturer && ` - ${i.manufacturer}`}{i.unit_price != null && ` - price ${money(i.unit_price)} each`}{i.gst_percent != null && ` + ${i.gst_percent}% GST`}

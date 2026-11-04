@@ -29,9 +29,9 @@ export default function DispensingHistory() {
                 const none = d.quantity_dispensed === 0;
                 const Icon = none ? Ban : d.status === "DISPENSED" ? PackageCheck : PackageMinus;
                 return (
-                  <li key={d.id} className="flex items-start gap-3">
+                  <li key={d.id} className="flex flex-wrap items-start gap-x-3 gap-y-1.5">
                     <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${none ? "bg-red-500" : d.status === "DISPENSED" ? "bg-emerald-500" : "bg-amber-500"}`}><Icon size={17} /></span>
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1 basis-48">
                       <p className="text-base text-slate-700">
                         {none
                           ? <><b className="text-slate-900">{d.medicine_name}</b> was marked as <b>not in stock</b> for <b className="text-slate-900">{d.patient_name}</b></>

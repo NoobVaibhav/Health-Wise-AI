@@ -14,6 +14,7 @@ import DeleteReportButton from "./DeleteReport";
 import { DoctorInsights, KeyFindings, PatientTips } from "./InsightsPanel";
 import { StatusPill } from "./StatusBadge";
 import { Hint } from "./Feedback";
+import { CoverageNote, OtherResults } from "./ReportCoverage";
 import { Button, fmtDate, fmtUtc, fmtUtcDate } from "./ui";
 import { openReportFile } from "../services/reportApi";
 import { getErrorMessage } from "../services/api";
@@ -83,6 +84,7 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
                 <Count n={c.UNKNOWN} label="No normal range" color="text-slate-500" />
               </div>
             )}
+            {!report.is_narrative && <div className="mt-4"><CoverageNote report={report} /></div>}
             {outside > 0 && isPatient && <div className="mt-4"><Hint title="Is a result outside the range a problem?">A result outside the normal range is not a diagnosis. Many things can change a result. Please talk to your doctor about it.</Hint></div>}
           </Section>
 
@@ -94,6 +96,7 @@ export default function ReportView({ report, canOpenFile = true, onUseAsAdvice, 
           {report.is_narrative
             ? <KeyFindings findings={report.insights?.key_findings} />
             : <Section title="All test results"><ParameterTable parameters={report.parameters} /></Section>}
+          {!report.is_narrative && <OtherResults report={report} />}
 
           {isPatient && <PatientTips insights={report.insights} />}
         </>

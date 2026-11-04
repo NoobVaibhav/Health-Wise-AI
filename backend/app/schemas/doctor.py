@@ -3,7 +3,7 @@ from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
-from app.utils.validators import PastOrTodayRequired, text, PositiveId
+from app.utils.validators import PastOrTodayRequired, PlannedDate, text, PositiveId
 
 PRIORITIES = ("NORMAL", "IMPORTANT", "FOLLOW_UP_REQUIRED")
 
@@ -32,8 +32,8 @@ class RecommendationCreate(BaseModel):
     report_id: PositiveId | None = None
     title: text(200, min_length=2)
     recommendation: text(3000, min_length=2, multiline=True)
-    follow_up_date: date | None = None
-    priority: str = "NORMAL"
+    follow_up_date: PlannedDate = None
+    priority: Literal["NORMAL", "IMPORTANT", "FOLLOW_UP_REQUIRED"] = "NORMAL"
 
 
 class RecommendationOut(BaseModel):

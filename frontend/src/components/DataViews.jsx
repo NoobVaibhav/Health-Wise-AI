@@ -113,9 +113,9 @@ export function DateTile({ value, tone = "brand", size = "lg" }) {
   const dims = size === "sm" ? "h-14 w-14" : "h-[76px] w-[76px]";
   return (
     <span className={`flex ${dims} shrink-0 flex-col items-center justify-center rounded-2xl ${tones[tone]}`}>
-      <span className="text-[10px] font-bold uppercase tracking-widest opacity-90">{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
+      <span className="text-xs font-bold uppercase tracking-wider opacity-90">{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
       <span className={`${size === "sm" ? "text-xl" : "text-3xl"} font-extrabold leading-none`}>{d.getDate()}</span>
-      <span className="text-[10px] font-bold uppercase tracking-widest opacity-90">{d.toLocaleDateString(undefined, { month: "short" })}</span>
+      <span className="text-xs font-bold uppercase tracking-wider opacity-90">{d.toLocaleDateString(undefined, { month: "short" })}</span>
     </span>
   );
 }

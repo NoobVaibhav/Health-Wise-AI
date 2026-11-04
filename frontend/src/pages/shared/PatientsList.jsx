@@ -43,7 +43,7 @@ export default function PatientsList() {
                 ...(p.phone ? [["Phone", p.phone]] : []), ["Doctor", p.assigned_doctor_name || "not chosen yet"],
               ]}
               actions={<>
-                {isDoctor && <Link to={`/doctor/patients/${p.id}`} className="rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm"><FolderOpen size={15} className="mr-1.5 inline" />Open record</Link>}
+                {isDoctor && <Link to={`/doctor/patients/${p.id}`} className="inline-flex min-h-11 items-center rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm"><FolderOpen size={15} className="mr-1.5 inline" />Open record</Link>}
                 {canEdit && <Button variant="secondary" onClick={() => setEditing(p)}><Pencil size={15} className="mr-1.5 inline" />Edit details</Button>}
                 {canEdit && <Button variant="secondary" onClick={() => setRegistry(p)}><ShieldCheck size={15} className="mr-1.5 inline" />Registration</Button>}
               </>} />

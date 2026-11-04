@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.utils.validators import (
-    DIASTOLIC, HEIGHT_CM, PULSE, RESP_RATE, SPO2, SYSTOLIC, TEMPERATURE_F, WEIGHT_KG, PositiveId, opt_text, text,
+    DIASTOLIC, HEIGHT_CM, PULSE, RESP_RATE, SPO2, SYSTOLIC, TEMPERATURE_F, WEIGHT_KG, PlannedDate, PositiveId, opt_text, text,
 )
 
 ORDER_KINDS = ("LAB", "RADIOLOGY", "PROCEDURE", "DIET", "NURSING", "OTHER")
@@ -59,7 +59,7 @@ class ConsultationIn(BaseModel):
     assessment: opt_text(3000, multiline=True) = None
     plan: opt_text(3000, multiline=True) = None
     advice: opt_text(3000, multiline=True) = None
-    follow_up_date: date | None = None
+    follow_up_date: PlannedDate = None
     template_id: PositiveId | None = None
     data: dict[str, str | int | float | None] = Field(default_factory=dict, max_length=40)
 
@@ -237,7 +237,7 @@ class AdmitIn(BaseModel):
     diagnosis: opt_text(300) = None
     source_encounter_id: PositiveId | None = None
     bed_id: PositiveId | None = None
-    expected_discharge: date | None = None
+    expected_discharge: PlannedDate = None
 
 
 class BedAssignIn(BaseModel):

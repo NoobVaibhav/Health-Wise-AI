@@ -18,7 +18,7 @@
 @keyframes hw-card-in { from { opacity: 0; transform: translate3d(0, 28px, 0); } to { opacity: 1; transform: none; } }
 @keyframes hw-card-out { to { opacity: 0; transform: translate3d(0, -10px, 0) scale(0.985); } }
 /* a headline word comes in blurred and low, and ends sharp (the blur is only on the big brand-panel headline, never on the form) */
-@keyframes hw-word { from { opacity: 0; transform: translate3d(0, 0.55em, 0); filter: blur(10px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes hw-word { from { opacity: 0; transform: translate3d(0, 0.55em, 0); } to { opacity: 1; transform: none; } }
 
 .hw-rise { animation: hw-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
 .hw-fade { animation: hw-fade 0.5s ease backwards; }

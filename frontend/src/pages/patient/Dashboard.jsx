@@ -68,7 +68,7 @@ export default function PatientDashboard() {
         {d.active_prescriptions.length === 0 ? <p className="text-slate-500">You have no active prescriptions.</p> : <div className="space-y-3">{d.active_prescriptions.map((p) => <PrescriptionCard key={p.id} rx={p} />)}</div>}
       </Section>
 
-      <Section title="What happened recently" action={<Link to="/patient/history" className="text-sm font-bold text-brand-700">See everything →</Link>}>
+      <Section title="What happened recently" action={<Link to="/patient/history" className="inline-flex min-h-11 items-center text-sm font-bold text-brand-700">See everything →</Link>}>
         {d.recent_history.length === 0 ? <EmptyState message="Nothing yet" hint="Reports, doctor notes and medicines will show up here." /> : <Timeline events={d.recent_history} />}
       </Section>
     </div>

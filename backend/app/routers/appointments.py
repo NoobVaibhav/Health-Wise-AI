@@ -14,7 +14,20 @@ from app.database.models import Appointment, Department, Doctor, Patient, User
 from app.schemas.appointment import STATUSES, AppointmentCreate, AppointmentOut, AppointmentUpdate
 from app.services import audit_service
 from app.services.serializers import appointment_out
+from app.utils.locking import lock
 from app.utils.validators import PathId, QueryId, one_of
+
+ACTIVE = ["SCHEDULED", "CONFIRMED"]
+
+
+def ensure_free(db: Session, doctor: Doctor, when: datetime, ignore_id: int | None = None) -> None:
+    """The doctor has nothing else at that time. The doctor's row is locked first, so two bookings made at the same moment take turns and the second one sees the first."""
+    lock(db, doctor)
+    query = select(Appointment.id).where(Appointment.doctor_id == doctor.id, Appointment.scheduled_at == when, Appointment.status.in_(ACTIVE))
+    if ignore_id is not None:
+        query = query.where(Appointment.id != ignore_id)
+    if db.scalar(query):
+        raise HTTPException(status.HTTP_409_CONFLICT, "This doctor already has an appointment at that time.")
 STATUS_FILTER = one_of("SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", name="status")
 
 router = APIRouter(prefix="/api/appointments", tags=["appointments"])
@@ -38,11 +51,7 @@ def create_appointment(data: AppointmentCreate, request: Request, user: User = D
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Department not found.")
     if data.scheduled_at < datetime.now() - timedelta(minutes=5):
         raise HTTPException(422, "The appointment time must be in the future.")
-    clash = db.scalar(select(Appointment.id).where(
-        Appointment.doctor_id == doctor.id, Appointment.scheduled_at == data.scheduled_at,
-        Appointment.status.in_(["SCHEDULED", "CONFIRMED"])))
-    if clash:
-        raise HTTPException(status.HTTP_409_CONFLICT, "This doctor already has an appointment at that time.")
+    ensure_free(db, doctor, data.scheduled_at)
     appointment = Appointment(patient_id=patient.id, doctor_id=doctor.id, department_id=data.department_id,
                               scheduled_at=data.scheduled_at, reason=data.reason, status="SCHEDULED",
                               symptoms_json=json.dumps([s.strip() for s in data.symptoms if s.strip()]) if data.symptoms else None,
@@ -99,6 +108,10 @@ def update_appointment(appointment_id: PathId, data: AppointmentUpdate, request:
     elif user.role not in (ADMIN, EMPLOYEE):
         raise forbidden()
 
+    # a new time, or a cancelled appointment brought back, must not land on another appointment of the same doctor
+    ends_active = (new_status or appointment.status) in ACTIVE
+    if ends_active and (data.scheduled_at or (new_status in ACTIVE and appointment.status not in ACTIVE)):
+        ensure_free(db, appointment.doctor, data.scheduled_at or appointment.scheduled_at, ignore_id=appointment.id)
     if new_status:
         appointment.status = new_status
     if data.scheduled_at:

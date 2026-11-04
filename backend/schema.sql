@@ -652,6 +652,7 @@ CREATE TABLE patients (
 
 CREATE UNIQUE INDEX ix_patients_patient_code ON patients (patient_code);
 CREATE UNIQUE INDEX ix_patients_uhid ON patients (uhid);
+CREATE INDEX ix_patients_assigned_doctor_id ON patients (assigned_doctor_id);
 
 CREATE TABLE purchase_order_items (
 	id SERIAL NOT NULL, 

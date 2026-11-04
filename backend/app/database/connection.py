@@ -40,6 +40,7 @@ def init_db() -> None:
         hospital_service.get_profile(db)
         access_service.seed_access(db)
         db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_patients_uhid ON patients (uhid)"))   # an old database got the column without the unique rule
+        db.execute(text("CREATE INDEX IF NOT EXISTS ix_patients_assigned_doctor_id ON patients (assigned_doctor_id)"))   # an old database never got this index
         registry_service.backfill_uhids(db)
         from app.services import encounter_service
         encounter_service.seed_rules(db)

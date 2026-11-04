@@ -14,7 +14,7 @@ export default function EmergencyCardPage() {
   return (
     <div className="mx-auto max-w-3xl p-4 print:p-0">
       <div className="mb-4 flex items-center justify-between print:hidden">
-        <Link to="/patient/health-history" className="text-sm font-semibold text-brand-700 hover:underline">Back to my health history</Link>
+        <Link to="/patient/health-history" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 hover:underline">Back to my health history</Link>
         <button onClick={() => printAs(data.card.name, "Emergency card")} className="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 font-bold text-white"><Printer size={16} /> Print this card</button>
       </div>
       <div className="print-area print-compact">

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from pydantic import BaseModel, Field, model_validator
 from app.utils.validators import Barcode, OptionalMoney, OptionalPercent, opt_text, text, PositiveId
@@ -8,6 +8,8 @@ def check_stock_dates(manufactured, expiry):
     """The manufacturing date is not in the future, and the expiry is after it."""
     if manufactured and manufactured > date.today():
         raise ValueError("The manufacturing date cannot be in the future.")
+    if expiry and not date(2000, 1, 1) <= expiry <= date.today() + timedelta(days=366 * 20):
+        raise ValueError("Please check the expiry date: it must be between the year 2000 and 20 years ahead.")
     if manufactured and expiry and expiry <= manufactured:
         raise ValueError("The expiry date must be after the manufacturing date.")
 

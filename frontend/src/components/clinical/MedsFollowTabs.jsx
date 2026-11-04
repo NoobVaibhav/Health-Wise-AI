@@ -56,15 +56,20 @@ export function FollowUpsTab({ patientId, onOpen }) {
   const [form, setForm] = useState({ title: "", due_date: "", details: "" });
   const [closing, setClosing] = useState(null);
   const [outcome, setOutcome] = useState("");
+  const [busy, setBusy] = useState(false);                // one request at a time: a double click must not add the task twice
   if (loading && !data) return <Loading />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
 
   const add = async (e) => {
     e.preventDefault();
-    try { setData(await createFollowUp(patientId, { title: form.title, due_date: form.due_date || null, details: form.details || null })); setForm({ title: "", due_date: "", details: "" }); toast("Follow-up added"); } catch (err) { toast(getErrorMessage(err), "error"); }
+    if (busy) return;
+    setBusy(true);
+    try { setData(await createFollowUp(patientId, { title: form.title, due_date: form.due_date || null, details: form.details || null })); setForm({ title: "", due_date: "", details: "" }); toast("Follow-up added"); } catch (err) { toast(getErrorMessage(err), "error"); } finally { setBusy(false); }
   };
   const close = async (task, status) => {
-    try { setData(await updateFollowUp(patientId, task.id, { status, outcome: outcome || null })); setClosing(null); setOutcome(""); toast(status === "DONE" ? "Marked done" : "Cancelled"); } catch (err) { toast(getErrorMessage(err), "error"); }
+    if (busy) return;
+    setBusy(true);
+    try { setData(await updateFollowUp(patientId, task.id, { status, outcome: outcome || null })); setClosing(null); setOutcome(""); toast(status === "DONE" ? "Marked done" : "Cancelled"); } catch (err) { toast(getErrorMessage(err), "error"); } finally { setBusy(false); }
   };
   const pending = data.tasks.filter((t) => t.status === "PENDING");
   const closed = data.tasks.filter((t) => t.status !== "PENDING");
@@ -74,8 +79,8 @@ export function FollowUpsTab({ patientId, onOpen }) {
       <Section title="Follow-up tracker">
         <form onSubmit={add} className="mb-4 grid gap-2 rounded-2xl bg-slate-50 p-3 sm:grid-cols-[1fr_11rem_auto]">
           <Input required minLength={3} placeholder="What must happen? e.g. Repeat ECG, HbA1c in 3 months" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <input type="date" className={inputClass} value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-          <Button><Plus size={15} className="mr-1 inline" />Add</Button>
+          <input type="date" aria-label="Due date" max={new Date(Date.now() + 730 * 864e5).toISOString().slice(0, 10)} className={inputClass} value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+          <Button disabled={busy}><Plus size={15} className="mr-1 inline" />Add</Button>
         </form>
         {pending.length === 0 && data.derived.length === 0 && <p className="text-slate-500">Nothing is pending.</p>}
         <ul className="space-y-2">
@@ -86,7 +91,7 @@ export function FollowUpsTab({ patientId, onOpen }) {
               <p className="text-xs text-slate-500">Added by {t.created_by}</p>
               {closing === t.id ? (
                 <div className="mt-2 space-y-2"><Textarea rows={2} placeholder="Outcome (what was found or done)" value={outcome} onChange={(e) => setOutcome(e.target.value)} />
-                  <div className="flex gap-2"><Button onClick={() => close(t, "DONE")}>Mark done</Button><Button variant="secondary" onClick={() => close(t, "CANCELLED")}>Cancel the task</Button><Button variant="secondary" onClick={() => setClosing(null)}>Back</Button></div></div>
+                  <div className="flex gap-2"><Button disabled={busy} onClick={() => close(t, "DONE")}>Mark done</Button><Button variant="secondary" disabled={busy} onClick={() => close(t, "CANCELLED")}>Cancel the task</Button><Button variant="secondary" onClick={() => setClosing(null)}>Back</Button></div></div>
               ) : <button type="button" onClick={() => setClosing(t.id)} className="mt-1 text-sm font-bold text-brand-700 hover:underline">Record the outcome</button>}
             </li>))}
           {data.derived.map((d, i) => (

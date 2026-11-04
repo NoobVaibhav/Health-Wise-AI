@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from app.services import report_measures
 from app.services.result_priority import DERIVED, prioritise, summary_points, summary_text
 
-INSIGHTS_ENGINE = 4          # bump when the way insights are worked out changes: stored rule-based insights of an older version are rebuilt when shown
+INSIGHTS_ENGINE = 5          # bump when the way insights are worked out changes: stored rule-based insights of an older version are rebuilt when shown
 
 REPORT_TYPE_LABELS = {
     "LAB": "Laboratory test report",
@@ -598,6 +598,27 @@ class LabItem:
     high: float | None
 
 
+# Results that point towards a cardiovascular-risk discussion. A LOW LDL, LOW triglycerides or a HIGH HDL do not: they never start that note on their own.
+CARDIOVASCULAR_FINDINGS = {("LDL", "ABOVE_RANGE"), ("Total Cholesterol", "ABOVE_RANGE"), ("Triglycerides", "ABOVE_RANGE"), ("HDL", "BELOW_RANGE"),
+                           ("LDL/HDL Ratio", "ABOVE_RANGE"), ("CHOL/HDL Ratio", "ABOVE_RANGE"), ("TG/HDL Ratio", "ABOVE_RANGE"), ("VLDL", "ABOVE_RANGE")}
+RED_CELL_VALUES = ("Hemoglobin", "RBC", "Hematocrit", "MCV", "MCH", "MCHC", "RDW")
+
+
+def cardiovascular_findings(items: list[LabItem]) -> list[LabItem]:
+    return [i for i in items if (i.name, i.status) in CARDIOVASCULAR_FINDINGS]
+
+
+def blood_count_note(items: list[LabItem], important_names: set[str]) -> str | None:
+    """One note for the red-cell values outside the printed range (haematocrit, MCV, MCHC ...). It lists them and says what a doctor may weigh up; it names no condition.
+    Written when two or more of them are outside the range, or one of them is among the results that need attention first."""
+    outside = [i for i in items if i.name in RED_CELL_VALUES and i.status in ("ABOVE_RANGE", "BELOW_RANGE")]
+    if len(outside) < 2 and not any(i.name in important_names for i in outside):
+        return None
+    listed = ", ".join(f"{i.name} ({'high' if i.status == 'ABOVE_RANGE' else 'low'})" for i in outside)
+    return (f"Red blood cell values outside the printed range: {listed}. These values are read together; consider how they fit the patient's symptoms, hydration, "
+            "medicines and earlier counts, and whether a repeat count is needed as you judge appropriate. This note does not suggest a diagnosis.")
+
+
 def _far_from_range(item: LabItem) -> bool:
     """A value 3 times above the upper limit or below a third of the lower limit: worth a second look
     (could be a real finding or a unit/typing mistake). Only uses the range printed on the report."""
@@ -609,7 +630,7 @@ def _far_from_range(item: LabItem) -> bool:
 
 
 # ------------------------------------------------------------------ builders
-def build_lab_insights(items: list[LabItem]) -> dict:
+def build_lab_insights(items: list[LabItem], coverage: dict | None = None) -> dict:
     """Insights for a laboratory report. The out-of-range values are ranked (see result_priority): a few "look at first" results, the rest
     listed once as "slightly outside", calculated values not repeated, and only a handful of suggestions and tips."""
     pri = prioritise(items)
@@ -641,7 +662,19 @@ def build_lab_insights(items: list[LabItem]) -> dict:
         doctor.append("All values that have a printed range are inside it. Routine follow-up as you judge appropriate.")
     if pri["no_range"]:
         doctor.append(f"{len(pri['no_range'])} value(s) have no printed range ({', '.join(pri['no_range'][:5])}) and cannot be judged here. Check them against your local reference ranges.")
-    doctor += [LAB_DOCTOR_BY_CATEGORY[c] for c in categories[:3] if c in LAB_DOCTOR_BY_CATEGORY]
+    cardio = bool(cardiovascular_findings(items))
+    count_note = blood_count_note(items, {e["name"] for e in important})
+    for c in categories[:3]:
+        if c == "lipid" and not cardio:
+            continue                                                     # a low LDL alone is not a reason for the cardiovascular-risk note
+        if c == "cbc" and count_note:
+            continue                                                     # the specific blood-count note below replaces the general one
+        if c in LAB_DOCTOR_BY_CATEGORY:
+            doctor.append(LAB_DOCTOR_BY_CATEGORY[c])
+    if count_note:
+        doctor.append(count_note)
+    if coverage and not coverage.get("complete", True):
+        doctor.append(f"{coverage.get('headline', 'Not the whole report was analysed')}. {coverage.get('message', '')}")
 
     red_flags = [f"{i.name} is far from the printed range ({i.value:g}{(' ' + i.unit) if i.unit else ''} vs {i.low if i.low is not None else ''}"
                  f"{'-' if i.low is not None and i.high is not None else ''}{i.high if i.high is not None else ''}). "
@@ -649,15 +682,15 @@ def build_lab_insights(items: list[LabItem]) -> dict:
                  for i in items if i.status in ("ABOVE_RANGE", "BELOW_RANGE") and _far_from_range(i) and i.name not in DERIVED]
 
     patient = []
-    for n, c in enumerate(categories[:3]):                               # tips only for the categories that matter most: two lines each, one for the third
+    for n, c in enumerate([c for c in categories if c != "lipid" or cardio][:3]):    # tips only for the categories that matter most: two lines each, one for the third
         patient += LAB_PATIENT_BY_CATEGORY.get(c, [])[:2 if n < 2 else 1]
     patient += PATIENT_GENERAL
 
     return {
-        "report_type": "LAB", "source": "rules", "summary": summary_text(items), "summary_points": summary_points(items),
+        "report_type": "LAB", "source": "rules", "summary": summary_text(items, coverage), "summary_points": summary_points(items, coverage),
         "key_findings": key_findings, "red_flags": red_flags, "doctor_suggestions": _dedupe(doctor)[:6], "patient_recommendations": _dedupe(patient)[:8],
         "engine": INSIGHTS_ENGINE, "priority": important, "slightly_outside": [{k: e[k] for k in ("name", "value", "unit", "range", "direction", "how_far")} for e in minor],
-        "counts": pri["counts"],
+        "counts": pri["counts"], "ranked": pri["ranked"],
     }
 
 

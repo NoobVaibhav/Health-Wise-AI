@@ -81,13 +81,16 @@ def stored_insights(r: HealthReport) -> dict | None:
         for p in r.parameters:
             info = get_parameter_info(p.normalized_name)
             items.append(LabItem(p.normalized_name, info.category if info else None, p.status, p.value, p.unit, p.reference_low, p.reference_high))
-        return build_lab_insights(items)
+        extras = {k: data[k] for k in LAB_EXTRAS if data and k in data}              # what only the upload could know (rows, coverage, tables) is kept when the ranking is rebuilt
+        return {**build_lab_insights(items, extras.get("coverage")), **extras}
     if r.extracted_text:
         return build_narrative_insights(r.extracted_text, (data or {}).get("report_type") or detect_report_type(r.extracted_text))
     return data
 
 
-PATIENT_INSIGHT_KEYS = ("report_type", "source", "summary", "key_findings", "metrics", "patient_recommendations", "priority", "slightly_outside", "counts", "holter", "summary_points")
+LAB_EXTRAS = ("coverage", "other_results", "interpretation_notes")
+PATIENT_INSIGHT_KEYS = ("report_type", "source", "summary", "key_findings", "metrics", "patient_recommendations", "priority", "slightly_outside", "counts", "holter", "summary_points",
+                        "ranked", *LAB_EXTRAS)
 
 
 def insights_for_role(r: HealthReport, role: str) -> dict | None:

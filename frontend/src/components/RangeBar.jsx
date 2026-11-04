@@ -37,7 +37,7 @@ export default function RangeBar({ value, low, high, status }) {
         <div className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white shadow-md"
           style={{ left: `${pct(value)}%`, background: COLORS[status] || COLORS.UNKNOWN }} title={`Result: ${value}`} />
       </div>
-      <div className="relative mt-1 h-4 text-[11px] text-slate-500">
+      <div className="relative mt-1 h-4 text-xs text-slate-600">
         {hasLow && <span className="absolute -translate-x-1/2" style={{ left: `${zoneStart}%` }}>{low}</span>}
         {hasHigh && <span className="absolute -translate-x-1/2" style={{ left: `${zoneEnd}%` }}>{high}</span>}
       </div>

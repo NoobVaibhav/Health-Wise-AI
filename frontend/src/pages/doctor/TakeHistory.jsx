@@ -340,7 +340,7 @@ export default function TakeHistory() {
       <AskTips items={STEPS[step].ask} />
       {pages[step]}
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 backdrop-blur md:pl-64">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 pb-[max(0.75rem,var(--safe-bottom))] backdrop-blur-sm lg:pl-64">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           <Button variant="secondary" disabled={step === 0} onClick={() => go(step - 1)}><ArrowLeft size={15} className="mr-1 inline" />Back</Button>
           <span className="hidden text-sm text-slate-400 sm:block">Step {step + 1} of {STEPS.length}</span>

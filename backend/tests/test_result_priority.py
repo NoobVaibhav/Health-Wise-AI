@@ -18,12 +18,13 @@ def test_the_values_that_matter_come_first_and_small_ones_are_not_listed_as_equa
              item("HbA1c", 7.1, None, 5.7, "%", "glucose"), item("MPV", 14.0, 7.5, 10.3, "fL", "cbc"), item("Hemoglobin", 14.5, 13, 16.5, "g/dL", "cbc"),
              item("Triglycerides", 168, None, 150, "mg/dL", "lipid"), item("BUN", 8.41, 9.0, 20.0, "mg/dL", "kidney"), item("LDL", 100.39, None, 100, "mg/dL", "lipid")]
     p = prioritise(items)
-    assert [e["name"] for e in p["important"]] == ["Vitamin D", "HbA1c", "Triglycerides"]                  # far or clearly outside, and key markers
-    assert {e["name"] for e in p["slight"]} == {"Urea", "WBC", "MPV", "LDL"}                                  # a few percent out, or a minor test
-    assert [e["name"] for e in p["derived"]] == ["BUN"]                                                       # calculated from urea: not listed on its own
+    assert [e["name"] for e in p["important"]] == ["Vitamin D", "MPV", "HbA1c"]                           # 70%, 36% and 25% outside the printed range: ranked by how far
+    assert [e["name"] for e in p["slight"]] == ["Triglycerides", "Urea", "WBC", "LDL"]                        # 12%, 7%, 6% and under 1% outside: only slightly
+    assert [e["name"] for e in p["derived"]] == ["BUN"]                                                       # calculated from urea: listed after the measured results
     assert p["counts"] == {"normal": 1, "important": 3, "slight": 5, "no_range": 0}
+    assert [e["rank"] for e in p["ranked"]] == list(range(1, 9)) and p["ranked"][-1]["name"] == "BUN"
     assert p["important"][0]["severity"] == "MARKED" and p["important"][0]["how_far"] == "about 70% below the lower limit" and p["important"][0]["direction"] == "LOW"
-    assert p["important"][1]["severity"] == "MODERATE" and p["important"][2]["severity"] == "MILD"
+    assert p["important"][1]["severity"] == "MODERATE" and p["important"][2]["severity"] == "MODERATE"
 
 
 def test_how_far_is_measured_from_the_printed_range_only():
@@ -37,13 +38,13 @@ def test_how_far_is_measured_from_the_printed_range_only():
 
 def test_a_value_without_a_printed_range_is_never_ranked_or_guessed():
     p = prioritise([item("HDL", 60.0), item("Mean Blood Glucose", 157.0)])
-    assert p["important"] == [] and p["slight"] == [] and p["no_range"] == ["HDL"] and p["counts"]["no_range"] == 2
+    assert p["important"] == [] and p["slight"] == [] and p["no_range"] == ["HDL", "Mean Blood Glucose"] and p["counts"]["no_range"] == 2
 
 
 # ------------------------------------------------------------------ the insights built from the ranking
 def test_lab_insights_are_short_ranked_and_free_of_unrelated_text():
     items = [item("Vitamin D", 8.98, 30, 100, "ng/mL", "vitamin"), item("HbA1c", 7.1, None, 5.7, "%", "glucose"), item("Urea", 18.0, 19.3, 43, "mg/dL", "kidney"),
-             item("WBC", 10570, 4000, 10000, "/cmm", "cbc"), item("MPV", 14.0, 7.5, 10.3, "fL", "cbc")]
+             item("WBC", 10570, 4000, 10000, "/cmm", "cbc"), item("MPV", 10.6, 7.5, 10.3, "fL", "cbc")]
     out = ins.build_lab_insights(items)
     texts = [f["text"] for f in out["key_findings"]]
     assert texts[0].startswith("Vitamin D") and texts[1].startswith("HbA1c") and len(texts) == 3                    # two important results, one line for the rest
@@ -166,7 +167,7 @@ def test_a_report_analysed_by_an_older_version_is_shown_with_the_new_ranking(cli
     from app.database.connection import SessionLocal
     from app.database.models import HealthReport
     text = sd.lines_to_text(["SYNTHETIC LAB", "Patient Name: Rahul Patil", "Report Date: 22/10/2026", "", "Test Name Result Unit Reference Range",
-                             "Vitamin D 8.98 ng/mL 30 - 100", "Hemoglobin 14.5 g/dL 13.0 - 16.5", "MPV 14.0 fL 7.5 - 10.3", "Urea 18 mg/dL 19.3 - 43.0"])
+                             "Vitamin D 8.98 ng/mL 30 - 100", "Hemoglobin 14.5 g/dL 13.0 - 16.5", "MPV 10.6 fL 7.5 - 10.3", "Urea 18 mg/dL 19.3 - 43.0"])
     r = upload(client, world.employee, world.patient_id, "old.txt", text)
     assert r.status_code == 201, r.text
     rid = r.json()["id"]

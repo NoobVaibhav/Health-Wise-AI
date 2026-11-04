@@ -10,6 +10,11 @@ from tests.security_and_chaos._helpers import all_actors, fill, intended_roles, 
 OUT = pathlib.Path(__file__).with_name("endpoint_matrix.json")
 DOC = pathlib.Path(__file__).parents[3] / "docs" / "ENDPOINT_MATRIX.md"
 NEWLINE = chr(10)
+# Routes that no actor of this sweep gets past, each for a stated reason. Anything else that nobody can reach is a finding.
+KNOWN_UNREACHABLE = {
+    ("PUT", "/api/health-history/me"): "refuses everyone by design: the history is the doctors' record, a patient is told to ask the doctor",
+    ("POST", "/api/lab/tests/{order_id}/approve"): "needs a pathologist, which this sweep has no actor for (covered by test_acceptance_workflows, workflow 2)",
+}
 NAMES = ["none", "PATIENT", "PHARMACY", "LAB", "INTERN", "NURSE", "EMPLOYEE", "ADMIN", "DOCTOR"]
 
 
@@ -32,6 +37,10 @@ def test_every_endpoint_denies_the_roles_it_is_not_meant_for_and_never_crashes(c
                 violations.append(f"NO-TOKEN {r.status_code} {method} {route.path}")
             elif not allowed and name != "none" and r.status_code not in (401, 403):
                 violations.append(f"NOT-DENIED {r.status_code} {method} {route.path} as {name} (intended: {row['roles']})")
+            elif allowed and name != "none" and r.status_code == 401:
+                violations.append(f"INTENDED-ROLE-UNAUTHENTICATED {r.status_code} {method} {route.path} as {name}")     # a role the code lets in must never be told it is not logged in
+        if not public and (method, route.path) not in KNOWN_UNREACHABLE and all(code in (401, 403) for code in row["results"].values()):
+            violations.append(f"UNREACHABLE {method} {route.path}: no role got past the permission check (a permission nobody holds?)")
         matrix.append(row)
     OUT.write_text(json.dumps(matrix, indent=1), encoding="utf-8")
     write_doc(matrix)

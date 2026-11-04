@@ -1,28 +1,38 @@
 """Which out-of-range results matter most?
 
 A report can have a dozen values slightly outside their printed range. Listing them all as equally important hides the few that matter.
-Each out-of-range value is scored from two things only, both visible in the report:
-  1. HOW FAR it is from the printed range (a value 70% below the lower limit is very different from one 2% above the upper limit);
-  2. HOW IMPORTANT the test usually is (blood sugar, haemoglobin, kidney and liver markers, vitamin D ... against minor or calculated values such as MPV, VLDL or a ratio).
+The order is worked out from the report alone:
+  1. HOW FAR each value is from the printed range, as a percentage of the nearest limit (a value 70% below the lower limit is very different from one 2% above the upper limit);
+  2. two plain adjustments, both explained on the screen:
+       - a value that is outside the range in the direction that is usually reassuring (a LOW LDL, LOW triglycerides, a HIGH HDL) counts for a quarter,
+         so that it is not put first only because the percentage is large;
+       - values CALCULATED from other results (ratios, VLDL, Non-HDL, BUN) are listed after the directly measured ones, because they repeat what the measured values already say.
 It never decides what a result means for the patient and never uses anything but the range printed on the report: it only orders the list."""
 from app.services.parameter_catalog import get_parameter_info
 
-# 3 = key marker doctors look at first, 2 = ordinary (the default), 1 = minor
-KEY = {"HbA1c", "Fasting Glucose", "Random Glucose", "Glucose", "Hemoglobin", "WBC", "Platelets", "Creatinine", "eGFR", "Potassium", "Sodium", "Calcium", "ALT", "AST", "ALP",
-       "Bilirubin", "Direct Bilirubin", "TSH", "Free T3", "Free T4", "T3", "T4", "Vitamin D", "Vitamin B12", "Total Cholesterol", "LDL", "Triglycerides", "Uric Acid",
-       "Homocysteine", "PSA", "Iron"}
-MINOR = {"MCV", "MCH", "MCHC", "RDW", "MPV", "Basophils", "Monocytes", "Eosinophils", "HbF", "Chloride"}
 # worked out from other values on the report: they repeat what the measured values already say
-DERIVED = {"Mean Blood Glucose", "VLDL", "BUN", "CHOL/HDL Ratio", "LDL/HDL Ratio", "A/G Ratio", "Indirect Bilirubin", "Delta Bilirubin", "Globulin", "Transferrin Saturation",
-           "MCH", "MCHC"}
+DERIVED = {"Mean Blood Glucose", "VLDL", "BUN", "CHOL/HDL Ratio", "LDL/HDL Ratio", "TG/HDL Ratio", "Non-HDL Cholesterol", "Urea/Creatinine Ratio", "BUN/Creatinine Ratio",
+           "A/G Ratio", "Indirect Bilirubin", "Delta Bilirubin", "Globulin", "Transferrin Saturation"}
 
 MARKED, MODERATE, MILD = 0.5, 0.15, 0.0            # how far outside the range (as a fraction of the nearest limit)
-IMPORTANT_MILD_KEY = 0.08                          # a key marker only slightly outside the range still counts when it is at least this far out
+REASSURING_FACTOR = 0.25                           # weight of a deviation in the direction that is usually reassuring
+REASSURING_CATEGORIES = {"lipid"}                  # only here: a low blood sugar, for example, is never treated as reassuring
 DEGREE = {"MARKED": "much", "MODERATE": "clearly", "MILD": "slightly"}
 
 
-def weight(name: str) -> int:
-    return 3 if name in KEY else 1 if name in MINOR or name in DERIVED else 2
+def is_reassuring_direction(item) -> bool:
+    """True for a result that is outside the range in the direction that is generally favourable (low LDL / triglycerides, high HDL, high eGFR)."""
+    info = get_parameter_info(item.name)
+    if info is None or info.favorable_direction is None:
+        return False
+    if item.category not in REASSURING_CATEGORIES and item.name != "eGFR":
+        return False
+    return (item.status == "BELOW_RANGE" and info.favorable_direction == "down") or (item.status == "ABOVE_RANGE" and info.favorable_direction == "up")
+
+
+def rank_score(item, dev: float) -> float:
+    """Percent distance from the printed range, with the reassuring-direction adjustment."""
+    return round(dev * 100 * (REASSURING_FACTOR if is_reassuring_direction(item) else 1.0), 2)
 
 
 def deviation(item) -> float:
@@ -64,12 +74,13 @@ def _entry(item, dev: float, sev: str) -> dict:
     return {"name": item.name, "value": item.value, "unit": item.unit, "range": range_text(item), "direction": direction, "severity": sev, "how_far": how_far(item, dev),
             "category": item.category, "meaning": info.meaning if info else None,
             "text": f"{item.name}: {item.value:g}{unit} is {degree} {'higher' if direction == 'HIGH' else 'lower'} than the normal range ({range_text(item)})",
-            "score": round(weight(item.name) * (1 + 3 * min(dev, 1.5)), 2)}
+            "percent_outside": round(dev * 100, 1), "score": rank_score(item, dev), "calculated": item.name in DERIVED,
+            "adjusted": is_reassuring_direction(item)}
 
 
 def prioritise(items: list) -> dict:
-    """Splits the results into: important (look at first, most important first), slight (outside the range by a little or minor tests),
-    derived (calculated from others, not listed on their own), no_range, and counts."""
+    """Splits the results into: important (look at first), slight (outside the range by a little), derived (calculated from other results),
+    no_range, and counts. `ranked` is every outside result in one order: measured results by score, then calculated ones by score."""
     important, slight, derived, no_range, normal = [], [], [], [], 0
     for item in items:
         if item.status == "WITHIN_RANGE":
@@ -80,20 +91,29 @@ def prioritise(items: list) -> dict:
             dev = deviation(item)
             sev = severity(dev)
             entry = _entry(item, dev, sev)
-            w = weight(item.name)
             if item.name in DERIVED:
                 derived.append(entry)
-            elif sev == "MARKED" or (sev == "MODERATE" and w >= 2) or (sev == "MILD" and w == 3 and dev >= IMPORTANT_MILD_KEY):
+            elif sev in ("MARKED", "MODERATE"):
                 important.append(entry)
             else:
                 slight.append(entry)
-    important.sort(key=lambda e: -e["score"])
-    slight.sort(key=lambda e: -e["score"])
-    return {"important": important, "slight": slight, "derived": derived, "no_range": [n for n in no_range if n not in DERIVED],
+    for group in (important, slight, derived):
+        group.sort(key=lambda e: -e["score"])
+    ranked = sorted(important + slight, key=lambda e: -e["score"]) + derived
+    for number, entry in enumerate(ranked, start=1):
+        entry["rank"] = number
+    return {"important": important, "slight": slight, "derived": derived, "ranked": ranked, "no_range": no_range,
             "counts": {"normal": normal, "important": len(important), "slight": len(slight) + len(derived), "no_range": len(no_range)}}
 
 
-def summary_points(items: list) -> list[dict]:
+def coverage_sentence(coverage: dict | None) -> str | None:
+    """One sentence saying what was NOT analysed; None when the whole report was (or when nothing is known about it)."""
+    if not coverage or coverage.get("complete", True):
+        return None
+    return f"{coverage.get('headline', 'Not the whole report was analysed')}: " + coverage.get("message", "")
+
+
+def summary_points(items: list, coverage: dict | None = None) -> list[dict]:
     """The same summary as a few short points for the screen and the PDF: [{"text": ..., "items": [...optional sub-points]}]."""
     p = prioritise(items)
     total, c = len(items), p["counts"]
@@ -112,12 +132,15 @@ def summary_points(items: list) -> list[dict]:
         names = ", ".join(e["name"] for e in minor[:8]) + (f" and {len(minor) - 8} more" if len(minor) > 8 else "")
         points.append({"text": f"{len(minor)} other{'s are' if len(minor) != 1 else ' is'} only slightly outside the range, or minor: {names}."})
     if p["no_range"]:
-        points.append({"text": f"No normal range is printed for {', '.join(p['no_range'][:6])}. Ask the doctor, who can check it against the lab's own comments."})
+        points.append({"text": f"No normal range is printed for {', '.join(p['no_range'][:6])}{' and more' if len(p['no_range']) > 6 else ''}. Ask the doctor, who can check it against the lab's own comments."})
+    note = coverage_sentence(coverage)
+    if note:
+        points.append({"text": note})
     points.append({"text": "This is not a diagnosis. A doctor must review these results."})
     return points
 
 
-def summary_text(items: list) -> str:
+def summary_text(items: list, coverage: dict | None = None) -> str:
     """One plain paragraph: what was read, what to look at first, what is only slightly outside."""
     p = prioritise(items)
     total, c = len(items), p["counts"]
@@ -131,6 +154,9 @@ def summary_text(items: list) -> str:
     if p["slight"] or p["derived"]:
         names = [e["name"] for e in (p["slight"] + p["derived"])][:8]
         text += f" {len(p['slight']) + len(p['derived'])} other{'s are' if len(p['slight']) + len(p['derived']) != 1 else ' is'} only slightly outside the range or minor ({', '.join(names)})."
+    note = coverage_sentence(coverage)
+    if note:
+        text += " " + note
     text += " This is not a diagnosis; a doctor must review these results."
     if p["no_range"]:
         text += f" No normal range is printed for: {', '.join(p['no_range'][:6])}; the doctor should check these against the lab's own comments."

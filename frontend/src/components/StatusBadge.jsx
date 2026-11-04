@@ -9,8 +9,8 @@ const RED = "bg-red-100 text-red-800";
 const INDIGO = "bg-indigo-100 text-indigo-800";
 
 const Pill = ({ icon: Icon, label, style }) => (
-  <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-sm font-bold ${style}`}>
-    {Icon && <Icon size={15} />}
+  <span className={`inline-flex max-w-full items-center gap-1 rounded-full px-3 py-1 text-sm font-bold leading-snug ${style}`}>
+    {Icon && <Icon size={15} className="shrink-0" aria-hidden="true" />}
     {label}
   </span>
 );

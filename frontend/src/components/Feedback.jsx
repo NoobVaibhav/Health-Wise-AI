@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
-import { AlertCircle, Inbox, Info, Loader2 } from "lucide-react";
+import { AlertCircle, Inbox, Info } from "lucide-react";
 
+// A calm placeholder in the shape of a page (a heading and two cards), so nothing jumps when the real page arrives.
 export const Loading = ({ text = "Loading..." }) => (
-  <div className="flex items-center gap-3 p-8 text-slate-500">
-    <Loader2 className="animate-spin text-brand-600" size={22} />
-    {text}
+  <div role="status" aria-live="polite" className="space-y-3 py-2">
+    <span className="sr-only">{text}</span>
+    <div className="skeleton h-7 w-2/5" aria-hidden="true" />
+    <div className="skeleton h-24 w-full" aria-hidden="true" />
+    <div className="skeleton h-24 w-full" aria-hidden="true" />
   </div>
 );
 
