@@ -25,7 +25,7 @@ def _scaled_text(self, x, y, s, fontdict=None, **kw):
 matplotlib.axes.Axes.text = _scaled_text
 plt.rcParams["font.family"] = ["Arial", "DejaVu Sans"]
 W = 5.8          # figure width in inches = the text width of the report, so figures are inserted at 100 per cent
-FS = 1.15        # all text is enlarged by this factor so that the smallest label prints at about 6 pt
+FS = 1.32        # all text is enlarged by this factor so that the smallest label prints at about 6 pt
 INK, GREY, LIGHT = "#111111", "#d9d9d9", "#f2f2f2"
 
 
@@ -147,7 +147,7 @@ def dfd0():
 def dfd1():
     fig, ax = canvas(100, 124)
     ROWS = [114, 92, 62, 38, 14]
-    EL, PL, ST, PR, ER = 6, 27, 48, 69, 90
+    EL, PL, ST, PR, ER = 7.5, 28, 48, 69, 90
 
     def ent(x, y, t):
         box(ax, x - 6.5, y - 4, 13, 8, t, fs=5.5, round_=False)
