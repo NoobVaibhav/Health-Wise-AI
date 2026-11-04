@@ -548,6 +548,98 @@ def notes_and_assistant():
             call("POST", "/api/patient-assistant/chat", email, ok=(200, 201, 422), json={"message": message, "language": "en"})
 
 
+def more_billing():
+    """A fuller billing desk: paid, part paid, discounted, cancelled and draft invoices, an advance, a refund, and one claim taken all the way to settlement."""
+    if len(call("GET", "/api/finance/invoices", BILL) or []) >= 12:
+        return
+    services = {x["code"]: x["id"] for x in call("GET", "/api/hospital/services", ADMIN) or []}
+    emails = {e: PID_OF(e) for e in (MARKER, "kiran.rao@healthwise.demo.com", "farida.shaikh@healthwise.demo.com", "lata.pawar@healthwise.demo.com", "mohan.deshpande@healthwise.demo.com", RAHUL)}
+    sneha, kiran, farida, lata, mohan, rahul = emails.values()
+
+    def invoice(pid, codes, who=BILL):
+        lines = [{"service_id": services[c], "quantity": q} for c, q in codes if c in services]
+        inv = call("POST", "/api/finance/invoices", who, ok=(200, 201, 409, 422), json={"patient_id": pid, "services": lines})
+        return inv
+
+    def final(pid, codes, who=BILL):
+        inv = invoice(pid, codes, who)
+        return inv and call("POST", f"/api/finance/invoices/{inv['id']}/finalise", who, ok=(200, 201, 409, 422))
+
+    def pay(inv, amount, method, who=BILL, **extra):
+        return inv and call("POST", f"/api/finance/invoices/{inv['id']}/pay", who, ok=(200, 201, 409, 422), json={"amount": amount, "method": method, **extra})
+
+    # fully paid, by different methods and two billing executives
+    for pid, codes, method, who in ((sneha, (("LAB-CBC", 1), ("OPD-FU", 1)), "CARD", BILL), (kiran, (("OPD-GEN", 1), ("XRAY-CH", 1)), "UPI", BILL2), (farida, (("RAD-CXR", 1), ("LAB-ELEC", 1)), "CASH", BILL2),
+                                    (rahul, (("OPD-FU", 1),), "CASH", BILL)):
+        inv = final(pid, codes, who)
+        if inv:
+            pay(inv, inv["total"], method, who, **({"reference": "TXN-DEMO-" + str(inv["id"])} if method != "CASH" else {}))
+    # part paid, the rest still due
+    inv = final(sneha, (("LAB-ELEC", 1), ("OPD-GEN", 1)))
+    if inv:
+        pay(inv, round(inv["total"] / 2, 2), "CASH")
+    # final bills left completely unpaid (the "outstanding" list)
+    final(kiran, (("LAB-CBC", 1),))
+    final(lata, (("OPD-GEN", 1), ("LAB-ELEC", 1)))
+    # discounted: a small one by the biller, a larger one approved by the accountant
+    inv = invoice(lata, (("OPD-GEN", 2), ("LAB-CBC", 1)))
+    if inv:
+        call("POST", f"/api/finance/invoices/{inv['id']}/discount", ACC, ok=(200, 201, 409, 422), json={"amount": 150, "reason": "Senior citizen concession"})
+        done = call("POST", f"/api/finance/invoices/{inv['id']}/finalise", BILL, ok=(200, 201, 409, 422))
+        pay(done, done and done["total"], "UPI", BILL, reference="UPI-DEMO-5521")
+    inv = invoice(rahul, (("OPD-GEN", 1), ("XRAY-CH", 1)))
+    if inv:
+        call("POST", f"/api/finance/invoices/{inv['id']}/discount", BILL, ok=(200, 201, 409, 422), json={"amount": 90, "reason": "Staff relative"})
+        call("POST", f"/api/finance/invoices/{inv['id']}/discount/approve", ACC, ok=(200, 201, 403, 409, 422))
+    # a draft still being prepared, and one cancelled by the accountant
+    invoice(farida, (("OPD-FU", 1), ("LAB-CBC", 1)))
+    wrong = final(rahul, (("LAB-ELEC", 1),))
+    if wrong:
+        call("POST", f"/api/finance/invoices/{wrong['id']}/cancel", ACC, ok=(200, 201, 409, 422), json={"reason": "Billed to the wrong patient"})
+    # an advance, then part of it returned
+    dep = call("POST", "/api/finance/deposits", BILL, ok=(200, 201, 422), json={"patient_id": farida, "amount": 15000, "method": "CARD"})
+    if dep:
+        ref = call("POST", "/api/finance/refunds", BILL, ok=(200, 201, 409, 422), json={"deposit_id": dep["id"], "amount": 4000, "method": "CASH", "reason": "Unused advance returned"})
+        if ref:
+            call("POST", f"/api/finance/refunds/{ref['id']}/decide", ACC, ok=(200, 201, 409, 422), json={"approve": True})
+    # a refund of part of a paid bill
+    paid = final(kiran, (("OPD-GEN", 1),))
+    if paid:
+        pay(paid, paid["total"], "CASH")
+        ref = call("POST", "/api/finance/refunds", BILL, ok=(200, 201, 409, 422), json={"invoice_id": paid["id"], "amount": 100, "method": "CASH", "reason": "Consultation fee waived by the doctor"})
+        if ref:
+            call("POST", f"/api/finance/refunds/{ref['id']}/decide", ACC, ok=(200, 201, 409, 422), json={"approve": True})
+    # Mohan's stay: ICU and ward days on a final bill, paid partly from his advance, then an insurance claim taken to settlement
+    stay = final(mohan, (("BED-ICU", 2), ("BED-GEN", 1), ("RAD-CXR", 1), ("LAB-CBC", 2)))
+    if stay:
+        deposits = (call("GET", f"/api/finance/patients/{mohan}/overview", BILL) or {}).get("deposits", [])
+        if deposits:
+            pay(stay, min(stay["total"], deposits[0].get("balance") or 0) or 1, "ADVANCE", deposit_id=deposits[0]["id"])
+        policies = call("GET", f"/api/patient-registry/{mohan}", EMP) or {}
+        pol = next(iter(policies.get("insurance", []) or []), None)
+        claim = call("POST", "/api/claims", TPA, ok=(200, 201, 409, 422), json={"invoice_id": stay["id"], "patient_insurance_id": pol["id"]}) if pol else None
+        if claim:
+            cid = f"/api/claims/{claim['id']}"
+            amount = int(stay["total"] * 0.8)
+            call("POST", f"{cid}/preauth", TPA, ok=(200, 201, 409, 422), json={"amount": amount, "reference": "PA-DEMO-2210"})
+            call("POST", f"{cid}/preauth/decision", TPA, ok=(200, 201, 409, 422), json={"approved_amount": amount})
+            for doc in claim.get("documents", []):
+                call("POST", f"{cid}/documents/{doc['id']}", TPA, ok=(200, 201, 409, 422), json={"received": True})
+            call("POST", f"{cid}/submit", TPA, ok=(200, 201, 409, 422), json={"amount": amount})
+            approved = int(amount * 0.9)
+            call("POST", f"{cid}/decision", TPA, ok=(200, 201, 409, 422), json={"approved_amount": approved, "reason": "Room rent capped by policy"})
+            call("POST", f"{cid}/settle", TPA, ok=(200, 201, 409, 422), json={"amount": approved, "reference": "UTR-DEMO-778812"})
+
+
+def PID_OF(email: str) -> int:
+    """Patient id of a demo patient, looked up through the registry list."""
+    if email not in PID or not PID[email]:
+        for p in call("GET", "/api/patients", EMP) or []:
+            if p.get("email") == email:
+                PID[email] = p["id"]
+    return PID[email]
+
+
 def patient_avatars():
     for i, (email, name, *_rest) in enumerate(PATIENTS):
         profile = call("GET", "/api/profile", email)
@@ -607,6 +699,7 @@ def main() -> None:
             step("trainee case histories", trainees)
             step("doctor notes and the assistant", notes_and_assistant)
             step("patient photos", patient_avatars)
+        step("more billing data", more_billing)
     if failures:
         print(f"\n{len(failures)} step(s) did not apply (the rest did):")
         for line in failures:
