@@ -99,6 +99,9 @@ def process_report(filename: str, content: bytes) -> ProcessedReport:
         visual = clean_text(pdf_service.extract_pdf_text_visual(content))
         if visual:
             parameters = merge_parameters(parameters, extract_parameters(visual))
+        layout = clean_text(pdf_service.extract_pdf_text_layout(content))    # a third reading, with the printed rows kept whole
+        if layout:
+            parameters = merge_parameters(parameters, extract_parameters(layout))
     # a single stray number is not enough: with fewer than two test results the file must still show signs of a report
     if parameters and (len(parameters) >= 2 or insight_service.has_report_signs(cleaned)):
         analyzed = analyze_parameters(parameters)

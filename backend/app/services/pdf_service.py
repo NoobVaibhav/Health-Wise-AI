@@ -37,6 +37,16 @@ def extract_pdf_text_visual(content: bytes) -> str:
         return ""
 
 
+def extract_pdf_text_layout(content: bytes) -> str:
+    """The text layer with the page layout kept (each printed row stays on one line). Some laboratory PDFs store the test names and the
+    values in separate blocks, which only this reading puts back together. Never raises: '' when it cannot be read."""
+    try:
+        reader = pypdf.PdfReader(io.BytesIO(content))
+        return "\n".join((page.extract_text(extraction_mode="layout") or "") for page in reader.pages[:MAX_TEXT_PAGES])
+    except Exception:
+        return ""
+
+
 def has_enough_text(text: str) -> bool:
     return len("".join(text.split())) >= MIN_TEXT_CHARS
 
