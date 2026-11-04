@@ -44,7 +44,8 @@ export const localDayKey = (utcIso) => {
 const AVATAR_TONES = ["from-brand-500 to-brand-700", "from-sky-400 to-blue-600", "from-emerald-400 to-emerald-600",
   "from-violet-400 to-violet-600", "from-amber-400 to-orange-500", "from-rose-400 to-rose-600"];
 
-export function Avatar({ name, size = 48, userId, version, round }) {
+export function Avatar({ name: rawName, size = 48, userId, version, round }) {
+  const name = rawName || "?";                         // a record without a name must not take the whole page down
   const picture = useAvatarUrl(userId, version);      // only people who have a photo (version is set) are fetched
   const shape = round ? "rounded-full" : "rounded-2xl";
   if (picture) {
