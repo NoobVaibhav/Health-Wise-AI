@@ -9,13 +9,13 @@ const STATES = {
   speaking: { label: "Speaking...", hint: "Tap to interrupt and ask something else.", color: "from-emerald-500 to-teal-600" },
 };
 
-function Orb({ state, onClick, disabled }) {
+function Orb({ state, onClick, disabled, compact }) {
   const s = STATES[state];
   const Icon = state === "listening" ? Square : state === "speaking" ? Volume2 : Mic;
   const name = state === "idle" ? "Start talking with HealthWise" : state === "listening" ? "Stop listening" : state === "speaking" ? "Interrupt and ask something else" : "Thinking";
   return (
     <button type="button" onClick={onClick} disabled={disabled} aria-label={name} data-state={state}
-      className={`voice-orb voice-orb-${state} relative flex h-16 w-16 shrink-0 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300 disabled:cursor-wait ${s.color}`}>
+      className={`voice-orb voice-orb-${state} relative flex ${compact ? "h-12 w-12" : "h-16 w-16"} shrink-0 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300 disabled:cursor-wait ${s.color}`}>
       <Icon size={30} />
       {(state === "listening" || state === "speaking") && <span className="voice-bars" aria-hidden="true"><i /><i /><i /><i /><i /></span>}
     </button>
@@ -23,25 +23,25 @@ function Orb({ state, onClick, disabled }) {
 }
 
 export default function VoicePanel({
-  state, heard, onOrb, inputOk, outputOk, handsFree, wakeOn, onWake, wakeSupported,
+  state, compact, heard, onOrb, inputOk, outputOk, handsFree, wakeOn, onWake, wakeSupported,
   voices, voiceName, onVoice, autoRead, onAutoRead, sounds, onSounds, rate, onRate,
 }) {
   const s = STATES[state];
   return (
-    <div className="relative border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white px-4 pb-3 pt-3 sm:px-5">
-      {/* phone: the orb on top, its words under it, centred; from sm up: the orb and its words side by side */}
-      <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-4 sm:text-left">
-        <Orb state={state} onClick={onOrb} disabled={state === "thinking"} />
+    <div className={`relative border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white px-4 sm:px-5 ${compact ? "py-2 sm:pb-3 sm:pt-3" : "pb-3 pt-3"}`}>
+      {/* phone: the orb on top, its words under it, centred (once a chat is going: one slim row, so the answers get the room); from sm up: the orb and its words side by side */}
+      <div className={`flex items-center text-center sm:flex-row sm:gap-4 sm:text-left ${compact ? "flex-row gap-3 pr-14 text-left" : "flex-col gap-2"}`}>
+        <Orb state={state} onClick={onOrb} disabled={state === "thinking"} compact={compact} />
         <div className="min-w-0 max-w-full flex-1" aria-live="polite">
           <p className="text-base font-extrabold leading-snug text-slate-900 sm:text-lg">{s.label}</p>
-          <p className="line-clamp-2 text-sm leading-snug text-slate-600">
+          <p className={`line-clamp-2 text-sm leading-snug text-slate-600 ${compact && state === "idle" ? "hidden sm:block" : ""}`}>
             {state === "listening" && heard ? <span className="font-semibold text-slate-800">&ldquo;{heard}&rdquo;</span> : (handsFree && state === "idle" ? "" : s.hint)}
             {!inputOk && state === "idle" && "Voice input is not available in this browser, but you can type and listen to answers."}
           </p>
           {handsFree && <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">Hands-free conversation is on</p>}
           {wakeOn && !handsFree && <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-bold text-violet-800"><Ear size={12} /> Waiting for &ldquo;Hey HealthWise&rdquo;</p>}
         </div>
-        <details className="absolute right-3 top-3 sm:static sm:shrink-0">
+        <details className={`absolute right-3 sm:static sm:shrink-0 ${compact ? "top-1/2 -translate-y-1/2 sm:translate-y-0" : "top-3"}`}>
           <summary aria-label="Voice settings" title="Voice settings" className="flex h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-0 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-brand-400 sm:px-3">
             <Settings2 size={18} aria-hidden="true" /><span className="hidden sm:inline">Voice settings</span>
           </summary>
@@ -49,23 +49,23 @@ export default function VoicePanel({
             {outputOk && (
               <>
                 <label className="block font-semibold text-slate-700">Voice
-                  <select value={voiceName} onChange={(e) => onVoice(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-base">
+                  <select value={voiceName} onChange={(e) => onVoice(e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-2 text-base">
                     <option value="">Best available</option>
                     {voices.filter((v) => v.name).map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
                   </select>
                 </label>
                 <label className="block font-semibold text-slate-700">Speed
-                  <select value={rate} onChange={(e) => onRate(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-base">
+                  <select value={rate} onChange={(e) => onRate(Number(e.target.value))} className="mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-2 text-base">
                     <option value={0.8}>Slow</option><option value={1}>Normal</option><option value={1.25}>Fast</option>
                   </select>
                 </label>
-                <label className="flex items-start gap-2 text-slate-700"><input type="checkbox" checked={autoRead} onChange={(e) => onAutoRead(e.target.checked)} className="mt-1 h-4 w-4" /> Read every answer aloud, also when I type</label>
+                <label className="flex min-h-11 items-center gap-2.5 text-slate-700"><input type="checkbox" checked={autoRead} onChange={(e) => onAutoRead(e.target.checked)} className="h-5 w-5 shrink-0" /> Read every answer aloud, also when I type</label>
               </>
             )}
-            <label className="flex items-start gap-2 text-slate-700"><input type="checkbox" checked={sounds} onChange={(e) => onSounds(e.target.checked)} className="mt-1 h-4 w-4" /> Play a small sound when I can speak</label>
+            <label className="flex min-h-11 items-center gap-2.5 text-slate-700"><input type="checkbox" checked={sounds} onChange={(e) => onSounds(e.target.checked)} className="h-5 w-5 shrink-0" /> Play a small sound when I can speak</label>
             {wakeSupported && (
-              <label className="flex items-start gap-2 text-slate-700">
-                <input type="checkbox" checked={wakeOn} onChange={(e) => onWake(e.target.checked)} className="mt-1 h-4 w-4" />
+              <label className="flex min-h-11 items-center gap-2.5 text-slate-700">
+                <input type="checkbox" checked={wakeOn} onChange={(e) => onWake(e.target.checked)} className="h-5 w-5 shrink-0" />
                 <span>Say &ldquo;Hey HealthWise&rdquo; to start (beta). The microphone stays on while this page is open, and your browser may send the sound to its speech service.</span>
               </label>
             )}

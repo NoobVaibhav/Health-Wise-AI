@@ -206,6 +206,7 @@ export default function AssistantChat() {
     speaker.stop();
     setBusy(true);
     setFailed(null);
+    setVoiceMessage("");                              // an old "I stopped listening" note does not belong next to a new question
     setInput("");
     setHeard("");
     setMessages((m) => [...m, { id: `local-${Date.now()}`, role: "PATIENT", text }]);
@@ -363,7 +364,7 @@ export default function AssistantChat() {
   const orbState = listening ? "listening" : busy ? "thinking" : speaking.state !== "idle" ? "speaking" : "idle";
 
   return (
-    <section className="relative flex h-[calc(100dvh-15rem)] min-h-[26rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white sm:h-[calc(100dvh-13rem)] sm:min-h-[34rem] sm:rounded-3xl" aria-label="Ask HealthWise assistant">
+    <section className="relative flex h-[calc(100dvh-15rem)] min-h-[26rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white sm:h-[calc(100dvh-17rem)] md:h-[calc(100dvh-24rem)] sm:min-h-[34rem] sm:rounded-3xl" aria-label="Ask HealthWise assistant">
       <header className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-3 py-1.5">
         <p className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 ring-1 ring-emerald-100" title="Answers use your own medical records. Nobody else can see this chat.">
           <ShieldCheck size={15} className="shrink-0" aria-hidden="true" />
@@ -388,7 +389,7 @@ export default function AssistantChat() {
           </span>
         </div>)}
 
-      <VoicePanel state={orbState} heard={heard} onOrb={onOrb} inputOk={inputOk} outputOk={outputOk} handsFree={handsFree} wakeOn={wakeOn} onWake={changeWake} wakeSupported={inputOk}
+      <VoicePanel state={orbState} compact={messages.length > 0} heard={heard} onOrb={onOrb} inputOk={inputOk} outputOk={outputOk} handsFree={handsFree} wakeOn={wakeOn} onWake={changeWake} wakeSupported={inputOk}
         voices={voices} voiceName={voiceName} onVoice={changeVoice} autoRead={autoRead} onAutoRead={changeAutoRead} sounds={sounds} onSounds={changeSounds} rate={rate} onRate={changeRate} />
 
       <div className="relative min-h-0 flex-1">
@@ -478,7 +479,7 @@ export default function AssistantChat() {
         {listening && !handsFree && <p className="flex items-center gap-2 text-sm font-semibold text-red-700" role="status"><span className="flex h-4 items-end gap-0.5" aria-hidden="true"><i className="wave-bar" /><i className="wave-bar" /><i className="wave-bar" /><i className="wave-bar" /></span> Listening... speak now. You can edit the text before sending.</p>}
         <div className="flex items-end gap-2">
           <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={onKey} rows={1} maxLength={1000}
-            aria-label="Type your question" placeholder="Type your question, or tap the mic..."
+            aria-label="Type your question" placeholder="Ask a question..."
             className="max-h-32 min-h-[3.5rem] min-w-0 flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-3.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200" />
           <button type="button" onClick={toggleMic} aria-pressed={listening && !handsFree} aria-label={listening && !handsFree ? "Stop listening" : "Speak your question"}
             className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${listening && !handsFree ? "mic-ring bg-red-600 focus-visible:ring-red-500" : "bg-slate-700 hover:bg-slate-800 focus-visible:ring-slate-500"}`}>

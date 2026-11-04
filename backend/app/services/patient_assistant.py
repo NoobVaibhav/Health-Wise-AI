@@ -355,7 +355,7 @@ def answer_allergies(db, patient, lang) -> dict:
     lines = []
     if items:
         lines.append(t("allergy_head", lang, x=", ".join(items)))
-    if patient.allergies and patient.allergies.strip():
+    if patient.allergies and patient.allergies.strip().strip(".").lower() not in {"", "-", "--", "none", "nil", "no", "n/a", "na", "not known"}:   # a lone dash or "none" at registration is no allergy
         lines.append({"en": "Also written when you were registered: ", "hi": "पंजीकरण के समय यह भी लिखा गया: ", "mr": "नोंदणीच्या वेळी हे देखील लिहिले: "}[lang] + patient.allergies.strip())
     if not lines:
         lines.append(t("allergy_none", lang))
