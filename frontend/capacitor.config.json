@@ -1,0 +1,6 @@
+{
+  "appId": "com.healthwise.ai",
+  "appName": "HealthWise AI",
+  "webDir": "dist",
+  "server": { "androidScheme": "http", "cleartext": true }
+}
