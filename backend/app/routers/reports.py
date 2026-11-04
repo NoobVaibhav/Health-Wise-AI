@@ -8,6 +8,8 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
+
+from app.core.config import from_backend_dir
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -139,7 +141,8 @@ def download_file(report_id: PathId, request: Request, user: User = Depends(get_
         raise forbidden()  # an employee can reopen only the files they uploaded themselves
     if user.role == PATIENT and not analysis_visible_to(user.role, report):
         raise forbidden()  # patients get the file after the doctor has reviewed the report
-    if not report.file_path or not os.path.exists(report.file_path):
+    path = from_backend_dir(report.file_path) if report.file_path else None
+    if not path or not os.path.exists(path):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "The original file is no longer available.")
     audit_service.log_action(db, user, audit_service.REPORT_FILE_VIEWED, "report", report.id, request)
-    return FileResponse(report.file_path, filename=report.filename)
+    return FileResponse(path, filename=report.filename)

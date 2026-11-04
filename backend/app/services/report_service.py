@@ -91,7 +91,8 @@ def delete_report(db: Session, report: HealthReport) -> str:
     """Remove the report, its results and its file. Notes, advice and prescriptions that were written about it stay in the
     patient's history (they just no longer point to the deleted report). Returns the file name for the audit log."""
     import os
-    name, path = report.filename, report.file_path
+    from app.core.config import from_backend_dir
+    name, path = report.filename, (from_backend_dir(report.file_path) if report.file_path else None)
     db.query(ReportComparison).filter((ReportComparison.previous_report_id == report.id)
                                       | (ReportComparison.latest_report_id == report.id)).delete(synchronize_session=False)
     for model in (DoctorNote, DoctorRecommendation, Prescription):

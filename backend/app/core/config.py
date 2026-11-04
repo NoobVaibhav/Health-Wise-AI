@@ -2,9 +2,16 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
+
+
+def from_backend_dir(path: str) -> str:
+    """A relative path (such as UPLOAD_DIR=./uploads or one stored with an older upload) means 'inside the backend folder',
+    wherever the server was started from."""
+    return path if Path(path).is_absolute() else str((BACKEND_DIR / path).resolve())
 
 
 class Settings(BaseSettings):
@@ -19,6 +26,11 @@ class Settings(BaseSettings):
 
     upload_dir: str = str(BACKEND_DIR / "uploads")
     max_file_size: int = 10 * 1024 * 1024  # bytes
+
+    @field_validator("upload_dir")
+    @classmethod
+    def upload_dir_inside_backend(cls, value: str) -> str:
+        return from_backend_dir(value)
 
     # Optional LLM. If empty the app uses deterministic explanations.
     llm_api_key: str = ""
