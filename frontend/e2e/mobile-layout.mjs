@@ -74,7 +74,7 @@ for (const role of roles) {
     await context.addInitScript((t) => localStorage.setItem("healthwise_token", t), token);
     const page = await context.newPage();
     let errors = [];
-    page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 200)); });
+    page.on("console", (m) => { if (m.type() === "error" && !/WebSocket connection to 'wss?:\/\/[^']*\?token=/.test(m.text())) errors.push(m.text().slice(0, 200)); });   // the dev server's own hot-reload socket is not the app's error
     page.on("pageerror", (e) => errors.push(`uncaught: ${e.message.slice(0, 200)}`));
     for (const route of ROUTES[role]) {
       errors = [];

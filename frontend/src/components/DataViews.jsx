@@ -62,7 +62,7 @@ export function Avatar({ name: rawName, size = 48, userId, version, round }) {
 /** One person as a card: avatar, name, small facts as label/value pairs, optional buttons on the right. */
 export function PersonCard({ name, subtitle, badge, facts = [], actions, muted, userId, avatarVersion }) {
   return (
-    <div className={`flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200/70 bg-white p-4 shadow-sm ${muted ? "opacity-60" : ""}`}>
+    <div className={`flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200/70 bg-white p-4 shadow-sm ${muted ? "bg-slate-50 grayscale" : ""}`}>
       <div className="flex min-w-0 items-center gap-4">
         <Avatar name={name} userId={userId} version={avatarVersion} />
         <div className="min-w-0">
@@ -105,17 +105,17 @@ export function CountdownChip({ days, overdueWord = "ago" }) {
 export function DateTile({ value, tone = "brand", size = "lg" }) {
   const d = new Date(value);
   const tones = {
-    brand: "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30",
-    green: "bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-md shadow-emerald-500/30",
-    amber: "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/30",
-    gray: "bg-slate-100 text-slate-500", red: "bg-red-100 text-red-600",
+    brand: "bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-md shadow-brand-500/30",
+    green: "bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-md shadow-emerald-500/30",
+    amber: "bg-gradient-to-br from-amber-600 to-orange-700 text-white shadow-md shadow-amber-500/30",
+    gray: "bg-slate-100 text-slate-700", red: "bg-red-100 text-red-700",
   };
   const dims = size === "sm" ? "h-14 w-14" : "h-[76px] w-[76px]";
   return (
     <span className={`flex ${dims} shrink-0 flex-col items-center justify-center rounded-2xl ${tones[tone]}`}>
-      <span className="text-xs font-bold uppercase tracking-wider opacity-90">{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
+      <span className="text-xs font-bold uppercase tracking-wider">{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
       <span className={`${size === "sm" ? "text-xl" : "text-3xl"} font-extrabold leading-none`}>{d.getDate()}</span>
-      <span className="text-xs font-bold uppercase tracking-wider opacity-90">{d.toLocaleDateString(undefined, { month: "short" })}</span>
+      <span className="text-xs font-bold uppercase tracking-wider">{d.toLocaleDateString(undefined, { month: "short" })}</span>
     </span>
   );
 }
@@ -127,7 +127,7 @@ export function AppointmentCard({ a, showPatient = true, actions }) {
   const tone = a.status === "CANCELLED" ? "red" : a.status === "COMPLETED" ? "gray" : days === 0 ? "green" : "brand";
   const accent = { red: "bg-red-400", gray: "bg-slate-300", green: "bg-emerald-500", brand: "bg-brand-500" }[tone];
   return (
-    <div className={`relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-3xl border border-slate-200/70 bg-white p-4 pl-6 shadow-sm ${a.status === "CANCELLED" ? "opacity-70" : ""}`}>
+    <div className={`relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-3xl border border-slate-200/70 bg-white p-4 pl-6 shadow-sm ${a.status === "CANCELLED" ? "bg-slate-50 grayscale" : ""}`}>
       <span className={`absolute inset-y-0 left-0 w-1.5 ${accent}`} />
       <div className="flex items-center gap-4">
         <DateTile value={a.scheduled_at} tone={tone} />

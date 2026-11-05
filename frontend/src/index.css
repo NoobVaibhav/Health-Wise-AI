@@ -9,10 +9,15 @@
   --color-brand-300: #67e8f9;
   --color-brand-400: #22d3ee;
   --color-brand-500: #06b6d4;
-  --color-brand-600: #0891b2;
+  --color-brand-600: #0a7c99;   /* a touch darker than Tailwind's cyan so white text on it passes 4.5:1 */
   --color-brand-700: #0e7490;
   --color-brand-800: #155e75;
   --color-brand-900: #164e63;
+  /* muted greys and accent colours that carry text are darkened to keep 4.5:1 on white */
+  --color-slate-400: #586579;
+  --color-slate-500: #4f5c6e;
+  --color-amber-600: #b45309;
+  --color-emerald-600: #047857;
   --color-ok-soft: #ecfdf5;   --color-ok-strong: #065f46;
   --color-warn-soft: #fffbeb; --color-warn-strong: #92400e;
   --color-danger-soft: #fef2f2; --color-danger-strong: #991b1b;
