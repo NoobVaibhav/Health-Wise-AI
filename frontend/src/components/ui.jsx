@@ -1,6 +1,7 @@
 // Small reusable UI pieces: Modal, form fields, Tabs, buttons, date helpers.
 import { useEffect, useId, useRef, useState } from "react";
 import { X } from "lucide-react";
+import useBackClose from "../hooks/useBackClose";
 
 export const inputClass =
   "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-100";
@@ -12,19 +13,20 @@ export function Modal({ title, onClose, children, wide }) {
   const sheet = useRef(null);
   const close = useRef(onClose);                       // the latest onClose, so a parent that re-renders (typing in the form) never re-runs the focus handling
   close.current = onClose;
+  useBackClose(true, onClose);
   useEffect(() => {
     const opener = document.activeElement;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    sheet.current?.focus();
+    sheet.current?.focus({ preventScroll: true });
     const key = (e) => { if (e.key === "Escape") close.current(); };
     document.addEventListener("keydown", key);
     return () => { document.removeEventListener("keydown", key); document.body.style.overflow = previous; opener?.focus?.(); };
   }, []);
   return (
-    <div className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-start sm:overflow-y-auto sm:p-4 sm:pt-10" onClick={onClose}>
+    <div className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-4" onClick={onClose}>
       <div ref={sheet} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} onClick={(e) => e.stopPropagation()}
-        className={`sheet-up flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-sheet focus:outline-none sm:max-h-none sm:rounded-3xl sm:shadow-2xl ${wide ? "sm:max-w-3xl" : "sm:max-w-lg"}`}>
+        className={`sheet-up flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-sheet focus:outline-none sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl sm:shadow-2xl ${wide ? "sm:max-w-3xl" : "sm:max-w-lg"}`}>
         <div className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-slate-300 sm:hidden" aria-hidden="true" />
         <div className="flex shrink-0 items-center justify-between gap-3 px-5 pb-3 pt-3 sm:px-6 sm:pt-6">
           <h3 id={titleId} className="min-w-0 break-words text-xl font-bold text-slate-900">{title}</h3>
@@ -34,6 +36,11 @@ export function Modal({ title, onClose, children, wide }) {
       </div>
     </div>
   );
+}
+
+// The buttons of a form inside a Modal: they stay at the bottom of the sheet while the form scrolls, above the keyboard and the phone's home indicator.
+export function ModalActions({ children }) {
+  return <div className="sticky bottom-0 -mx-5 mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-5 pb-1 pt-3 sm:-mx-6 sm:px-6">{children}</div>;
 }
 
 // A labelled field. `error` shows a readable message under the field (announced to screen readers); the input itself carries aria-invalid.

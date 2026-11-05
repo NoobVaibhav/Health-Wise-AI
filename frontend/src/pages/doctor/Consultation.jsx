@@ -9,7 +9,11 @@ import { addAddendum, addDiagnosis, addOrder, addVitals, getWorkspace, saveConsu
 import { PrescriptionModal } from "../../components/DoctorForms";
 import { AdmitDialog, ReferDialog } from "../../components/ClinicalDialogs";
 import { Section } from "../../components/HealthCard";
-import { ErrorBox, Loading, PageTitle } from "../../components/Feedback";
+import PatientBanner from "../../components/PatientBanner";
+import ActionBar from "../../components/ActionBar";
+import ConsultReference from "../../components/clinical/ConsultReference";
+import useLayoutMode from "../../hooks/useLayoutMode";
+import { ErrorBox, Loading } from "../../components/Feedback";
 import { Button, Field, Input, Select, Textarea, fmtUtc } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
 
@@ -39,6 +43,8 @@ function Workspace({ ws, reload }) {
   const [addendum, setAddendum] = useState("");
   const [dialog, setDialog] = useState(null);
   const { problem, busy, run } = useSave();
+  const { split } = useLayoutMode();
+  const [pane, setPane] = useState("record");        // below 1024 px: the record to write, or the patient's information to read
   const dirty = useRef(false);
   const latest = useRef(form);
   latest.current = form;
@@ -75,22 +81,33 @@ function Workspace({ ws, reload }) {
   const p = ws.patient;
 
   return (
-    <div className="space-y-5 pb-4">
-      <PageTitle title={p.full_name} subtitle={`${p.uhid} · ${p.age ?? "?"} years · ${p.gender || ""} ${ws.encounter.department_name ? "· " + ws.encounter.department_name : ""}`} />
-      {p.allergies && <p role="alert" className="rounded-2xl bg-red-100 p-3 font-bold text-red-800">Allergies: {p.allergies}</p>}
+    <div className="space-y-4">
+      <PatientBanner name={p.full_name} uhid={p.uhid} age={p.age} gender={p.gender} allergies={p.allergies} />
       <div className="flex flex-wrap gap-2">
-        <Link to={`/doctor/patients/${p.id}`} className="inline-flex min-h-11 items-center rounded-xl border-2 border-brand-700 bg-white px-4 py-2 font-bold text-brand-800">Full record</Link>
+                <Link to={`/doctor/patients/${p.id}`} className="inline-flex min-h-11 items-center rounded-xl border-2 border-brand-700 bg-white px-4 py-2 text-sm font-bold text-brand-800">Full record</Link>
         {!closed && <Button type="button" variant="secondary" onClick={() => setDialog("refer")}>Refer to a department</Button>}
         <Button type="button" variant="secondary" onClick={() => setDialog("admit")}>Admit to a ward</Button>
         {grade !== "INTERN" && <Button type="button" variant="secondary" onClick={() => setDialog("rx")}><Pill size={15} className="mr-1 inline" /> {grade === "CONSULTANT" ? "Prescription" : "Prescription (consultant countersigns)"}</Button>}
       </div>
       {signed && <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-3 font-semibold text-emerald-900"><Lock size={16} /> Signed {fmtUtc(ws.consultation.signed_at)}. It can no longer be changed; add an addendum below if something must be added.</p>}
-
+      {!split && (
+        <div role="tablist" aria-label="Consultation" className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-200 p-1">
+          {[["record", "Write"], ["reference", "Patient information"]].map(([key, label]) => (
+            <button key={key} type="button" role="tab" aria-selected={pane === key} onClick={() => setPane(key)} className={`min-h-11 rounded-xl text-base font-bold ${pane === key ? "bg-brand-700 text-white shadow-sm" : "text-slate-700"}`}>{label}</button>
+          ))}
+        </div>
+      )}
+      <div className={split ? "grid items-start gap-4 [grid-template-columns:minmax(18rem,24rem)_minmax(0,1fr)]" : ""} data-consultation={split ? "split" : "single"}>
+        {(split || pane === "reference") && (
+          <aside aria-label="Patient information" className={split ? "sticky top-[calc(var(--height-appbar)+var(--safe-top)+4.5rem)] max-h-[calc(100dvh-10rem)] overflow-y-auto overscroll-contain" : ""}><ConsultReference ws={ws} /></aside>
+        )}
+        {(split || pane === "record") && (
+          <div className="min-w-0 space-y-4">
       <Section title="Vital signs">
         {ws.vitals[0] && <p className="mb-2 text-sm text-slate-600">Last: {VITALS.map(([k, l]) => (ws.vitals[0][k] != null ? `${l} ${ws.vitals[0][k]}` : null)).filter(Boolean).join(" · ")} <span className="text-slate-400">({ws.vitals[0].recorded_by}, {fmtUtc(ws.vitals[0].recorded_at)})</span></p>}
         {!closed && (
           <>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">{VITALS.map(([k, l]) => <Field key={k} label={l}><Input type="number" step="any" value={vit[k] ?? ""} onChange={(e) => setVit({ ...vit, [k]: e.target.value })} /></Field>)}</div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:grid-cols-8">{VITALS.map(([k, l]) => <Field key={k} label={l}><Input type="number" inputMode="decimal" enterKeyHint="next" step="any" value={vit[k] ?? ""} onChange={(e) => setVit({ ...vit, [k]: e.target.value })} /></Field>)}</div>
             <div className="mt-2"><Button type="button" variant="secondary" disabled={busy || Object.keys(vitals).length === 0} onClick={async () => { const r = await run(() => addVitals(eid, vitals), "Vitals saved"); if (r) { setVit({}); reload(); } }}>Save vitals</Button></div>
           </>)}
       </Section>
@@ -125,21 +142,21 @@ function Workspace({ ws, reload }) {
         {ws.prescriptions.length > 0 && <p className="mt-3 text-sm text-slate-600">Prescriptions in this visit: {ws.prescriptions.length}</p>}
       </Section>
 
-      {ws.previous_consultations.length > 0 && <Section title="Earlier consultations"><ul className="space-y-2">{ws.previous_consultations.map((c) => <li key={c.id} className="text-sm"><b>{fmtUtc(c.signed_at)}</b> · {c.doctor_name}<br />{c.complaint}{c.assessment ? ` → ${c.assessment}` : ""}</li>)}</ul></Section>}
-      {ws.charges.length > 0 && <Section title="Charges (to be billed)"><ul>{ws.charges.map((c) => <li key={c.id}>{c.description}: Rs {c.amount} <span className="text-sm text-slate-500">({c.status.toLowerCase()})</span></li>)}</ul></Section>}
       {signed && (
         <Section title="Addenda">
           <ul className="mb-3 space-y-1">{ws.addenda.map((a) => <li key={a.id} className="text-sm"><b>{fmtUtc(a.added_at)}</b> · {a.text}</li>)}{ws.addenda.length === 0 && <li className="text-slate-500">None.</li>}</ul>
           <div className="flex gap-2"><Input aria-label="Addendum" maxLength={3000} value={addendum} onChange={(e) => setAddendum(e.target.value)} /><Button type="button" variant="secondary" disabled={busy || addendum.trim().length < 3} onClick={async () => { if (await run(() => addAddendum(ws.consultation.id, addendum), "Addendum added")) { setAddendum(""); reload(); } }}>Add</Button></div>
         </Section>)}
+          </div>
+        )}
+      </div>
       {problem && <ErrorBox message={problem} />}
 
       {!readOnly && (
-        <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
-          <span className="text-sm">{saveState === "saving" ? <span className="text-slate-500"><Loader2 size={14} className="mr-1 inline animate-spin" />Saving...</span> : saveState === "saved" ? <span className="text-emerald-700"><CheckCircle2 size={14} className="mr-1 inline" />Draft saved</span>
-            : saveState === "failed" ? <span role="alert" className="font-semibold text-red-700"><CloudOff size={14} className="mr-1 inline" />Not saved. What you typed is still here. <button type="button" className="underline" onClick={save}>Try again</button></span> : <span className="text-slate-400">Saved automatically as you type</span>}</span>
-          <span className="flex gap-2"><Button type="button" variant="secondary" onClick={save}>Save draft</Button>{grade !== "INTERN" ? <Button type="button" disabled={busy} onClick={sign}>Review and sign</Button> : <span className="self-center text-sm font-semibold text-slate-600">Your consultant signs this</span>}</span>
-        </div>)}
+        <ActionBar status={saveState === "saving" ? <span className="text-slate-500"><Loader2 size={14} className="mr-1 inline animate-spin" />Saving...</span> : saveState === "saved" ? <span className="text-emerald-700"><CheckCircle2 size={14} className="mr-1 inline" />Draft saved</span>
+            : saveState === "failed" ? <span role="alert" className="font-semibold text-red-700"><CloudOff size={14} className="mr-1 inline" />Not saved. What you typed is still here. <button type="button" className="underline" onClick={save}>Try again</button></span> : <span className="text-slate-600">Saved automatically as you type</span>}>
+          <Button type="button" variant="secondary" onClick={save}>Save draft</Button>{grade !== "INTERN" ? <Button type="button" disabled={busy} onClick={sign}>Review and sign</Button> : <span className="self-center text-sm font-semibold text-slate-600">Your consultant signs this</span>}
+        </ActionBar>)}
 
       {dialog === "rx" && <PrescriptionModal patientId={p.id} encounterId={eid} onClose={() => setDialog(null)} onSaved={() => { setDialog(null); reload(); }} />}
       {dialog === "refer" && <ReferDialog patientId={p.id} encounterId={eid} onClose={() => setDialog(null)} />}

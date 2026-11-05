@@ -2,6 +2,7 @@
 import { Printer } from "lucide-react";
 import Barcode from "./Barcode";
 import { printAs } from "../utils/printTitle";
+import ShareButton from "./ShareButton";
 import { Button, fmtDate, fmtUtc } from "./ui";
 
 export const money = (n) => `₹${(Number(n) || 0).toFixed(2)}`;
@@ -23,7 +24,7 @@ export default function BillView({ bill, onClose, closeLabel = "Close" }) {
           {bill.prescription_code && <p><b>Prescription:</b> {bill.prescription_code}</p>}
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Bill lines: scroll sideways for more">
           <table className="mt-3 w-full min-w-[520px] text-left text-sm">
             <thead className="border-b-2 border-slate-400">
               <tr><th className="py-2">Medicine</th><th>Batch</th><th>Expiry</th><th className="text-right">Qty</th><th className="text-right">Rate</th><th className="text-right">GST</th><th className="text-right">Amount</th></tr>
@@ -60,6 +61,7 @@ export default function BillView({ bill, onClose, closeLabel = "Close" }) {
 
       <div className="no-print flex flex-wrap gap-3">
         <Button onClick={() => printAs(bill.customer_name || "Walk-in customer", bill.bill_number, "Bill")}><Printer size={20} /> Print this bill</Button>
+        <ShareButton title={`Bill ${bill.bill_number}`} text={`Bill ${bill.bill_number}: total ${money(bill.total)}`} />
         {onClose && <Button variant="secondary" onClick={onClose}>{closeLabel}</Button>}
       </div>
     </div>

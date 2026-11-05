@@ -14,6 +14,7 @@
     "@capacitor-community/speech-recognition": "^7.0.1",
     "@capacitor-community/text-to-speech": "^8.0.2",
     "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.6.0",
     "axios": "^1.7.0",
     "jsbarcode": "^3.12.3",

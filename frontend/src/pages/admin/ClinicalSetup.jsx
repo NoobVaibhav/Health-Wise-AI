@@ -92,7 +92,7 @@ export function ThresholdsTab() {
       <div className="mt-4 grid gap-2 sm:grid-cols-[9rem_6rem_7rem_8rem_1fr_auto] sm:items-end">
         <Field label="Measurement"><Select value={fresh.parameter} onChange={(e) => setFresh({ ...fresh, parameter: e.target.value })}>{PARAMS.map((p) => <option key={p}>{p}</option>)}</Select></Field>
         <Field label="When"><Select value={fresh.comparison} onChange={(e) => setFresh({ ...fresh, comparison: e.target.value })}><option value="GT">above</option><option value="LT">below</option></Select></Field>
-        <Field label="Value"><Input type="number" step="any" value={fresh.threshold} onChange={(e) => setFresh({ ...fresh, threshold: e.target.value })} /></Field>
+        <Field label="Value"><Input type="number" inputMode="decimal" step="any" value={fresh.threshold} onChange={(e) => setFresh({ ...fresh, threshold: e.target.value })} /></Field>
         <Field label="Level"><Select value={fresh.level} onChange={(e) => setFresh({ ...fresh, level: e.target.value })}><option>WARNING</option><option>CRITICAL</option></Select></Field>
         <Field label="Message"><Input maxLength={200} value={fresh.message} onChange={(e) => setFresh({ ...fresh, message: e.target.value })} /></Field>
         <Button type="button" disabled={busy || fresh.threshold === "" || fresh.message.trim().length < 3} onClick={async () => { if (await run(() => saveRule(null, { ...fresh, threshold: Number(fresh.threshold) }), "Rule added")) { setFresh({ ...fresh, threshold: "", message: "" }); reload(); } }}>Add</Button></div>

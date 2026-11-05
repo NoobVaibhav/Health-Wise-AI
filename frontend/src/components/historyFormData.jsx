@@ -74,7 +74,7 @@ export function UsualValues({ baseline, onChange }) {
   const set = (k, v) => onChange({ ...baseline, [k]: v });
   const field = (label, key, unit, step = 1) => (
     <label className="text-xs font-bold text-slate-500">{label} <span className="font-normal text-slate-400">{unit}</span>
-      <Input type="number" step={step} value={baseline[key] ?? ""} onChange={(e) => set(key, e.target.value)} /></label>
+      <Input type="number" inputMode="decimal" step={step} value={baseline[key] ?? ""} onChange={(e) => set(key, e.target.value)} /></label>
   );
   return (
     <div className="space-y-4">

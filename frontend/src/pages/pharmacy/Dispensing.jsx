@@ -8,6 +8,7 @@ import { getErrorMessage } from "../../services/api";
 import { Section } from "../../components/HealthCard";
 import { StatusPill } from "../../components/StatusBadge";
 import { Button, Input, fmtDate } from "../../components/ui";
+import Stepper from "../../components/Stepper";
 import { ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 import { useToast } from "../../components/Toast";
 import PrescriptionBill from "../../components/PrescriptionBill";
@@ -21,12 +22,19 @@ export default function Dispensing() {
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   const open = ["ACTIVE", "PARTIALLY_DISPENSED"].includes(rx.status);
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="mx-auto max-w-7xl space-y-5">
       <PageTitle title={`Give medicine: ${rx.code}`} subtitle={`Patient: ${rx.patient_name} (${rx.patient_code}). Step 1: give each medicine. Step 2: make the bill.`} />
-      <PrescriptionSheet rx={rx} variant="pharmacy" onPrint={() => printAs(rx.patient_name, rx.code, "Prescription")} />
-      <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-900"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-lg text-white">1</span> Step 1: Give the medicines</h2>
-      {rx.items.map((item) => <ItemRow key={item.id} item={item} canDispense={open} onDone={setData} />)}
-      <PrescriptionBill rx={rx} />
+      {/* from 1024 px: the prescription stays on the left, big and readable, and the counter work is on the right */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
+        <div className="min-w-0 lg:sticky lg:top-[calc(var(--height-appbar)+var(--safe-top)+0.75rem)] lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:overscroll-contain">
+          <PrescriptionSheet rx={rx} variant="pharmacy" onPrint={() => printAs(rx.patient_name, rx.code, "Prescription")} />
+        </div>
+        <div className="min-w-0 space-y-5">
+          <h2 className="flex items-center gap-3 text-xl font-extrabold text-slate-900"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-lg text-white">1</span> Step 1: Give the medicines</h2>
+          {rx.items.map((item) => <ItemRow key={item.id} item={item} canDispense={open} onDone={setData} />)}
+          <PrescriptionBill rx={rx} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -62,8 +70,8 @@ function ItemRow({ item, canDispense, onDone }) {
       </div>
       {canDispense && item.remaining_quantity > 0 && (
         <div className="mt-4 flex flex-wrap items-end gap-3 border-t pt-4">
-          <label className="text-base font-semibold text-slate-700">How many to give now?<Input type="number" min={1} max={item.remaining_quantity} value={quantity} onChange={(e) => setQuantity(e.target.value)} className="mt-1 w-32 rounded-lg border border-slate-300 px-3 py-2" /></label>
-          <label className="flex-1 text-base font-semibold text-slate-700">Note (if you want to add one)<Input value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
+          <div className="text-base font-semibold text-slate-700"><span id={`qty-${item.id}`}>How many to give now?</span><div className="mt-1"><Stepper label={`Quantity of ${item.medicine_name} to give now`} min={1} max={item.remaining_quantity} value={String(quantity)} onChange={setQuantity} /></div></div>
+          <label className="min-w-[12rem] flex-1 text-base font-semibold text-slate-700">Note (if you want to add one)<Input enterKeyHint="done" value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
           <Button disabled={busy} onClick={() => send({})} className="!border-emerald-800 !bg-emerald-600 hover:!bg-emerald-700">✓ Give medicine</Button>
           <Button variant="secondary" disabled={busy} onClick={() => send({ mark_unavailable: true, quantity: 0 })} className="!border-red-600 !text-red-700 hover:!bg-red-50">✗ Not in stock</Button>
         </div>

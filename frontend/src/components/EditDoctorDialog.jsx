@@ -4,7 +4,7 @@ import { updateUser } from "../services/adminApi";
 import { getErrorMessage } from "../services/api";
 import DepartmentSpecializationSelect from "./DepartmentSpecializationSelect";
 import { ErrorBox } from "./Feedback";
-import { Button, Modal } from "./ui";
+import { Button, Modal, ModalActions } from "./ui";
 
 export default function EditDoctorDialog({ person, onClose, onSaved }) {
   const [choice, setChoice] = useState({ department_id: person.department_id ? String(person.department_id) : "", specialization_id: person.specialization_id ? String(person.specialization_id) : "" });
@@ -37,7 +37,7 @@ export default function EditDoctorDialog({ person, onClose, onSaved }) {
             <span><b>Can prescribe independently</b><br />Off (the safe default): a consultant countersigns every prescription this doctor writes, and the pharmacy cannot dispense it before. On: the prescription goes straight to the pharmacy. Only the administrator can change this.</span>
           </label>)}
         {error && <ErrorBox message={error} />}
-        <Button disabled={busy}>{busy ? "Saving..." : "Save"}</Button>
+        <ModalActions><Button disabled={busy}>{busy ? "Saving..." : "Save"}</Button></ModalActions>
       </form>
     </Modal>
   );

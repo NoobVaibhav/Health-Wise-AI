@@ -170,7 +170,7 @@ export default function PrescriptionSheet({ rx, variant = "patient", onPrint }) 
                   <p className="mt-1 text-xs text-slate-700">Computer-generated prescription. Not valid without the doctor's signature.</p>
                 </div>
                 <div className="flex flex-col items-end justify-end text-sm">
-                  <div className="h-16 w-full max-w-[16rem] rounded border border-dashed border-slate-400" aria-label="Space for the doctor's stamp and signature" />
+                  <div role="img" className="h-16 w-full max-w-[16rem] rounded border border-dashed border-slate-400" aria-label="Space for the doctor's stamp and signature" />
                   <div className="w-full max-w-[16rem] border-t border-slate-800 pt-1 text-center font-semibold">{doctorLabel(rx.doctor_name)}</div>
                 </div>
               </footer>
@@ -183,7 +183,7 @@ export default function PrescriptionSheet({ rx, variant = "patient", onPrint }) 
       {shop && items.length > 0 && (
         <section className="no-print mt-4 rounded-3xl border border-slate-300 bg-white p-4 shadow-sm" aria-label="Dispensing status">
           <h2 className="text-base font-extrabold text-slate-900">Dispensing status</h2>
-          <div className="mt-2 overflow-x-auto">
+          <div className="mt-2 overflow-x-auto" tabIndex={0} role="region" aria-label="Medicine table: scroll sideways for more">
             <table className="w-full min-w-[28rem] border-collapse text-sm">
               <thead><tr className="border-b-2 border-slate-700 text-left"><th scope="col" className="py-1.5 pr-2">Medicine</th><th scope="col" className="py-1.5 pr-2 text-right">Prescribed</th><th scope="col" className="py-1.5 pr-2 text-right">Given</th><th scope="col" className="py-1.5 pr-2 text-right">Remaining</th><th scope="col" className="py-1.5">Status</th></tr></thead>
               <tbody>

@@ -42,7 +42,8 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-html { -webkit-text-size-adjust: 100%; }
+/* a field reached with Tab or by scrolling stops below the sticky top bar and patient banner and above the sticky action bar, never under them */
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--height-appbar) + var(--safe-top) + 5.5rem); scroll-padding-bottom: 6.5rem; }
 
 /* A grid with no column list is one column that may shrink (minmax(0, 1fr)), not one that grows to its widest unbroken word and pushes the page sideways. */
 @layer base { .grid { grid-template-columns: minmax(0, 1fr); } h1, h2, h3, h4, p, li { overflow-wrap: break-word; } }
@@ -58,6 +59,9 @@ body {
 
 /* one visible focus ring everywhere; taps do not zoom the page */
 :focus-visible { outline: 3px solid var(--color-brand-400); outline-offset: 2px; }
+/* the pale ring of a text box is not enough on its own: a keyboard user always gets the clear outline too */
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+input[type="date"]:focus-within, input[type="time"]:focus-within, input[type="datetime-local"]:focus-within, input[type="month"]:focus-within { outline: 3px solid var(--color-brand-400); outline-offset: 1px; }
 button, a, summary, select, input, textarea, [role="button"] { touch-action: manipulation; }
 
 /* numbers in tables, vitals and money line up */
@@ -76,6 +80,12 @@ button, [role="button"] { transition-property: transform, background-color, bord
 /* skeleton loaders: a calm pulse on opacity only */
 @keyframes skeleton { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 .skeleton { background: #e2e8f0; border-radius: 0.75rem; animation: skeleton 1.4s ease-in-out infinite; }
+
+/* the page column of a staff screen: full width on a phone, beside the 72 px icon rail on a tablet, beside the 256 px sidebar from 1280 px */
+.shell-staff { padding-left: 0; }
+@media (min-width: 640px) { .shell-staff { padding-left: 4.5rem; } }
+@media (min-width: 1280px) { .shell-staff { padding-left: 16rem; } }
+@media print { .shell-staff { padding-left: 0 !important; } }
 
 /* the bottom padding that keeps content above the tab bar and the phone's home indicator */
 .pb-tabbar { padding-bottom: calc(var(--height-tabbar) + var(--safe-bottom) + 0.75rem); }
@@ -172,3 +182,18 @@ button, [role="button"] { transition-property: transform, background-color, bord
 /* the current step of a report's journey */
 @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.5); } 100% { box-shadow: 0 0 0 12px rgba(8, 145, 178, 0); } }
 .pulse-ring { animation: pulse-ring 1.6s ease-out infinite; }
+
+/* a table that has to scroll sideways shows a soft shadow on the edge where there is more (no script; it follows the scroll position) */
+.overflow-x-auto:has(> table) {
+  background:
+    linear-gradient(to right, #fff 30%, rgb(255 255 255 / 0)) left center / 2rem 100% no-repeat local,
+    linear-gradient(to left, #fff 30%, rgb(255 255 255 / 0)) right center / 2rem 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgb(15 23 42 / 0.18), rgb(15 23 42 / 0)) left center / 0.75rem 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgb(15 23 42 / 0.18), rgb(15 23 42 / 0)) right center / 0.75rem 100% no-repeat scroll;
+}
+
+/* search and filter boxes keep a comfortable width on a wide screen (they were stretching to 1000 px) */
+@media (min-width: 1024px) {
+  main input[placeholder^="Search"], main input[placeholder^="Filter by"], main input[placeholder^="Type a"] { max-width: 36rem; }
+  main form input, main [role="dialog"] input { max-width: none; }
+}

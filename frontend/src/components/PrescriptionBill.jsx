@@ -58,7 +58,7 @@ export default function PrescriptionBill({ rx }) {
 
           {lines.length > 0 && (
             <div className="space-y-4">
-              <div className="overflow-x-auto rounded-2xl border-2 border-slate-200">
+              <div className="overflow-x-auto rounded-2xl border-2 border-slate-200" tabIndex={0} role="region" aria-label="Bill lines: scroll sideways for more">
                 <table className="w-full min-w-[480px] text-left text-base">
                   <thead className="bg-slate-50 text-sm text-slate-600"><tr><th className="p-3">Medicine given</th><th>How many</th><th>Price</th><th className="pr-3 text-right">Amount</th></tr></thead>
                   <tbody>
@@ -86,7 +86,7 @@ export default function PrescriptionBill({ rx }) {
                     </div>
                   </div>
                   <Field label="Patient phone (optional)"><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
-                  <Field label="Discount in rupees (if any)"><Input type="number" min={0} step="0.01" value={discount} onChange={(e) => setDiscount(e.target.value)} /></Field>
+                  <Field label="Discount in rupees (if any)"><Input type="number" inputMode="decimal" min={0} step="0.01" value={discount} onChange={(e) => setDiscount(e.target.value)} /></Field>
                 </div>
                 <div className="flex flex-col justify-between rounded-2xl bg-emerald-50 p-5">
                   <dl className="space-y-2 text-lg">

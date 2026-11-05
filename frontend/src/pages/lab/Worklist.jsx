@@ -41,9 +41,9 @@ export default function Worklist() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-1.5" role="tablist">{TABS.map(([key, label]) => (
+      <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0" role="tablist">{TABS.map(([key, label]) => (
         <button key={key || "all"} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)}
-          className={`rounded-full px-4 py-2 text-sm font-bold ${tab === key ? "bg-brand-700 text-white shadow" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"}`}>
+          className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold ${tab === key ? "bg-brand-700 text-white shadow" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"}`}>
           {label}{count(key) !== undefined ? ` (${count(key)})` : ""}</button>))}</div>
 
       <div className="relative w-full max-w-xl">
@@ -54,7 +54,7 @@ export default function Worklist() {
       {loading && !data ? <Loading /> : error ? <ErrorBox message={error} onRetry={reload} /> : data.tests.length === 0 ? (
         <EmptyState message={q ? "No test matches your search" : "Nothing here"} hint={tab === "OPEN" ? "When a doctor advises a test it appears here." : "Try another tab."} icon={FlaskConical} />
       ) : (
-        <div className="space-y-3">{data.tests.map((t) => (
+        <div className="grid gap-3 lg:grid-cols-2 lg:items-start 2xl:grid-cols-3">{data.tests.map((t) => (
           <div key={t.id} className={`rounded-3xl border-2 bg-white p-5 shadow-sm ${t.urgent && ["ORDERED", "SAMPLE_COLLECTED", "IN_PROGRESS"].includes(t.status) ? "border-red-300" : "border-brand-200"}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>

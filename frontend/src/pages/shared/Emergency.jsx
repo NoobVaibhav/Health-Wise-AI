@@ -69,7 +69,7 @@ function Register({ onClose, onDone }) {
         {known ? <Field label="Patient"><PatientPicker value={patient} onChange={setPatient} /></Field> : (
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Sex"><Select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}><option value="">Not known</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></Select></Field>
-            <Field label="Approximate age"><Input type="number" min="0" max="120" value={form.approx_age} onChange={(e) => setForm({ ...form, approx_age: e.target.value })} /></Field>
+            <Field label="Approximate age"><Input type="number" inputMode="decimal" min="0" max="120" value={form.approx_age} onChange={(e) => setForm({ ...form, approx_age: e.target.value })} /></Field>
             <Field label="Description"><Input maxLength={200} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
           </div>)}
         <Field label="What is wrong? *"><Input maxLength={300} value={form.chief_complaint} onChange={(e) => setForm({ ...form, chief_complaint: e.target.value })} /></Field>
@@ -106,7 +106,7 @@ function Visit({ id, role, onClose }) {
                 <Field label="Category"><Select value={triage.category} onChange={(e) => setTriage({ ...triage, category: e.target.value })}><option value="">Choose</option>{Object.entries(CATEGORY).map(([k, v]) => <option key={k} value={k}>{v[0]}</option>)}</Select></Field>
                 <Field label="Note"><Input maxLength={300} value={triage.note} onChange={(e) => setTriage({ ...triage, note: e.target.value })} /></Field>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">{VITALS.map(([k, label]) => <Field key={k} label={label}><Input type="number" step="any" value={triage.vitals[k] ?? ""} onChange={(e) => setTriage({ ...triage, vitals: { ...triage.vitals, [k]: e.target.value } })} /></Field>)}</div>
+              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">{VITALS.map(([k, label]) => <Field key={k} label={label}><Input type="number" inputMode="decimal" step="any" value={triage.vitals[k] ?? ""} onChange={(e) => setTriage({ ...triage, vitals: { ...triage.vitals, [k]: e.target.value } })} /></Field>)}</div>
               <div className="mt-3"><Button type="button" disabled={!triage.category || busy} onClick={() => act(() => edTriage(id, { category: Number(triage.category), note: triage.note || null, vitals: Object.keys(vitals).length ? vitals : null }), "Triage saved")}>Save triage</Button></div>
             </Section>)}
           {isDoctor && data.status !== "DISPOSED" && (

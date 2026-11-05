@@ -108,17 +108,17 @@ export function ConditionForm({ patientId, kind, record, onSaved, onClose }) {
             <Field label="Diagnosis"><Select value={f.diagnosis_type} onChange={(e) => set({ diagnosis_type: e.target.value })}><option value="">Not recorded</option>{TYPES[kind].map((t) => <option key={t}>{t}</option>)}</Select></Field>
           ) : <Field label="Type or details of the diagnosis"><Input value={f.diagnosis_type} onChange={(e) => set({ diagnosis_type: e.target.value })} /></Field>}
           <Field label="Duration (how long)"><Input value={f.duration_text} onChange={(e) => set({ duration_text: e.target.value })} placeholder="e.g. 5 years" /></Field>
-          <Field label="Year of diagnosis"><Input type="number" min="1900" max={thisYear} value={f.diagnosis_year} onChange={(e) => set({ diagnosis_year: e.target.value })} placeholder="e.g. 2021" /></Field>
+          <Field label="Year of diagnosis"><Input type="number" inputMode="decimal" min="1900" max={thisYear} value={f.diagnosis_year} onChange={(e) => set({ diagnosis_year: e.target.value })} placeholder="e.g. 2021" /></Field>
           <Field label={kind === "OTHER" ? "Disease control" : "Overall control"}><Select value={f.control_status} onChange={(e) => set({ control_status: e.target.value })}><option value="">Not recorded</option><option value="GOOD">Good</option><option value="FAIR">Fair</option><option value="POOR">Poor</option></Select></Field>
           <Field label="Is the patient on treatment?"><Select value={f.on_treatment} onChange={(e) => set({ on_treatment: e.target.value })}><option value="">Not recorded</option><option value="yes">Yes</option><option value="no">No</option></Select></Field>
         </Grid>
 
         {kind === "DIABETES" && (<><Sub>Blood sugar control (reported values, with the date they were measured)</Sub>
           <Grid cols={3}>
-            <Field label="Fasting sugar (mg/dL)"><Input type="number" step="any" value={f.fasting} onChange={(e) => set({ fasting: e.target.value })} /></Field>
-            <Field label="After-meal sugar (mg/dL)"><Input type="number" step="any" value={f.postprandial} onChange={(e) => set({ postprandial: e.target.value })} /></Field>
-            <Field label="Random sugar (mg/dL)"><Input type="number" step="any" value={f.random} onChange={(e) => set({ random: e.target.value })} /></Field>
-            <Field label="HbA1c (%)"><Input type="number" step="any" value={f.hba1c} onChange={(e) => set({ hba1c: e.target.value })} /></Field>
+            <Field label="Fasting sugar (mg/dL)"><Input type="number" inputMode="decimal" step="any" value={f.fasting} onChange={(e) => set({ fasting: e.target.value })} /></Field>
+            <Field label="After-meal sugar (mg/dL)"><Input type="number" inputMode="decimal" step="any" value={f.postprandial} onChange={(e) => set({ postprandial: e.target.value })} /></Field>
+            <Field label="Random sugar (mg/dL)"><Input type="number" inputMode="decimal" step="any" value={f.random} onChange={(e) => set({ random: e.target.value })} /></Field>
+            <Field label="HbA1c (%)"><Input type="number" inputMode="decimal" step="any" value={f.hba1c} onChange={(e) => set({ hba1c: e.target.value })} /></Field>
             <Field label="Measured on"><Input value={f.noted_on} onChange={(e) => set({ noted_on: e.target.value })} placeholder="e.g. Sep 2026" /></Field>
           </Grid>
           <p className="text-xs text-slate-500">Results from uploaded laboratory reports are shown separately, with their own dates.</p></>)}
@@ -267,13 +267,13 @@ export function AdmissionForm({ patientId, record, onSaved, onClose }) {
           <T f={f} set={set} k="preexisting_conditions" label="Relevant illnesses the patient already had" />
           <Sub>Vital signs measured at admission (leave empty what was not recorded)</Sub>
           <Grid cols={3}>
-            <Field label="BP top (mmHg)"><Input type="number" value={f.bp_systolic} onChange={(e) => set({ bp_systolic: e.target.value })} /></Field>
-            <Field label="BP bottom (mmHg)"><Input type="number" value={f.bp_diastolic} onChange={(e) => set({ bp_diastolic: e.target.value })} /></Field>
-            <Field label="Pulse (per min)"><Input type="number" value={f.pulse} onChange={(e) => set({ pulse: e.target.value })} /></Field>
-            <Field label="Breathing rate (per min)"><Input type="number" value={f.resp_rate} onChange={(e) => set({ resp_rate: e.target.value })} /></Field>
-            <Field label="Temperature (F)"><Input type="number" step="0.1" value={f.temperature_f} onChange={(e) => set({ temperature_f: e.target.value })} /></Field>
-            <Field label="Oxygen SpO2 (%)"><Input type="number" value={f.spo2} onChange={(e) => set({ spo2: e.target.value })} /></Field>
-            <Field label="Pain score (0-10)"><Input type="number" min="0" max="10" value={f.pain_score} onChange={(e) => set({ pain_score: e.target.value })} /></Field>
+            <Field label="BP top (mmHg)"><Input type="number" inputMode="decimal" value={f.bp_systolic} onChange={(e) => set({ bp_systolic: e.target.value })} /></Field>
+            <Field label="BP bottom (mmHg)"><Input type="number" inputMode="decimal" value={f.bp_diastolic} onChange={(e) => set({ bp_diastolic: e.target.value })} /></Field>
+            <Field label="Pulse (per min)"><Input type="number" inputMode="decimal" value={f.pulse} onChange={(e) => set({ pulse: e.target.value })} /></Field>
+            <Field label="Breathing rate (per min)"><Input type="number" inputMode="decimal" value={f.resp_rate} onChange={(e) => set({ resp_rate: e.target.value })} /></Field>
+            <Field label="Temperature (F)"><Input type="number" inputMode="decimal" step="0.1" value={f.temperature_f} onChange={(e) => set({ temperature_f: e.target.value })} /></Field>
+            <Field label="Oxygen SpO2 (%)"><Input type="number" inputMode="decimal" value={f.spo2} onChange={(e) => set({ spo2: e.target.value })} /></Field>
+            <Field label="Pain score (0-10)"><Input type="number" inputMode="decimal" min="0" max="10" value={f.pain_score} onChange={(e) => set({ pain_score: e.target.value })} /></Field>
             <Field label="Measured at"><Input value={f.vitals_at} onChange={(e) => set({ vitals_at: e.target.value })} placeholder="time or date" /></Field>
           </Grid>
           <T f={f} set={set} k="exam_findings" label="Important physical examination findings" rows={3} /><T f={f} set={set} k="investigations" label="Laboratory investigations and imaging reports" rows={3} />
@@ -331,7 +331,7 @@ export function SurgeryForm({ patientId, record, admissions, presetAdmission, on
           <Field label="Part of which admission?"><Select value={f.admission_id} onChange={(e) => set({ admission_id: e.target.value })}><option value="">Not linked to an admission</option>{admissions.map((a) => <option key={a.id} value={a.id}>{[a.admitted_at ? a.admitted_at.slice(0, 10) : a.admitted_date_text, a.main_complaint || a.reason || a.final_diagnosis].filter(Boolean).join(" - ") || `Admission ${a.id}`}</option>)}</Select></Field>
           <I f={f} set={set} k="body_site" label="Site (for a fracture: bone and location)" placeholder="e.g. right femur, shaft" />
           <Field label="Operation date"><Input type="date" max={new Date().toISOString().slice(0, 10)} value={f.operation_date} onChange={(e) => set({ operation_date: e.target.value })} /></Field>
-          <Field label="Or only the year, if the date is not known"><Input type="number" min="1900" max={thisYear} value={f.operation_year} onChange={(e) => set({ operation_year: e.target.value })} /></Field>
+          <Field label="Or only the year, if the date is not known"><Input type="number" inputMode="decimal" min="1900" max={thisYear} value={f.operation_year} onChange={(e) => set({ operation_year: e.target.value })} /></Field>
           <I f={f} set={set} k="surgeon" label="Surgeon" /><I f={f} set={set} k="hospital" label="Hospital" /><I f={f} set={set} k="anesthesia" label="Type of anaesthesia (if documented)" />
         </Grid>
         <T f={f} set={set} k="reason" label="Reason for the operation" /><T f={f} set={set} k="findings" label="Surgical findings" />

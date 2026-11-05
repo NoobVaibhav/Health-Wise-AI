@@ -6,7 +6,10 @@ import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./components/Toast";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./utils/nativeSpeech";
+import { startNativeBack } from "./utils/nativeBack";
 import "./index.css";
+
+startNativeBack().catch((e) => console.warn("The Android back button could not be set up:", e?.message || e));
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

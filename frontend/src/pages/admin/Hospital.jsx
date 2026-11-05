@@ -108,7 +108,7 @@ function Prices() {
         <Field label="Service"><Input maxLength={200} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
         <Field label="Category"><Select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</Select></Field>
         <Field label="Department"><Select value={form.department_id} onChange={(e) => setForm({ ...form, department_id: e.target.value })}><option value="">Any</option>{(departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
-        <Field label="Price (Rs)"><Input type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></Field>
+        <Field label="Price (Rs)"><Input type="number" inputMode="decimal" min="0" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></Field>
         <Button type="button" disabled={form.code.trim().length < 2 || form.name.trim().length < 2 || form.price === ""}
           onClick={async () => { if (await run(() => addService({ ...form, price: Number(form.price), gst_percent: Number(form.gst_percent), department_id: form.department_id ? Number(form.department_id) : null }), "Service added")) { setForm({ ...form, code: "", name: "", price: "" }); reload(); } }}>Add</Button>
       </div>

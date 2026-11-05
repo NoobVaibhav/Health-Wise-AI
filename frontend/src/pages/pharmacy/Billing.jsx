@@ -12,6 +12,9 @@ import BillView, { money } from "../../components/BillView";
 import { ErrorBox, PageTitle } from "../../components/Feedback";
 import { Button, Field, Input, inputClass } from "../../components/ui";
 import { useToast } from "../../components/Toast";
+import ActionBar from "../../components/ActionBar";
+import BarcodeScan from "../../components/BarcodeScan";
+import useLayoutMode from "../../hooks/useLayoutMode";
 
 const METHODS = [["CASH", "Cash"], ["UPI", "UPI"], ["CARD", "Card"]];
 
@@ -27,6 +30,7 @@ const Step = ({ n, title, children }) => (
 
 export default function Billing() {
   const toast = useToast();
+  const { split } = useLayoutMode();
   const scanBox = useRef(null);
   const [code, setCode] = useState("");
   const [lines, setLines] = useState([]);                 // { barcode, name, price, gst, available, qty }
@@ -119,20 +123,23 @@ export default function Billing() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageTitle title="Sell medicine (without prescription)" subtitle="For customers who just walk in. Follow the 3 steps, then print the bill." icon={ReceiptText} />
       <p className="rounded-2xl border-2 border-violet-200 bg-violet-50 p-3 text-base text-violet-900">
         Medicine from a <b>doctor's prescription</b>? Open it in <Link to="/pharmacy/prescriptions" className="font-bold underline">Prescriptions</Link>, give the medicine there, and then make its bill on the same page.
       </p>
 
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+        <div className="min-w-0 space-y-5">
       <Step n={1} title="Scan the medicine">
         <label htmlFor="scan" className="flex items-center gap-2 text-base font-semibold text-slate-700"><ScanBarcode size={22} className="text-brand-700" /> Click the box and scan the barcode on the pack</label>
         <div className="mt-2 flex flex-wrap gap-2">
-          <input id="scan" ref={scanBox} autoFocus autoComplete="off" value={code} onChange={(e) => setCode(e.target.value)}
+          <input id="scan" ref={scanBox} autoFocus autoComplete="off" enterKeyHint="search" value={code} onChange={(e) => setCode(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); scan(); } }}
             placeholder="Scan here (or type the code and press Enter)"
             className={`${inputClass} min-w-0 flex-1 border-2 border-brand-600 !py-3.5 text-lg`} />
           <Button onClick={() => scan()} disabled={!code.trim()} className="min-w-24">Add</Button>
+          <BarcodeScan onDetect={(c) => scan(c)} />
         </div>
         <div className="mt-4">
           <Field label="No barcode on the pack? Search by name">
@@ -168,11 +175,13 @@ export default function Billing() {
         )}
       </Step>
 
+        </div>
+        <div className="lg:sticky lg:top-[calc(var(--height-appbar)+var(--safe-top)+0.75rem)]">
       <Step n={3} title="Take payment and make the bill">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
           <div className="space-y-3">
             <Field label="Customer name (optional)"><Input value={customer.name} onChange={(e) => setCustomer({ ...customer, name: e.target.value })} /></Field>
-            <Field label="Customer phone (optional)"><Input value={customer.phone} onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} /></Field>
+            <Field label="Customer phone (optional)"><Input type="tel" inputMode="tel" autoComplete="off" enterKeyHint="next" value={customer.phone} onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} /></Field>
             <div>
               <p className="mb-1.5 text-sm font-semibold text-slate-700">How is the customer paying?</p>
               <div className="flex gap-2" role="group" aria-label="Payment method">
@@ -182,7 +191,7 @@ export default function Billing() {
                 ))}
               </div>
             </div>
-            <Field label="Discount in rupees (if any)"><Input type="number" min={0} step="0.01" value={discount} onChange={(e) => setDiscount(e.target.value)} /></Field>
+            <Field label="Discount in rupees (if any)"><Input type="number" inputMode="decimal" enterKeyHint="done" min={0} step="0.01" value={discount} onChange={(e) => setDiscount(e.target.value)} /></Field>
           </div>
 
           <div className="flex flex-col justify-between rounded-2xl bg-slate-50 p-5">
@@ -202,6 +211,13 @@ export default function Billing() {
           </div>
         </div>
       </Step>
+        </div>
+      </div>
+      {lines.length > 0 && !split && (
+        <ActionBar status={<span className="num text-xl font-extrabold text-slate-900">Total {money(total)}</span>}>
+          <Button onClick={generate} disabled={busy} className="!border-emerald-800 !bg-emerald-600 hover:!bg-emerald-700">{busy ? "Making the bill..." : "✓ Generate bill"}</Button>
+        </ActionBar>
+      )}
     </div>
   );
 }

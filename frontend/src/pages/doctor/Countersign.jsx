@@ -44,7 +44,7 @@ function EditDialog({ id, onClose, onDone }) {
           <div key={idx} className="grid gap-2 rounded-xl bg-slate-50 p-2 sm:grid-cols-5">
             <Field label="Medicine"><Input maxLength={200} value={i.medicine_name} onChange={set(idx, "medicine_name")} /></Field><Field label="Dose"><Input maxLength={100} value={i.dosage} onChange={set(idx, "dosage")} /></Field>
             <Field label="How often"><Input maxLength={100} value={i.frequency} onChange={set(idx, "frequency")} /></Field><Field label="For how long"><Input maxLength={100} value={i.duration} onChange={set(idx, "duration")} /></Field>
-            <Field label="Quantity"><Input type="number" min="1" value={i.quantity} onChange={set(idx, "quantity")} /></Field>
+            <Field label="Quantity"><Input type="number" inputMode="decimal" min="1" value={i.quantity} onChange={set(idx, "quantity")} /></Field>
           </div>))}
         {problem && <ErrorBox message={problem} />}
         <Button type="button" disabled={busy} onClick={async () => { if (await run(() => approveCountersign(id, { items: body }), "Edited and approved")) onDone(); }}>Save the changes and approve</Button>

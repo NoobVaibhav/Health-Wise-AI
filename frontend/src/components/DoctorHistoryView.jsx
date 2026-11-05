@@ -108,7 +108,7 @@ export default function DoctorHistoryView({ patient }) {
             <p className="text-sm text-slate-500">{data.history.saved_before ? `${data.completeness.percent}% filled in. Last saved ${fmtUtc(data.history.updated_at)} by ${data.history.updated_by_name}.` : "The patient has not filled in the history yet. You can fill it in with the patient."}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to={`/doctor/patients/${patient.id}/take-history`} className="inline-flex items-center rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm"><ClipboardPen size={15} className="mr-1.5" /> Take history / examine</Link>
+            <Link to={`/doctor/patients/${patient.id}/take-history`} className="inline-flex min-h-11 items-center rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm"><ClipboardPen size={15} className="mr-1.5" /> Take history / examine</Link>
             <Button variant="secondary" onClick={() => printAs(patient.full_name, "Medical history")}><Printer size={15} className="mr-1 inline" /> Print</Button>
           </div>
         </div>

@@ -147,9 +147,9 @@ function AddStock({ onClose, onSaved }) {
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Batch number"><Input value={form.batch_number} onChange={set("batch_number")} /></Field>
-          <Field label="How many are you adding?"><Input type="number" min={1} required value={form.quantity} onChange={set("quantity")} /></Field>
+          <Field label="How many are you adding?"><Input type="number" inputMode="decimal" min={1} required value={form.quantity} onChange={set("quantity")} /></Field>
           <Field label="Expiry date"><Input type="date" value={form.expiry_date} onChange={set("expiry_date")} /></Field>
-          <Field label="Selling price of one (before GST)"><Input type="number" min={0} step="0.01" value={form.unit_price} onChange={set("unit_price")} /></Field>
+          <Field label="Selling price of one (before GST)"><Input type="number" inputMode="decimal" min={0} step="0.01" value={form.unit_price} onChange={set("unit_price")} /></Field>
           <Field label="GST %">
             <Select value={form.gst_percent === "" ? "" : String(form.gst_percent)} onChange={set("gst_percent")}>
               <option value="">Choose GST</option>{gstChoices.map((g) => <option key={g} value={g}>{g}%</option>)}

@@ -9,6 +9,7 @@ import { ackAlert, actOnDose, chartIntakeOutput, chartNote, chartVitals, getChar
 import { Section } from "../../components/HealthCard";
 import { EmptyState, ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 import { Button, Field, Input, Select, Textarea, fmtDateTime, fmtUtc } from "../../components/ui";
+import ResponsiveTable from "../../components/ResponsiveTable";
 
 const Alert = ({ a, onAck }) => (
   <li className={`flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 ${a.level === "CRITICAL" ? "bg-red-100 text-red-900" : "bg-amber-100 text-amber-900"}`}>
@@ -79,17 +80,20 @@ export function NurseChart() {
 
       {!closed && (
         <Section title="Record vital signs">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">{VIT.map(([k, l]) => <Field key={k} label={l}><Input type="number" step="any" value={vit[k] ?? ""} onChange={(e) => setVit({ ...vit, [k]: e.target.value })} /></Field>)}</div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">{VIT.map(([k, l]) => <Field key={k} label={l}><Input type="number" inputMode="decimal" step="any" value={vit[k] ?? ""} onChange={(e) => setVit({ ...vit, [k]: e.target.value })} /></Field>)}</div>
           <div className="mt-2"><Button type="button" disabled={busy || Object.keys(vitals).length === 0} onClick={() => act(() => chartVitals(id, vitals).then(() => setVit({})), "Vitals saved")}>Save vitals</Button></div>
         </Section>)}
       <Section title="Recent vitals">
-        {data.vitals.length === 0 ? <p className="text-slate-500">None yet.</p> : <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b text-xs uppercase text-slate-500"><th className="py-1">Time</th>{VIT.map(([, l]) => <th key={l}>{l}</th>)}<th>By</th></tr></thead>
-          <tbody>{data.vitals.slice(0, 8).map((v) => <tr key={v.id} className="border-b"><td className="py-1">{fmtUtc(v.recorded_at)}</td>{VIT.map(([k]) => <td key={k}>{v[k] ?? "-"}</td>)}<td>{v.recorded_by}</td></tr>)}</tbody></table></div>}
+        {data.vitals.length === 0 ? <p className="text-slate-500">None yet.</p> : <ResponsiveTable caption="Recent vitals" rows={data.vitals.slice(0, 8)} columns={[
+          { key: "recorded_at", label: "Time", priority: 1, render: (v) => fmtUtc(v.recorded_at) },
+          ...VIT.map(([k, l], i) => ({ key: k, label: l, priority: i < 4 ? 1 : 2, numeric: true, render: (v) => v[k] ?? "-" })),
+          { key: "recorded_by", label: "By", priority: 3 },
+        ]} />}
       </Section>
 
       <Section title={`Intake and output today (balance ${data.totals.balance > 0 ? "+" : ""}${data.totals.balance} ml)`}>
         {!closed && <div className="mb-3 grid gap-2 sm:grid-cols-[8rem_1fr_8rem_auto] sm:items-end"><Field label="Kind"><Select value={io.kind} onChange={(e) => setIo({ ...io, kind: e.target.value })}><option value="INTAKE">Intake</option><option value="OUTPUT">Output</option></Select></Field><Field label="What"><Input maxLength={100} value={io.item} onChange={(e) => setIo({ ...io, item: e.target.value })} /></Field>
-          <Field label="ml"><Input type="number" min="1" max="10000" value={io.amount_ml} onChange={(e) => setIo({ ...io, amount_ml: e.target.value })} /></Field><Button type="button" variant="secondary" disabled={busy || io.item.trim().length < 2 || !io.amount_ml} onClick={() => act(() => chartIntakeOutput(id, { kind: io.kind, item: io.item, amount_ml: Number(io.amount_ml) }).then(() => setIo({ ...io, item: "", amount_ml: "" })), "Recorded")}>Add</Button></div>}
+          <Field label="ml"><Input type="number" inputMode="decimal" min="1" max="10000" value={io.amount_ml} onChange={(e) => setIo({ ...io, amount_ml: e.target.value })} /></Field><Button type="button" variant="secondary" disabled={busy || io.item.trim().length < 2 || !io.amount_ml} onClick={() => act(() => chartIntakeOutput(id, { kind: io.kind, item: io.item, amount_ml: Number(io.amount_ml) }).then(() => setIo({ ...io, item: "", amount_ml: "" })), "Recorded")}>Add</Button></div>}
         <p className="text-sm text-slate-700">Intake {data.totals.intake} ml · Output {data.totals.output} ml</p>
       </Section>
 

@@ -7,7 +7,7 @@ import { admit, askReferral, listWards } from "../services/careApi";
 import { listDoctors } from "../services/doctorApi";
 import { getDepartments } from "../services/catalogApi";
 import { ErrorBox } from "./Feedback";
-import { Button, Field, Input, Modal, Select, Textarea } from "./ui";
+import { Button, Field, Input, Modal, Select, Textarea, ModalActions } from "./ui";
 
 export function ReferDialog({ patientId, encounterId, onClose }) {
   const { data: departments } = useFetch(getDepartments, []);
@@ -30,7 +30,7 @@ export function ReferDialog({ patientId, encounterId, onClose }) {
           <Field label="Why? *" hint="At least 5 characters"><Textarea rows={3} maxLength={500} value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} /></Field>
           <label className="flex items-center gap-2 font-semibold text-red-700"><input type="checkbox" className="h-5 w-5" checked={form.urgency === "URGENT"} onChange={(e) => setForm({ ...form, urgency: e.target.checked ? "URGENT" : "ROUTINE" })} /> Urgent</label>
           {problem && <ErrorBox message={problem} />}
-          <Button disabled={busy || !form.to_department_id || form.reason.trim().length < 5}>{busy ? "Sending..." : "Send the referral"}</Button>
+          <ModalActions><Button disabled={busy || !form.to_department_id || form.reason.trim().length < 5}>{busy ? "Sending..." : "Send the referral"}</Button></ModalActions>
         </form>)}
     </Modal>
   );
@@ -54,7 +54,7 @@ export function AdmitDialog({ patientId, encounterId, onClose }) {
         <Field label="Bed (can be given later)"><Select value={form.bed_id} onChange={(e) => setForm({ ...form, bed_id: e.target.value })}><option value="">No bed yet</option>{beds.map((b) => <option key={b.id} value={b.id}>{b.ward}: {b.code}</option>)}</Select></Field>
         <Field label="Expected discharge"><Input type="date" min={new Date().toISOString().slice(0, 10)} value={form.expected_discharge} onChange={(e) => setForm({ ...form, expected_discharge: e.target.value })} /></Field>
         {problem && <ErrorBox message={problem} />}
-        <Button disabled={busy}>{busy ? "Admitting..." : "Admit the patient"}</Button>
+        <ModalActions><Button disabled={busy}>{busy ? "Admitting..." : "Admit the patient"}</Button></ModalActions>
       </form>
     </Modal>
   );

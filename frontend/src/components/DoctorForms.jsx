@@ -7,7 +7,7 @@ import { getMedicineOptions, getTestOptions } from "../services/catalogApi";
 import { addHistoryEntry, addNote, addRecommendation, reviewReport } from "../services/doctorApi";
 import { createPrescription } from "../services/prescriptionApi";
 import { getErrorMessage } from "../services/api";
-import { Button, Field, Input, Modal, Select, Textarea } from "./ui";
+import { Button, Field, Input, Modal, Select, Textarea, ModalActions } from "./ui";
 import { ErrorBox } from "./Feedback";
 import { useToast } from "./Toast";
 
@@ -47,7 +47,7 @@ export function NoteModal({ patientId, reportId, onClose, onSaved }) {
         <Field label="Note"><Textarea required minLength={2} rows={5} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
         <Field label="Priority"><Select value={priority} onChange={(e) => setPriority(e.target.value)}>{PRIORITIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></Field>
         {error && <ErrorBox message={error} />}
-        <Button disabled={busy}>{busy ? "Saving..." : "Save note"}</Button>
+        <ModalActions><Button disabled={busy}>{busy ? "Saving..." : "Save note"}</Button></ModalActions>
       </form>
     </Modal>
   );
@@ -70,7 +70,7 @@ export function RecommendationModal({ patientId, reportId, onClose, onSaved, ini
           <Field label="Priority"><Select value={form.priority} onChange={set("priority")}>{PRIORITIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></Field>
         </div>
         {error && <ErrorBox message={error} />}
-        <Button disabled={busy}>{busy ? "Saving..." : "Save recommendation"}</Button>
+        <ModalActions><Button disabled={busy}>{busy ? "Saving..." : "Save recommendation"}</Button></ModalActions>
       </form>
     </Modal>
   );
@@ -175,7 +175,7 @@ export function PrescriptionModal({ patientId, reportId, encounterId, onClose, o
         <Field label="Clinical indication (optional)"><Input value={indication} onChange={(e) => setIndication(e.target.value)} /></Field>
         <Field label="Notes (optional)"><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
         {error && <ErrorBox message={error} />}
-        <Button disabled={busy}>{busy ? "Saving..." : "Create prescription"}</Button>
+        <ModalActions><Button disabled={busy}>{busy ? "Saving..." : "Create prescription"}</Button></ModalActions>
       </form>
     </Modal>
   );
@@ -195,7 +195,7 @@ export function HistoryEntryModal({ patientId, onClose, onSaved }) {
         </div>
         <Field label="Description"><Textarea required rows={4} value={form.description} onChange={set("description")} /></Field>
         {error && <ErrorBox message={error} />}
-        <Button disabled={busy}>{busy ? "Saving..." : "Save entry"}</Button>
+        <ModalActions><Button disabled={busy}>{busy ? "Saving..." : "Save entry"}</Button></ModalActions>
       </form>
     </Modal>
   );

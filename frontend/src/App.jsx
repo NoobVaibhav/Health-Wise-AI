@@ -1,86 +1,88 @@
+import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ROLE_HOME, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleRoute from "./routes/RoleRoute";
 import Layout from "./components/Layout";
+import { Loading } from "./components/Feedback";
 
 import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import ChangePassword from "./pages/auth/ChangePassword";
-import Profile from "./pages/shared/Profile";
-import MyHealthHistory from "./pages/patient/MyHealthHistory";
-import PatientAssistant from "./pages/patient/Assistant";
-import TakeHistory from "./pages/doctor/TakeHistory";
-import EmergencyCardPage from "./pages/patient/EmergencyCardPage";
+const Register = lazy(() => import("./pages/auth/Register"));
+const ChangePassword = lazy(() => import("./pages/auth/ChangePassword"));
+const Profile = lazy(() => import("./pages/shared/Profile"));
+const MyHealthHistory = lazy(() => import("./pages/patient/MyHealthHistory"));
+const PatientAssistant = lazy(() => import("./pages/patient/Assistant"));
+const TakeHistory = lazy(() => import("./pages/doctor/TakeHistory"));
+const EmergencyCardPage = lazy(() => import("./pages/patient/EmergencyCardPage"));
 
-import Appointments from "./pages/shared/Appointments";
-import PatientsList from "./pages/shared/PatientsList";
-import ReportsList from "./pages/shared/ReportsList";
-import ReportDetails from "./pages/shared/ReportDetails";
+const Appointments = lazy(() => import("./pages/shared/Appointments"));
+const PatientsList = lazy(() => import("./pages/shared/PatientsList"));
+const ReportsList = lazy(() => import("./pages/shared/ReportsList"));
+const ReportDetails = lazy(() => import("./pages/shared/ReportDetails"));
 
-import AdminDashboard from "./pages/admin/Dashboard";
-import Users from "./pages/admin/Users";
-import StaffManager from "./pages/admin/StaffManager";
-import AuditLogs from "./pages/admin/AuditLogs";
-import Settings from "./pages/admin/Settings";
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const Users = lazy(() => import("./pages/admin/Users"));
+const StaffManager = lazy(() => import("./pages/admin/StaffManager"));
+const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
+const Settings = lazy(() => import("./pages/admin/Settings"));
 
-import DoctorDashboard from "./pages/doctor/Dashboard";
-import PatientDetails from "./pages/doctor/PatientDetails";
-import ReportReview from "./pages/doctor/ReportReview";
-import DoctorNotes from "./pages/doctor/DoctorNotes";
-import DoctorRecommendations from "./pages/doctor/Recommendations";
-import DoctorPrescriptions from "./pages/doctor/Prescriptions";
+const DoctorDashboard = lazy(() => import("./pages/doctor/Dashboard"));
+const PatientDetails = lazy(() => import("./pages/doctor/PatientDetails"));
+const ReportReview = lazy(() => import("./pages/doctor/ReportReview"));
+const DoctorNotes = lazy(() => import("./pages/doctor/DoctorNotes"));
+const DoctorRecommendations = lazy(() => import("./pages/doctor/Recommendations"));
+const DoctorPrescriptions = lazy(() => import("./pages/doctor/Prescriptions"));
 
-import EmployeeDashboard from "./pages/employee/Dashboard";
-import RegisterPatient from "./pages/employee/RegisterPatient";
-import UploadReport from "./pages/employee/UploadReport";
+const EmployeeDashboard = lazy(() => import("./pages/employee/Dashboard"));
+const RegisterPatient = lazy(() => import("./pages/employee/RegisterPatient"));
+const UploadReport = lazy(() => import("./pages/employee/UploadReport"));
 
-import PatientDashboard from "./pages/patient/Dashboard";
-import MyReports from "./pages/patient/MyReports";
-import HealthHistory from "./pages/patient/HealthHistory";
-import PatientNotes from "./pages/patient/DoctorNotes";
-import PatientRecommendations from "./pages/patient/Recommendations";
-import PatientPrescriptions from "./pages/patient/Prescriptions";
+const PatientDashboard = lazy(() => import("./pages/patient/Dashboard"));
+const MyReports = lazy(() => import("./pages/patient/MyReports"));
+const HealthHistory = lazy(() => import("./pages/patient/HealthHistory"));
+const PatientNotes = lazy(() => import("./pages/patient/DoctorNotes"));
+const PatientRecommendations = lazy(() => import("./pages/patient/Recommendations"));
+const PatientPrescriptions = lazy(() => import("./pages/patient/Prescriptions"));
 
-import TestOrders from "./pages/lab/TestOrders";
-import LabWorklist from "./pages/lab/Worklist";
-import LabApprovals from "./pages/lab/Approvals";
-import RadiologyWorklist from "./pages/radiology/Worklist";
+const TestOrders = lazy(() => import("./pages/lab/TestOrders"));
+const LabWorklist = lazy(() => import("./pages/lab/Worklist"));
+const LabApprovals = lazy(() => import("./pages/lab/Approvals"));
+const RadiologyWorklist = lazy(() => import("./pages/radiology/Worklist"));
 import PermissionRoute from "./routes/PermissionRoute";
-import StockControl from "./pages/stock/StockControl";
-import Procurement from "./pages/stock/Procurement";
-import WardRequests from "./pages/stock/WardRequests";
-import OtSchedule from "./pages/ot/Schedule";
-import BloodBank from "./pages/bloodbank/BloodBank";
-import Transfusions from "./pages/bloodbank/Transfusions";
-import FinanceBilling from "./pages/finance/Billing";
-import Claims from "./pages/finance/Claims";
-import FinanceReports from "./pages/finance/FinanceReports";
-import MyBills from "./pages/patient/MyBills";
-import Integrations from "./pages/admin/Integrations";
-import TraineeDashboard from "./pages/trainee/Dashboard";
-import TraineeTakeHistory from "./pages/trainee/TakeHistory";
-import TraineeSelectDoctor from "./pages/trainee/SelectDoctor";
-import TraineeReferrals from "./pages/trainee/MyReferrals";
-import DoctorReferrals from "./pages/doctor/Referrals";
-import EmergencyAccess from "./pages/doctor/EmergencyAccess";
-import Hospital from "./pages/admin/Hospital";
-import OpdDesk from "./pages/employee/OpdDesk";
-import OpdQueue from "./pages/doctor/OpdQueue";
-import Consultation from "./pages/doctor/Consultation";
+const StockControl = lazy(() => import("./pages/stock/StockControl"));
+const Procurement = lazy(() => import("./pages/stock/Procurement"));
+const WardRequests = lazy(() => import("./pages/stock/WardRequests"));
+const OtSchedule = lazy(() => import("./pages/ot/Schedule"));
+const BloodBank = lazy(() => import("./pages/bloodbank/BloodBank"));
+const Transfusions = lazy(() => import("./pages/bloodbank/Transfusions"));
+const FinanceBilling = lazy(() => import("./pages/finance/Billing"));
+const Claims = lazy(() => import("./pages/finance/Claims"));
+const FinanceReports = lazy(() => import("./pages/finance/FinanceReports"));
+const MyBills = lazy(() => import("./pages/patient/MyBills"));
+const Integrations = lazy(() => import("./pages/admin/Integrations"));
+const TraineeDashboard = lazy(() => import("./pages/trainee/Dashboard"));
+const TraineeTakeHistory = lazy(() => import("./pages/trainee/TakeHistory"));
+const TraineeSelectDoctor = lazy(() => import("./pages/trainee/SelectDoctor"));
+const TraineeReferrals = lazy(() => import("./pages/trainee/MyReferrals"));
+const DoctorReferrals = lazy(() => import("./pages/doctor/Referrals"));
+const EmergencyAccess = lazy(() => import("./pages/doctor/EmergencyAccess"));
+const Hospital = lazy(() => import("./pages/admin/Hospital"));
+const OpdDesk = lazy(() => import("./pages/employee/OpdDesk"));
+const OpdQueue = lazy(() => import("./pages/doctor/OpdQueue"));
+const Consultation = lazy(() => import("./pages/doctor/Consultation"));
 import Inpatients, { InpatientDetail } from "./pages/doctor/Inpatients";
-import ReferralRequests from "./pages/doctor/ReferralRequests";
-import Countersign from "./pages/doctor/Countersign";
-import Emergency from "./pages/shared/Emergency";
-import Beds from "./pages/shared/Beds";
+const ReferralRequests = lazy(() => import("./pages/doctor/ReferralRequests"));
+const Countersign = lazy(() => import("./pages/doctor/Countersign"));
+const Emergency = lazy(() => import("./pages/shared/Emergency"));
+const Beds = lazy(() => import("./pages/shared/Beds"));
 import { NurseChart, NurseDashboard } from "./pages/nurse/Nurse";
-import PharmacyDashboard from "./pages/pharmacy/Dashboard";
-import Billing from "./pages/pharmacy/Billing";
-import Bills from "./pages/pharmacy/Bills";
-import PharmacyPrescriptions from "./pages/pharmacy/Prescriptions";
-import Dispensing from "./pages/pharmacy/Dispensing";
-import DispensingHistory from "./pages/pharmacy/DispensingHistory";
-import Inventory from "./pages/pharmacy/Inventory";
+const PharmacyDashboard = lazy(() => import("./pages/pharmacy/Dashboard"));
+const Billing = lazy(() => import("./pages/pharmacy/Billing"));
+const Bills = lazy(() => import("./pages/pharmacy/Bills"));
+const PharmacyPrescriptions = lazy(() => import("./pages/pharmacy/Prescriptions"));
+const Dispensing = lazy(() => import("./pages/pharmacy/Dispensing"));
+const DispensingHistory = lazy(() => import("./pages/pharmacy/DispensingHistory"));
+const Inventory = lazy(() => import("./pages/pharmacy/Inventory"));
 
 function HomeRedirect() {
   const { user } = useAuth();
@@ -89,6 +91,7 @@ function HomeRedirect() {
 
 export default function App() {
   return (
+    <Suspense fallback={<Loading />}>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -230,5 +233,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }

@@ -39,8 +39,8 @@ export const Block = ({ title, hint, done, children, right }) => (
 );
 
 export const NoneCheck = ({ checked, disabled, onChange, children }) => (
-  <label className={`mt-3 flex items-center gap-2 text-sm font-semibold ${disabled ? "text-slate-300" : "text-slate-700"}`}>
-    <input type="checkbox" className="h-4 w-4" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} /> {children}
+  <label className={`mt-3 flex min-h-11 items-center gap-2 text-sm font-semibold ${disabled ? "text-slate-300" : "text-slate-700"}`}>
+    <input type="checkbox" className="h-5 w-5 shrink-0" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} /> {children}
   </label>
 );
 

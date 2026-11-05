@@ -58,7 +58,7 @@ function EventForm({ patientId, reports, onClose, onSaved }) {
         <div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-500">When did it start?<Input value={f.onset ?? ""} placeholder="e.g. 10 pm the night before" onChange={(e) => set("onset", e.target.value)} /></label>
           <label className="text-xs font-bold text-slate-500">How long did it last?<Input value={f.duration ?? ""} placeholder="e.g. 30 seconds" onChange={(e) => set("duration", e.target.value)} /></label></div>
         <Fold title="Vital signs and examination">
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">{[["pulse", "Pulse"], ["sys", "BP top"], ["dia", "BP bottom"], ["spo2", "SpO2 %"], ["temp", "Temp F"], ["rr", "Breaths"]].map(([k, l]) => <label key={k} className="text-xs font-bold text-slate-500">{l}<Input type="number" value={f.vitals[k] ?? ""} onChange={(e) => set("vitals", { ...f.vitals, [k]: e.target.value })} /></label>)}</div>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">{[["pulse", "Pulse"], ["sys", "BP top"], ["dia", "BP bottom"], ["spo2", "SpO2 %"], ["temp", "Temp F"], ["rr", "Breaths"]].map(([k, l]) => <label key={k} className="text-xs font-bold text-slate-500">{l}<Input type="number" inputMode="decimal" value={f.vitals[k] ?? ""} onChange={(e) => set("vitals", { ...f.vitals, [k]: e.target.value })} /></label>)}</div>
           <div className="mt-3">{area("Examination findings", "exam")}</div>
         </Fold>
         <Fold title="Tests and results">{area("Investigations ordered", "ordered")}<div className="mt-3">{area("Investigation results", "results")}</div></Fold>

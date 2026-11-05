@@ -8,6 +8,7 @@ import { getErrorMessage } from "../../services/api";
 import { Section } from "../../components/HealthCard";
 import AccountCreatedDialog from "../../components/AccountCreatedDialog";
 import { Button, Input, Select } from "../../components/ui";
+import ActionBar from "../../components/ActionBar";
 import { FormField } from "../../components/FormField";
 import useValidation from "../../hooks/useValidation";
 import * as v from "../../utils/validators";
@@ -61,7 +62,7 @@ export default function RegisterPatient() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-[46rem] space-y-5">
       <PageTitle title="Register Patient" subtitle="Creates the patient record and a login for the patient" />
       {result && (
         <AccountCreatedDialog kind="patient" name={result.patient.full_name} code={result.patient.uhid || result.patient.patient_code} email={result.patient.email} password={result.temporary_password}
@@ -123,7 +124,7 @@ export default function RegisterPatient() {
             </div>
           </div>)}
         {error && <ErrorBox message={error} />}
-        <Button disabled={busy}>{busy ? "Registering..." : "Register patient"}</Button>
+        <ActionBar><Button disabled={busy}>{busy ? "Registering..." : "Register patient"}</Button></ActionBar>
       </form>
     </div>
   );

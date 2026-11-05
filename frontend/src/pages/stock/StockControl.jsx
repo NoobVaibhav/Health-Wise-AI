@@ -9,6 +9,7 @@ import { addSupplier, getMedicineRequests, getMovements, getStockAlerts, getSupp
 import { Section } from "../../components/HealthCard";
 import { EmptyState, ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 import { Button, Field, Input, Modal, Tabs, fmtUtc } from "../../components/ui";
+import ResponsiveTable from "../../components/ResponsiveTable";
 
 function ReasonDialog({ title, label, onClose, onSave }) {
   const [reason, setReason] = useState("");
@@ -26,15 +27,13 @@ function ReasonDialog({ title, label, onClose, onSave }) {
 function BatchTable({ rows, empty, canManage, onAction, actions }) {
   if (!rows.length) return <p className="py-3 text-sm text-slate-500">{empty}</p>;
   return (
-    <div className="overflow-x-auto"><table className="w-full min-w-[32rem] text-left text-sm">
-      <thead><tr className="border-b text-xs uppercase text-slate-500"><th className="py-1.5 pr-3">Medicine</th><th className="pr-3">Batch</th><th className="pr-3">Quantity</th><th className="pr-3">Expiry</th><th /></tr></thead>
-      <tbody>{rows.map((r) => (
-        <tr key={r.id} className="border-b border-slate-100">
-          <td className="py-2 pr-3 font-semibold">{r.medicine_name}{r.recall_reason && <span className="block text-xs font-normal text-red-700">Recall: {r.recall_reason}</span>}</td>
-          <td className="pr-3">{r.batch_number || "-"}</td><td className="pr-3">{r.quantity}</td><td className="pr-3">{r.expiry_date || "-"}</td>
-          <td className="space-x-2 text-right">{canManage && actions.map(([key, label]) => <Button key={key} variant="secondary" onClick={() => onAction(key, r)}>{label}</Button>)}</td>
-        </tr>))}</tbody>
-    </table></div>
+    <ResponsiveTable caption="Stock batches" rows={rows} columns={[
+      { key: "medicine_name", label: "Medicine", priority: 1, render: (r) => <span className="font-semibold">{r.medicine_name}{r.recall_reason && <span className="block text-xs font-normal text-red-700">Recall: {r.recall_reason}</span>}</span> },
+      { key: "quantity", label: "Quantity", priority: 1, numeric: true },
+      { key: "expiry_date", label: "Expiry", priority: 2, numeric: true, render: (r) => r.expiry_date || "-" },
+      { key: "batch_number", label: "Batch", priority: 3, render: (r) => r.batch_number || "-" },
+      ...(canManage ? [{ key: "actions", label: "Actions", priority: 1, render: (r) => <span className="flex flex-wrap justify-end gap-2">{actions.map(([key, label]) => <Button key={key} variant="secondary" onClick={() => onAction(key, r)}>{label}</Button>)}</span> }] : []),
+    ]} />
   );
 }
 
@@ -91,11 +90,13 @@ function History() {
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   return (
     <Section title="Every stock change (newest first)">
-      <div className="overflow-x-auto"><table className="w-full min-w-[30rem] text-left text-sm">
-        <thead><tr className="border-b text-xs uppercase text-slate-500"><th className="py-1.5 pr-3">When</th><th className="pr-3">What</th><th className="pr-3">Change</th><th className="pr-3">Balance</th><th>Note</th></tr></thead>
-        <tbody>{data.map((m) => <tr key={m.id} className="border-b border-slate-100"><td className="py-1.5 pr-3">{fmtUtc(m.created_at)}</td><td className="pr-3">{m.kind}{m.reference_type ? ` (${m.reference_type} ${m.reference_id ?? ""})` : ""}</td>
-          <td className={`pr-3 font-bold ${m.quantity < 0 ? "text-red-700" : "text-emerald-700"}`}>{m.quantity > 0 ? `+${m.quantity}` : m.quantity}</td><td className="pr-3">{m.balance_after}</td><td className="text-slate-500">{m.note}</td></tr>)}</tbody>
-      </table></div>
+      <ResponsiveTable caption="Stock changes" rows={data} columns={[
+        { key: "created_at", label: "When", priority: 1, render: (m) => fmtUtc(m.created_at) },
+        { key: "kind", label: "What", priority: 1, render: (m) => `${m.kind}${m.reference_type ? ` (${m.reference_type} ${m.reference_id ?? ""})` : ""}` },
+        { key: "quantity", label: "Change", priority: 1, numeric: true, render: (m) => <b className={m.quantity < 0 ? "text-red-700" : "text-emerald-700"}>{m.quantity > 0 ? `+${m.quantity}` : m.quantity}</b> },
+        { key: "balance_after", label: "Balance", priority: 2, numeric: true },
+        { key: "note", label: "Note", priority: 3, render: (m) => <span className="text-slate-600">{m.note || "-"}</span> },
+      ]} />
     </Section>
   );
 }

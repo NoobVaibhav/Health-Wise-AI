@@ -14,6 +14,7 @@ import PastHistory from "../../components/history/PastHistory";
 import { AskTips, Block, Chips, Fold, MoreChips, NoneCheck, addPhrase } from "../../components/historyKit";
 import { RowList, UsualValues, toForm, toPayload } from "../../components/historyFormData";
 import { Button, Input, Select, Textarea, fmtDate, inputClass } from "../../components/ui";
+import ActionBar from "../../components/ActionBar";
 import { ErrorBox, Loading } from "../../components/Feedback";
 import { useToast } from "../../components/Toast";
 
@@ -259,12 +260,12 @@ export default function TakeHistory() {
             const flag = v.vitals[k] ? FLAG[k](Number(v.vitals[k])) : "";
             return (
               <label key={k} className="text-xs font-bold text-slate-500">{label} <span className="font-normal text-slate-400">{unit}</span>
-                <Input type="number" step={k === "temp" ? 0.1 : 1} className={`${inputClass} ${flag ? "!border-red-400 !bg-red-50" : ""}`} value={v.vitals[k] ?? ""} onChange={(e) => vis({ vitals: { ...v.vitals, [k]: e.target.value } })} />
+                <Input type="number" inputMode="decimal" step={k === "temp" ? 0.1 : 1} className={`${inputClass} ${flag ? "!border-red-400 !bg-red-50" : ""}`} value={v.vitals[k] ?? ""} onChange={(e) => vis({ vitals: { ...v.vitals, [k]: e.target.value } })} />
                 {flag && <span className="text-red-700">{flag}</span>}{usualValue ? <span className="block font-normal text-slate-400">usual {usualValue}</span> : null}</label>);
           })}
         </div>
         <div className="mt-3"><Fold title="More: breathing rate, weight, height">
-          <div className="grid grid-cols-3 gap-3">{[["rr", "Resp. rate /min"], ["weight", "Weight kg"], ["height", "Height cm"]].map(([k, label]) => <label key={k} className="text-xs font-bold text-slate-500">{label}<Input type="number" value={v.vitals[k] ?? ""} onChange={(e) => vis({ vitals: { ...v.vitals, [k]: e.target.value } })} /></label>)}</div>
+          <div className="grid grid-cols-3 gap-3">{[["rr", "Resp. rate /min"], ["weight", "Weight kg"], ["height", "Height cm"]].map(([k, label]) => <label key={k} className="text-xs font-bold text-slate-500">{label}<Input type="number" inputMode="decimal" value={v.vitals[k] ?? ""} onChange={(e) => vis({ vitals: { ...v.vitals, [k]: e.target.value } })} /></label>)}</div>
         </Fold></div>
       </Block>
 
@@ -319,10 +320,10 @@ export default function TakeHistory() {
   ];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 pb-24">
+    <div className="mx-auto max-w-3xl space-y-4">
       <div className="rounded-3xl bg-gradient-to-r from-brand-700 to-brand-600 p-5 text-white">
-        <Link to={`/doctor/patients/${id}`} className="mb-1 flex items-center gap-1 text-sm font-semibold text-brand-100 hover:underline"><ArrowLeft size={14} /> Back to the patient</Link>
-        <p className="text-2xl font-extrabold">Take history: {card.name}</p>
+        <Link to={`/doctor/patients/${id}`} className="mb-1 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-brand-100 hover:underline"><ArrowLeft size={14} /> Back to the patient</Link>
+        <h1 className="text-2xl font-extrabold">Take history: {card.name}</h1>
         <p className="text-brand-50">{card.age != null ? `${card.age} years` : ""}{card.gender ? ` - ${card.gender}` : ""} - {card.patient_code}{card.blood_group ? ` - ${card.blood_group}` : ""}</p>
       </div>
 
@@ -335,21 +336,16 @@ export default function TakeHistory() {
         <button key={s.title} type="button" onClick={() => go(i)} className={`rounded-2xl px-2 py-2.5 text-center ${i === step ? "bg-brand-700 text-white shadow" : "bg-white text-slate-600 ring-1 ring-slate-200"}`}>
           <span className={`mx-auto mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-extrabold ${i === step ? "bg-white/20" : done[i] ? "bg-emerald-100 text-emerald-700" : "bg-slate-100"}`}>{done[i] && i !== step ? <CheckCircle2 size={14} /> : i + 1}</span>
           <span className="block text-xs font-bold leading-tight sm:text-sm">{s.title}</span></button>))}</div>
-      <p className="text-center text-xs font-extrabold uppercase tracking-wide text-slate-400">{STEPS[step].part}</p>
+      <p className="text-center text-xs font-extrabold uppercase tracking-wide text-slate-600">{STEPS[step].part}</p>
 
       <AskTips items={STEPS[step].ask} />
       {pages[step]}
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 pb-[max(0.75rem,var(--safe-bottom))] backdrop-blur-sm lg:pl-64">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
-          <Button variant="secondary" disabled={step === 0} onClick={() => go(step - 1)}><ArrowLeft size={15} className="mr-1 inline" />Back</Button>
-          <span className="hidden text-sm text-slate-400 sm:block">Step {step + 1} of {STEPS.length}</span>
-          <div className="flex gap-2">
-            {step < STEPS.length - 1 && <Button onClick={() => go(step + 1)}>Next<ArrowRight size={15} className="ml-1 inline" /></Button>}
-            <Button variant={step < STEPS.length - 1 ? "secondary" : "primary"} onClick={save} disabled={saving}><Save size={15} className="mr-1.5 inline" />{saving ? "Saving..." : "Save"}</Button>
-          </div>
-        </div>
-      </div>
+      <ActionBar status={<span className="num text-slate-700">Step {step + 1} of {STEPS.length}</span>}>
+        <Button variant="secondary" disabled={step === 0} onClick={() => go(step - 1)}><ArrowLeft size={15} className="mr-1 inline" />Back</Button>
+        {step < STEPS.length - 1 && <Button onClick={() => go(step + 1)}>Next<ArrowRight size={15} className="ml-1 inline" /></Button>}
+        <Button variant={step < STEPS.length - 1 ? "secondary" : "primary"} onClick={save} disabled={saving}><Save size={15} className="mr-1.5 inline" />{saving ? "Saving..." : "Save"}</Button>
+      </ActionBar>
     </div>
   );
 }
@@ -371,7 +367,7 @@ function PickRow({ label, value, onPick, options, years, onYears, showYears }) {
     <div className="flex flex-wrap items-center gap-2">
       <span className="w-20 text-sm font-bold text-slate-600">{label}</span>
       {options.map(([val, text]) => <button type="button" key={val} onClick={() => onPick(value === val ? "" : val)} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold ${value === val ? "border-brand-600 bg-brand-50 text-brand-900" : "border-slate-300 bg-white text-slate-600"}`}>{text}</button>)}
-      {showYears && <span className="flex items-center gap-1 text-sm text-slate-500">for <Input type="number" min="0" className={`${inputClass} !w-20 !py-1`} value={years ?? ""} onChange={(e) => onYears(e.target.value)} /> years</span>}
+      {showYears && <span className="flex items-center gap-1 text-sm text-slate-500">for <Input type="number" inputMode="decimal" min="0" className={`${inputClass} !w-20 !py-1`} value={years ?? ""} onChange={(e) => onYears(e.target.value)} /> years</span>}
     </div>
   );
 }

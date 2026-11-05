@@ -9,7 +9,7 @@ import PeopleList from "../../components/PeopleList";
 import AccountCreatedDialog from "../../components/AccountCreatedDialog";
 import { useToast } from "../../components/Toast";
 import { getErrorMessage } from "../../services/api";
-import { Button, Input, Modal, Select } from "../../components/ui";
+import { Button, Input, Modal, Select, ModalActions } from "../../components/ui";
 import { FormField, PasswordInput } from "../../components/FormField";
 import useValidation from "../../hooks/useValidation";
 import * as v from "../../utils/validators";
@@ -141,7 +141,7 @@ function CreateModal({ kind, cfg, onClose, onCreated }) {
           </FormField>)}
         {kind === "lab-staff" && <FormField label="Laboratory name" name="lab_name" error={check.errors.lab_name}><Input maxLength={150} value={form.lab_name} onChange={set("lab_name")} onBlur={blur("lab_name")} /></FormField>}
         {error && <ErrorBox message={error} />}
-        <Button disabled={busy}>{busy ? "Creating..." : "Create account"}</Button>
+        <ModalActions><Button disabled={busy}>{busy ? "Creating..." : "Create account"}</Button></ModalActions>
       </form>
     </Modal>
   );
