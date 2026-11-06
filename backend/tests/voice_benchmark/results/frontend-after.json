@@ -1,0 +1,125 @@
+{
+ "commands": {
+  "n": 57,
+  "match_pct": 98.2,
+  "by_type": {
+   "stop": 92.3,
+   "repeat": 100,
+   "slower": 100,
+   "faster": 100,
+   "clear": 100,
+   "language": 100,
+   "exit": 100,
+   "question (must not match)": 100
+  },
+  "false_positives": 0,
+  "wrong": [
+   {
+    "text": "band karo",
+    "expected": "stop",
+    "got": null
+   }
+  ]
+ },
+ "normalisation": {
+  "numbers": {
+   "n": 22,
+   "ok_pct": 100,
+   "implemented": true,
+   "wrong": []
+  },
+  "dates": {
+   "n": 10,
+   "ok_pct": 100,
+   "implemented": true,
+   "wrong": []
+  },
+  "units": {
+   "n": 6,
+   "ok_pct": 100,
+   "implemented": true,
+   "wrong": []
+  }
+ },
+ "repair": {
+  "n": 40,
+  "implemented": true,
+  "wer_before_pct": 58.1,
+  "wer_after_pct": 5.6,
+  "numbers_changed": 2
+ },
+ "spoken": {
+  "n": 27,
+  "mean_words": 92,
+  "over_60_words": 21,
+  "with_symbols": 0,
+  "with_abbreviation": 0,
+  "abbreviation_by_lang": {},
+  "with_month_abbreviation": 0,
+  "cut_off": 4,
+  "with_source": 26,
+  "source_or_date_said": 26,
+  "doctor_reminder_said": 14,
+  "dates_spoken": 26,
+  "long": [
+   "What did my doctor say at my last checkup",
+   "Explain my latest report",
+   "What is my haemoglobin",
+   "What is my vitamin D level",
+   "Which of my results are abnormal",
+   "Compare my test results",
+   "What medicines do I take",
+   "Brief me",
+   "पिछले चेकअप में डॉक्टर ने क्या कहा",
+   "मेरी ताज़ा रिपोर्ट समझाइए",
+   "मेरा हीमोग्लोबिन कितना है",
+   "मेरा विटामिन डी कितना है",
+   "कौन से नतीजे असामान्य हैं",
+   "मेरी दवाइयाँ कौन सी हैं",
+   "आज की जानकारी",
+   "मागील तपासणीत डॉक्टर काय म्हणाले",
+   "माझा ताजा रिपोर्ट समजावून सांगा",
+   "माझा हिमोग्लोबिन किती आहे",
+   "माझे व्हिटॅमिन डी किती आहे",
+   "कोणते निकाल असामान्य आहेत",
+   "मी कोणती औषधे घेतो"
+  ]
+ },
+ "spoken_short": {
+  "n": 27,
+  "mean_words": 52,
+  "over_60_words": 6,
+  "with_symbols": 0,
+  "with_abbreviation": 0,
+  "abbreviation_by_lang": {},
+  "with_month_abbreviation": 0,
+  "cut_off": 0,
+  "with_source": 26,
+  "source_or_date_said": 26,
+  "doctor_reminder_said": 27,
+  "dates_spoken": 26,
+  "long": [
+   "Which of my results are abnormal",
+   "Brief me",
+   "मेरी ताज़ा रिपोर्ट समझाइए",
+   "कौन से नतीजे असामान्य हैं",
+   "आज की जानकारी",
+   "आजची माहिती"
+  ]
+ },
+ "latency_static": {
+  "browser_final_result_to_send_ms": 0,
+  "native_wait_for_final_text_after_speech_ends_ms": 1500,
+  "native_no_speech_timeout_ms": 9000,
+  "native_listening_poll_ms": 800,
+  "hands_free_restart_delays_ms": [
+   200,
+   300,
+   350,
+   700,
+   800
+  ],
+  "reply_is_spoken_only_after_the_whole_answer_arrives": true,
+  "first_spoken_unit": "a sentence-sized chunk (max 180 characters) of the whole answer"
+ }
+}

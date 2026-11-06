@@ -12,6 +12,7 @@ and numbers. Three small, fixed-rule steps (no model, no outside service) make t
 The original message is what is stored and shown; only the copy used for matching is repaired."""
 import difflib
 import re
+from functools import lru_cache
 
 from app.services.parameter_catalog import PARAMETERS
 
@@ -45,6 +46,7 @@ _LETTER_NAMES = {"ए": "a", "बी": "b", "सी": "c", "डी": "d", "ई":
 _NUMBER_WORDS = {"one": "1", "won": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9"}
 
 
+@lru_cache(maxsize=8192)
 def skeleton(word: str) -> str:
     """The consonant sound of a word, with Devanagari and Latin spellings mapped to the same letters: "मेटफॉर्मिन" and "metformin" both give "mtprmn"."""
     w = word.lower()
@@ -71,12 +73,26 @@ def skeleton(word: str) -> str:
     return re.sub(r"(.)\1+", r"\1", s)
 
 
+def _ratio(a: str, b: str, floor: float) -> float:
+    """difflib's ratio, but the cheap upper bounds are tried first so most pairs are rejected without the slow part."""
+    m = difflib.SequenceMatcher(None, a, b)
+    if m.real_quick_ratio() < floor or m.quick_ratio() < floor:
+        return 0.0
+    return m.ratio()
+
+
 def _score(candidate: str, name: str) -> float:
     """How close the heard word is to a known name: the letters themselves (exact spelling counts most), or only the consonant sounds (slightly less)."""
-    plain = difflib.SequenceMatcher(None, candidate, name).ratio() if candidate.isascii() else 0.0
+    plain = 0.0
+    if candidate.isascii() and abs(len(candidate) - len(name)) <= 4:
+        r = _ratio(candidate, name, 0.88)
+        plain = r if r >= 0.88 else 0.0
     a, b = skeleton(candidate), skeleton(name)
-    sound = difflib.SequenceMatcher(None, a, b).ratio() * 0.99 if len(a) >= 4 and len(b) >= 4 else 0.0
-    return max(plain if plain >= 0.88 else 0.0, sound if sound >= 0.89 else 0.0)
+    sound = 0.0
+    if len(a) >= 4 and len(b) >= 4 and abs(len(a) - len(b)) <= 2:
+        r = _ratio(a, b, 0.9) * 0.99
+        sound = r if r >= 0.89 else 0.0
+    return max(plain, sound)
 
 
 # ------------------------------------------------------------------ the fixed vocabulary

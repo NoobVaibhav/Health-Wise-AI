@@ -189,11 +189,11 @@ def test_dump_written_answers_for_the_spoken_text_benchmark(client, seeded):
     out = []
     for text, _ in fx.SPOKEN_QUESTIONS:
         r = ask(client, seeded.patient, text)["reply"]
-        out.append({"lang": "en", "question": text, "intent": r["intent"], "text": r["text"], "sources": r["sources"]})
+        out.append({"lang": "en", "question": text, "intent": r["intent"], "text": r["text"], "spoken": r.get("spoken"), "more": r.get("more"), "sources": r["sources"]})
     for lang, questions in fx.SPOKEN_QUESTIONS_I18N.items():
         for text in questions:
             r = ask(client, seeded.patient, text, lang=lang)["reply"]
-            out.append({"lang": lang, "question": text, "intent": r["intent"], "text": r["text"], "sources": r["sources"]})
+            out.append({"lang": lang, "question": text, "intent": r["intent"], "text": r["text"], "spoken": r.get("spoken"), "more": r.get("more"), "sources": r["sources"]})
     save("answers.json", out)
     SUMMARY["answers_dumped"] = len(out)
     assert len(out) >= 20

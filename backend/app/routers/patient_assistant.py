@@ -40,11 +40,13 @@ def _conversation(db: Session, user: User, conversation_id: int) -> PatientAssis
 
 
 @router.get("/info")
-def info(lang: str = "en", user: User = Depends(patient_only)):
+def info(lang: str = "en", user: User = Depends(patient_only), db: Session = Depends(get_db)):
     lang = normalise_lang(lang)
     return {"languages": [{"code": k, "name": v} for k, v in LANGUAGES.items()], "disclaimer": t("disclaimer", lang),
             "ai_wording_available": service.llm_service.llm_is_configured(), "emergency_number": get_settings().emergency_number,
-            "retention_days": get_settings().assistant_retention_days}
+            "retention_days": get_settings().assistant_retention_days,
+            # this patient's own medicine names: the browser uses them to put a misheard word back to the name in the record (never sent anywhere else)
+            "vocabulary": sorted(set(service.patient_vocabulary(db, get_patient_profile(db, user))))}
 
 
 @router.get("/suggestions")

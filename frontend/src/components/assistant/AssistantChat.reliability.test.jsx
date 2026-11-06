@@ -88,10 +88,12 @@ describe("voice reliability scenarios", () => {
       await fire(() => FakeRec.instances[0].fail("not-allowed")); await settle(0);
       return { ok: state() === "idle" && said(/microphone is blocked/i) && !screen.getByLabelText("Type your question").disabled, note: `state=${state()}` };
     });
-    await scenario("R3", "network error while listening: one message, no restart loop", async () => {
+    await scenario("R3", "network error while listening: one short retry, then one message, no restart loop", async () => {
       await tapOrb();
-      await fire(() => FakeRec.instances[0].fail("network")); await settle(5000);
-      return { ok: state() === "idle" && FakeRec.instances.length === 1 && said(/internet connection/i), note: `recognisers started=${FakeRec.instances.length}` };
+      await fire(() => FakeRec.instances[0].fail("network")); await settle(1000);
+      const retried = FakeRec.instances.length === 2 && state() === "listening";                // the blip is retried quietly
+      await fire(() => FakeRec.instances[1].fail("network")); await settle(5000);                 // the retry fails too
+      return { ok: retried && state() === "idle" && FakeRec.instances.length === 2 && said(/internet connection/i), note: `recognisers started=${FakeRec.instances.length}, retried quietly=${retried}` };
     });
     await scenario("R4", "tab goes to the background while listening: listening stops", async () => {
       await tapOrb();

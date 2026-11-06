@@ -2,15 +2,16 @@
 // shows where every answer came from, and works by typing alone when voice is not available.
 // Voice: press the orb for a hands-free conversation (listen, answer aloud, listen again), or say "Hey HealthWise" (optional), or use the
 // small microphone to dictate one question. All of it uses the browser's own free speech features: no outside voice service or key.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowDown, Check, Copy, Mic, Pause, Play, RotateCcw, Send, ShieldCheck, Square, Trash2, Volume2 } from "lucide-react";
 import { deleteConversation, getAssistantInfo, getSuggestions, sendChat } from "../../services/assistantApi";
 import { getErrorMessage } from "../../services/api";
 import {
-  LANG_NAMES, VOICE_NOTICE, createListener, createSpeaker, createWakeListener, cue, isYes, matchVoiceCommand, speechInputSupported, speechOutputSupported,
-  voiceErrorMessage, voicesFor,
+  CONFIRM_TEXT, LANG_NAMES, VOICE_NOTICE, correctMedicalTerms, createListener, createSpeaker, createWakeListener, cue, detectLanguage, isNo, isNoise, isYes, matchVoiceCommand,
+  needsConfirmation, speechInputSupported, speechOutputSupported, startLevelMeter, supportsPauseControl, voiceErrorMessage, voicesFor,
 } from "../../utils/voice";
+import { initialVoice, voiceReducer } from "../../utils/voiceMachine";
 import VoicePanel from "./VoicePanel";
 import MicInfo, { MicInfoButton } from "./MicInfo";
 
@@ -28,6 +29,7 @@ const store = {
 };
 const when = (iso) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "");
 const RATES = [0.8, 1, 1.25];
+const SAY_AGAIN = { en: "Okay. Please say it again.", hi: "ठीक है। कृपया फिर से बोलिए।", mr: "ठीक आहे. कृपया पुन्हा बोला." };
 /** The clock time of a message ("10:42 am"). The server sends UTC without a zone mark, so one is added. */
 const clock = (iso) => (iso ? new Date(/[zZ]|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}Z`).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "");
 
@@ -99,6 +101,13 @@ export default function AssistantChat() {
   const [autoRead, setAutoRead] = useState(() => store.get("hw_assistant_autoread", "no") === "yes");
   const [sounds, setSounds] = useState(() => store.get("hw_assistant_sounds", "yes") === "yes");
   const [aiConsent, setAiConsent] = useState(() => store.get("hw_assistant_ai", "no") === "yes");
+  const [pitch, setPitch] = useState(() => Number(store.get("hw_assistant_pitch", "1")) || 1);
+  const [pauseMs, setPauseMs] = useState(() => Number(store.get("hw_assistant_pause", "0")) || 0);     // 0: the browser decides when a sentence ends; else how long a pause ends it (desktop)
+  const [confirmBeforeSend, setConfirmBeforeSend] = useState(() => store.get("hw_assistant_check", "no") === "yes");   // spoken words go to the box to be checked, not straight to the server
+  const [privateMode, setPrivateMode] = useState(() => store.get("hw_assistant_private", "no") === "yes");           // read only a short note aloud: the answer stays on the screen
+  const [bargeIn, setBargeIn] = useState(() => store.get("hw_assistant_barge", "no") === "yes");                     // talking over the assistant stops it (needs headphones)
+  const [autoLang, setAutoLang] = useState(() => store.get("hw_assistant_autolang", "no") === "yes");                // the answer language follows what was said
+  const [level, setLevel] = useState(null);                  // live microphone level 0..1 while listening, when the browser allows it
   const [info, setInfo] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -127,9 +136,14 @@ export default function AssistantChat() {
   const handsFreeRef = useRef(false);
   const pendingClear = useRef(false);                     // the assistant asked "clear this chat?" and waits for yes or no
   const silent = useRef(0);                               // listening rounds in a row in which nothing was said
+  const retries = useRef(0);                              // short retries after a network blip while listening (one, then the message)
   const messagesRef = useRef([]);
   const api = useRef({});                                 // the latest functions, for timers and callbacks that outlive a render
   const timers = useRef(new Set());
+  const pendingConfirm = useRef(null);                    // "Did I hear ...? Say yes or no": what was heard, waiting for the answer
+  const barge = useRef(null);                             // { listener, cut }: the recogniser that waits for the person to talk over the assistant
+  const vocabRef = useRef([]);                            // this patient's own medicine names, for putting misheard words back
+  const lastLang = useRef(null);                          // the language of the last question when it is chosen automatically
   /** A delayed call that is cancelled when the person leaves the page, so the microphone never starts on a page that is gone. */
   const later = useCallback((fn, ms) => {
     const id = setTimeout(() => { timers.current.delete(id); fn(); }, ms);
@@ -138,12 +152,19 @@ export default function AssistantChat() {
 
   const inputOk = speechInputSupported();
   const outputOk = speechOutputSupported();
+  const [voice, dispatchVoice] = useReducer(voiceReducer, initialVoice);     // idle, listening, hearing, thinking, speaking or error (utils/voiceMachine.js)
   const speaker = useMemo(() => createSpeaker({
-    onState: (state) => setSpeaking((s) => ({ id: state === "idle" ? null : speakingId.current, state })),
+    onState: (state) => {
+      setSpeaking((s) => ({ id: state === "idle" ? null : speakingId.current, state }));
+      dispatchVoice({ type: state === "idle" ? "SPEAK_END" : "SPEAK_START" });
+      const b = barge.current;
+      if (state === "idle" && b && !b.cut) { barge.current = null; b.listener?.abort(); }     // the speech ended: nobody is talking over it any more
+    },
     onProblem: setSpeakNote,
   }), []);
 
   useEffect(() => { getAssistantInfo(language).then(setInfo).catch(() => {}); }, [language]);
+  useEffect(() => { vocabRef.current = info?.vocabulary || []; }, [info]);
   useEffect(() => { getSuggestions(language).then(setSuggestions).catch(() => setSuggestions([])); }, [language]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   // a new answer is shown from the question that led to it, so a long answer is read from its first line; the waiting note goes to the bottom
@@ -159,7 +180,17 @@ export default function AssistantChat() {
     timers.current.clear();
     speaker.stop();
     listener.current?.abort();
+    const b = barge.current;
+    barge.current = null;
+    b?.listener?.abort();
   }, [speaker]);
+  useEffect(() => {                                       // the sound level for the meter: only while listening, only where the browser lets a second microphone use run beside the recogniser
+    if (!listening || !supportsPauseControl()) return undefined;
+    let alive = true;
+    let meter = null;
+    startLevelMeter(setLevel).then((m) => { if (alive) meter = m; else m?.stop(); });
+    return () => { alive = false; meter?.stop(); setLevel(null); };
+  }, [listening]);
   useEffect(() => {                                       // the list of installed voices arrives a moment after the page opens
     if (!outputOk) return undefined;
     const load = () => setVoices(voicesFor(language));
@@ -168,27 +199,67 @@ export default function AssistantChat() {
     return () => window.speechSynthesis.removeEventListener?.("voiceschanged", load);
   }, [outputOk, language]);
 
-  const changeLanguage = (code) => { setLanguage(code); store.set("hw_assistant_lang", code); speaker.stop(); };
+  const changeLanguage = (code) => {
+    setLanguage(code); lastLang.current = code; store.set("hw_assistant_lang", code); speaker.stop();
+    if (listener.current) {                              // changed while listening: the running recogniser is set to the old language, so start again in the new one
+      const again = handsFreeRef.current;
+      listener.current.abort();
+      if (again) later(() => { if (!listener.current) api.current.listen({ auto: true }); }, 300);
+    }
+  };
+  const changePitch = (v) => { setPitch(v); store.set("hw_assistant_pitch", String(v)); };
+  const changePause = (v) => { setPauseMs(v); store.set("hw_assistant_pause", String(v)); };
+  const changeCheck = (on) => { setConfirmBeforeSend(on); store.set("hw_assistant_check", on ? "yes" : "no"); };
+  const changePrivate = (on) => { setPrivateMode(on); store.set("hw_assistant_private", on ? "yes" : "no"); };
+  const changeBarge = (on) => { setBargeIn(on); store.set("hw_assistant_barge", on ? "yes" : "no"); };
+  const changeAutoLang = (on) => { setAutoLang(on); store.set("hw_assistant_autolang", on ? "yes" : "no"); };
   const changeRate = (value) => { setRate(value); store.set("hw_assistant_rate", String(value)); };
   const changeVoice = (name) => { setVoiceName(name); store.set("hw_assistant_voice", name); };
   const changeAutoRead = (on) => { setAutoRead(on); store.set("hw_assistant_autoread", on ? "yes" : "no"); };
   const changeSounds = (on) => { setSounds(on); store.set("hw_assistant_sounds", on ? "yes" : "no"); };
   const changeConsent = (on) => { setAiConsent(on); store.set("hw_assistant_ai", on ? "yes" : "no"); };
 
-  const speak = useCallback((message, { then, speed } = {}) => {
+  const stopBarge = useCallback(() => { const b = barge.current; barge.current = null; b?.listener?.abort(); }, []);
+  const answerLang = autoLang ? lastLang.current || language : language;
+
+  /** Reads an answer aloud: the short spoken version the server made from the same written answer (private mode: only a short note), or with full = true the whole written
+   *  answer ("tell me more"). With "interrupt by talking" on and a voice conversation going, a recogniser waits during the speech: the first words cut the speech short. */
+  const speak = useCallback((message, { then, speed, full = false } = {}) => {
     speakingId.current = message.id;
     setSpeakNote("");
-    return speaker.speak(message.text, { lang: language, rate: speed ?? rate, voiceName, onEnd: then });
-  }, [speaker, language, rate, voiceName]);
+    const emergency = message.safety === "EMERGENCY";
+    const text = privateMode && !emergency && message.spoken_private ? message.spoken_private : !full && message.spoken ? message.spoken : message.text;
+    if (bargeIn && inputOk && handsFreeRef.current) {
+      stopBarge();
+      const state = { listener: null, cut: false };
+      state.listener = createListener({
+        lang: answerLang,
+        onText: (heardText, final, meta) => {
+          if (isNoise(heardText)) return;
+          if (!state.cut) { state.cut = true; speaker.stop(); }
+          if (final) { barge.current = null; api.current.onHeard(correctMedicalTerms(heardText, { lang: answerLang, vocabulary: vocabRef.current }), heardText, meta); }
+        },
+        onError: () => {},
+        onEnd: () => { if (barge.current === state && !state.cut) barge.current = null; },
+      });
+      if (state.listener) { barge.current = state; state.listener.start(); }
+    }
+    return speaker.speak(text, { lang: answerLang, rate: speed ?? rate, pitch, voiceName, limit: full ? 3000 : 900, onEnd: () => { stopBarge(); then?.(); } });
+  }, [speaker, answerLang, rate, pitch, voiceName, privateMode, bargeIn, inputOk, stopBarge]);
 
   // ------------------------------------------------------------------ the conversation
   const endHandsFree = useCallback((message = "") => {
     handsFreeRef.current = false;
     setHandsFree(false);
     silent.current = 0;
+    pendingConfirm.current = null;
     listener.current?.abort();
+    const b = barge.current;
+    barge.current = null;
+    b?.listener?.abort();
     setListening(false);
     setHeard("");
+    dispatchVoice({ type: "STOP" });
     if (message) setVoiceMessage(message);
   }, []);
 
@@ -229,6 +300,9 @@ export default function AssistantChat() {
       return;
     }
     speaker.stop();
+    const lang = autoLang ? detectLanguage(text, language) : language;     // "Choose the answer language from what I say"
+    lastLang.current = lang;
+    dispatchVoice({ type: "SEND" });
     setBusy(true);
     setFailed(null);
     setVoiceMessage("");                              // an old "I stopped listening" note does not belong next to a new question
@@ -236,10 +310,11 @@ export default function AssistantChat() {
     setHeard("");
     setMessages((m) => [...m, { id: `local-${Date.now()}`, role: "PATIENT", text }]);
     try {
-      const data = await sendChat({ message: text, conversation_id: conversationId, language, ai_consent: aiConsent });
+      const data = await sendChat({ message: text, conversation_id: conversationId, language: lang, ai_consent: aiConsent });
       setConversationId(data.conversation_id);
       setMessages((m) => [...m.filter((x) => !String(x.id).startsWith("local-")), data.message, data.reply]);
       setBusy(false);
+      dispatchVoice({ type: "REPLIED" });
       if (sounds && viaVoice) cue("done");
       finishReply(data.reply, viaVoice);
     } catch (e) {
@@ -249,8 +324,9 @@ export default function AssistantChat() {
       setFailed({ text, viaVoice, message: e.response?.status === 401 ? "Your session has ended. Please log in again." : getErrorMessage(e) });
       setInput(text);                                 // the typed question is never lost
       setBusy(false);
+      dispatchVoice({ type: "ERROR", kind: "send" });
     }
-  }, [busy, conversationId, language, aiConsent, sounds, speaker, finishReply, endHandsFree]);
+  }, [busy, conversationId, language, autoLang, aiConsent, sounds, speaker, finishReply, endHandsFree]);
 
   const jumpToLatest = () => { stick.current = true; setShowJump(false); bottom.current?.scrollIntoView?.({ behavior: "smooth", block: "end" }); };
   const onLogScroll = (e) => {
@@ -267,6 +343,20 @@ export default function AssistantChat() {
 
   /** A spoken sentence: a command for the voice itself ("stop", "repeat", "speak slower", "switch to Hindi"), or a question. */
   const onSpoken = useCallback((text) => {
+    const keepOn = () => { if (handsFreeRef.current) later(() => api.current.listen({ auto: true }), 300); };
+    if (pendingConfirm.current) {                         // the answer to "Did I hear ...? Say yes or no."
+      const phrase = pendingConfirm.current;
+      pendingConfirm.current = null;
+      setVoiceMessage("");
+      if (isYes(text)) { send(phrase, true); return; }
+      if (isNo(text)) {
+        const again = SAY_AGAIN[answerLang] || SAY_AGAIN.en;
+        setVoiceMessage(again);
+        if (!outputOk || !speaker.speak(again, { lang: answerLang, rate, pitch, voiceName, onEnd: keepOn })) keepOn();
+        return;
+      }
+      // anything else is a new sentence: it is taken as it was said
+    }
     if (pendingClear.current) {                           // the answer to "Do you want to clear this chat?"
       pendingClear.current = false;
       setVoiceMessage("");
@@ -283,11 +373,12 @@ export default function AssistantChat() {
       pendingClear.current = true;
       const ask = "Do you want to clear this chat? Say yes or no.";
       setVoiceMessage(ask);
-      if (!outputOk || !speaker.speak(ask, { lang: language, rate, voiceName, onEnd: keepListening })) keepListening();
+      if (!outputOk || !speaker.speak(ask, { lang: "en", rate, pitch, voiceName, onEnd: keepListening })) keepListening();
       return;
     }
     if (command.type === "language") { changeLanguage(command.value); keepListening(); return; }
     if (command.type === "repeat" && lastReply) { if (!speak(lastReply, { then: keepListening })) keepListening(); return; }
+    if (command.type === "more" && lastReply) { if (!speak(lastReply, { then: keepListening, full: true })) keepListening(); return; }       // "tell me more": the whole written answer
     if (command.type === "slower" || command.type === "faster") {
       const index = Math.max(0, Math.min(RATES.length - 1, RATES.indexOf(rate) + (command.type === "slower" ? -1 : 1)));
       changeRate(RATES[index]);
@@ -295,7 +386,23 @@ export default function AssistantChat() {
       return;
     }
     keepListening();
-  }, [send, speaker, endHandsFree, clearChat, speak, rate, later, outputOk, language, voiceName]);
+  }, [send, speaker, endHandsFree, clearChat, speak, rate, pitch, later, outputOk, language, answerLang, voiceName]);
+
+  /** What the recogniser finished hearing. Put right (medical words, "h b a 1 c"), then: shown in the box first when the person asked to check it; read back ("Did I hear
+   *  ...?") when it holds a number, date or medicine and the recogniser was not sure or had to be corrected; otherwise taken as the question. */
+  const onHeard = useCallback((shown, raw, meta) => {
+    if (confirmBeforeSend) { setInput(shown); endHandsFree(); inputRef.current?.focus(); return; }
+    const ask = pendingConfirm.current ? null : needsConfirmation({ heard: raw, corrected: shown, confidence: meta?.confidence ?? null, vocabulary: vocabRef.current });
+    if (ask && !matchVoiceCommand(shown)) {
+      pendingConfirm.current = ask;
+      const say = (CONFIRM_TEXT[answerLang] || CONFIRM_TEXT.en)(ask);
+      setVoiceMessage(say);
+      const keepOn = () => { if (handsFreeRef.current) later(() => api.current.listen({ auto: true }), 300); };
+      if (!outputOk || !speaker.speak(say, { lang: answerLang, rate, pitch, voiceName, onEnd: keepOn })) keepOn();
+      return;
+    }
+    api.current.onSpoken(shown);
+  }, [confirmBeforeSend, endHandsFree, answerLang, outputOk, speaker, rate, pitch, voiceName, later]);
 
   // ------------------------------------------------------------------ voice input
   /** One round of listening. auto: send what is heard at once and go on (hands-free, or after "Hey HealthWise"); otherwise the words are put in the box to be checked. */
@@ -305,25 +412,40 @@ export default function AssistantChat() {
     speaker.stop();
     let handled = false;
     let failedKind = null;
+    dispatchVoice({ type: "LISTEN" });
     const l = createListener({
       lang: language,
+      pauseMs: supportsPauseControl() && pauseMs ? pauseMs : null,
       onStart: () => { if (sounds) cue("start"); },
-      onText: (text, final) => {
-        setHeard(text);
-        setInput(text);                               // shown in the box so the person can correct it before sending
-        if (final && auto && !handled) { handled = true; silent.current = 0; l?.stop(); setInput(""); api.current.onSpoken(text); }
+      onText: (text, final, meta) => {
+        if (final && isNoise(text)) return;            // a cough, a bleep or "umm" is not a question: the round counts as silence
+        const shown = final ? correctMedicalTerms(text, { lang: language, vocabulary: vocabRef.current }) : text;
+        setHeard(shown);
+        setInput(shown);                               // shown in the box so the person can correct it before sending
+        if (text) retries.current = 0;
+        if (text && !final) dispatchVoice({ type: "HEARD" });
+        if (final && auto && !handled) { handled = true; silent.current = 0; l?.stop(); setInput(""); api.current.onHeard(shown, text, meta); }
       },
       onError: (kind) => {
         failedKind = kind;
         if (kind === "no-speech" && auto) return;      // handled when this round ends
+        if (auto && kind === "network" && retries.current < 1 && navigator.onLine !== false) {      // a network blip: one short retry before saying anything
+          retries.current += 1;
+          handled = true;
+          setListening(false);
+          later(() => api.current.listen({ auto: true }), 800);
+          return;
+        }
         if (kind !== "no-speech" && kind !== "aborted") { handled = true; if (sounds) cue("error"); }
         setVoiceMessage(voiceErrorMessage(kind));
         setListening(false);
         if (auto || handsFreeRef.current) endHandsFree(voiceErrorMessage(kind));
+        if (kind !== "no-speech" && kind !== "aborted") dispatchVoice({ type: "ERROR", kind });
         inputRef.current?.focus();
       },
       onEnd: () => {
         setListening(false);
+        dispatchVoice({ type: "LISTEN_END" });
         if (listener.current === l) listener.current = null;
         if (auto && !handled && handsFreeRef.current && failedKind !== "aborted") {
           silent.current += 1;                         // nothing was said this time
@@ -338,10 +460,11 @@ export default function AssistantChat() {
     listener.current = l;
     setListening(true);
     l.start();
-  }, [language, sounds, speaker, endHandsFree, later]);
+  }, [language, sounds, pauseMs, speaker, endHandsFree, later]);
 
   const startHandsFree = () => {
     silent.current = 0;
+    retries.current = 0;
     handsFreeRef.current = true;
     setHandsFree(true);
     listen({ auto: true });
@@ -379,14 +502,15 @@ export default function AssistantChat() {
     return () => wake.stop();
   }, [wakeOn, listening, busy, handsFree, voiceNotice, speaking.state, language, sounds]);
 
-  api.current = { listen, onSpoken };
+  api.current = { listen, onSpoken, onHeard };
 
   const onKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } };
   const lastMessage = messages[messages.length - 1];
   const followUps = lastMessage?.role === "ASSISTANT" ? lastMessage.follow_ups || [] : [];
   const chips = followUps.length ? followUps : suggestions;                   // after an answer: what people usually ask next about it
   const showChips = !busy && chips.length > 0;
-  const orbState = listening ? "listening" : busy ? "thinking" : speaking.state !== "idle" ? "speaking" : "idle";
+  const orbState = voice.phase === "error" ? "idle" : voice.phase;          // after an error the round button is ready again; the message says what happened
+  const lastAssistant = [...messages].reverse().find((m) => m.role === "ASSISTANT");
 
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card sm:rounded-3xl" aria-label="Ask HealthWise assistant">
@@ -414,8 +538,11 @@ export default function AssistantChat() {
           </span>
         </div>)}
 
-      <VoicePanel state={orbState} compact={messages.length > 0} heard={heard} onOrb={onOrb} inputOk={inputOk} outputOk={outputOk} handsFree={handsFree} wakeOn={wakeOn} onWake={changeWake} wakeSupported={inputOk}
-        voices={voices} voiceName={voiceName} onVoice={changeVoice} autoRead={autoRead} onAutoRead={changeAutoRead} sounds={sounds} onSounds={changeSounds} rate={rate} onRate={changeRate} />
+      <VoicePanel state={orbState} compact={messages.length > 0} heard={heard} level={level} onOrb={onOrb} inputOk={inputOk} outputOk={outputOk} handsFree={handsFree} wakeOn={wakeOn} onWake={changeWake} wakeSupported={inputOk}
+        failed={voice.phase === "error"} canReplay={outputOk && Boolean(lastAssistant)} onReplay={() => lastAssistant && speak(lastAssistant)} errorText={voiceMessage}
+        voices={voices} voiceName={voiceName} onVoice={changeVoice} autoRead={autoRead} onAutoRead={changeAutoRead} sounds={sounds} onSounds={changeSounds} rate={rate} onRate={changeRate}
+        pitch={pitch} onPitch={changePitch} pauseMs={pauseMs} onPause={changePause} pauseSupported={supportsPauseControl()} confirmBeforeSend={confirmBeforeSend} onConfirmBeforeSend={changeCheck}
+        privateMode={privateMode} onPrivateMode={changePrivate} bargeIn={bargeIn} onBargeIn={changeBarge} autoLang={autoLang} onAutoLang={changeAutoLang} />
 
       <div className="relative min-h-0 flex-1">
       <div className="h-full space-y-3 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4" role="log" aria-live="polite" aria-label="Conversation" onScroll={onLogScroll}>
@@ -448,13 +575,16 @@ export default function AssistantChat() {
                     {outputOk && (speaking.id === m.id && speaking.state !== "idle" ? (
                       <>
                         {speaking.state === "speaking"
-                          ? <button type="button" aria-label="Pause reading" onClick={() => speaker.pause()} className="rounded-full bg-white p-2 text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"><Pause size={16} /></button>
-                          : <button type="button" aria-label="Resume reading" onClick={() => speaker.resume()} className="rounded-full bg-white p-2 text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"><Play size={16} /></button>}
-                        <button type="button" aria-label="Stop speaking" onClick={() => speaker.stop()} className="rounded-full bg-red-600 p-2 text-white hover:bg-red-700"><Square size={16} /></button>
+                          ? <button type="button" aria-label="Pause reading" onClick={() => speaker.pause()} className="grid h-11 w-11 place-items-center rounded-full bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"><Pause size={18} /></button>
+                          : <button type="button" aria-label="Resume reading" onClick={() => speaker.resume()} className="grid h-11 w-11 place-items-center rounded-full bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"><Play size={18} /></button>}
+                        <button type="button" aria-label="Stop speaking" onClick={() => speaker.stop()} className="grid h-11 w-11 place-items-center rounded-full bg-red-700 text-white hover:bg-red-800"><Square size={18} /></button>
                       </>
                     ) : (
                       <button type="button" aria-label="Read this answer aloud" onClick={() => speak(m)} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"><Volume2 size={16} /> Listen</button>
                     ))}
+                    {outputOk && m.more && !privateMode && !(speaking.id === m.id && speaking.state !== "idle") && (
+                      <button type="button" aria-label="Hear all the details of this answer" onClick={() => speak(m, { full: true })} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">Tell me more</button>
+                    )}
                   </div>
                 )}
               </div>

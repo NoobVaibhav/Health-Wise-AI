@@ -2,8 +2,26 @@
 // stand-ins that use the phone's own speech recognition and text-to-speech (Capacitor plugins). voice.js then works unchanged.
 // In a normal browser this file does nothing.
 import { Capacitor } from "@capacitor/core";
-import { SpeechRecognition as Native } from "@capacitor-community/speech-recognition";
+import { SpeechRecognition as CommunityPlugin } from "@capacitor-community/speech-recognition";
 import { TextToSpeech } from "@capacitor-community/text-to-speech";
+
+// The recogniser behind the Android app is a swappable ENGINE: any object with these six calls. Today it is the free community plugin; a better one (an on-device
+// Hindi/Marathi model, for example) plugs in with setNativeSpeechEngine(engine) and nothing else changes: the rest of the app only ever sees the browser's
+// SpeechRecognition shape that this file builds. Engine calls (all async):
+//   checkPermissions() / requestPermissions() -> { speechRecognition: "granted" | ... }      available() -> { available: boolean }
+//   start({ language, maxResults, partialResults, popup })      stop()      isListening() -> { isListening: boolean }
+//   addListener("partialResults", fn({ matches: [text] }))  and  addListener("listeningState", fn({ status: "started" | "stopped" }))  -> { remove() }
+export const communityEngine = {
+  checkPermissions: () => CommunityPlugin.checkPermissions(),
+  requestPermissions: () => CommunityPlugin.requestPermissions(),
+  available: () => CommunityPlugin.available(),
+  start: (options) => CommunityPlugin.start(options),
+  stop: () => CommunityPlugin.stop(),
+  isListening: () => CommunityPlugin.isListening(),
+  addListener: (name, fn) => CommunityPlugin.addListener(name, fn),
+};
+let Native = communityEngine;
+export const setNativeSpeechEngine = (engine) => { Native = engine || communityEngine; };
 
 const NO_SPEECH_MS = 9000;      // nothing heard at all: the plugin reports no error once partial results are on, so we end the round ourselves
 const FINAL_WAIT_MS = 1500;     // after the phone says speech ended, its final text still arrives a moment later

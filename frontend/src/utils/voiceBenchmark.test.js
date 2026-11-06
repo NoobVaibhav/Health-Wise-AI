@@ -102,27 +102,35 @@ describe("voice benchmark (browser side)", () => {
     const symbol = /[|•*_#>\[\]{}\\<=]|\s\/\s|\d\/[A-Za-z]/;
     const abbreviation = /\b(?:mg|ml|dL|g\/dL|mg\/dL|ng\/mL|HbA1c|LDL|HDL|TSH|ALT|AST|BP|mmHg|bpm)\b/;
     const monthAbbr = /\b(?:Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/;
-    const words = [];
-    const long = [];
-    let symbols = 0, abbreviations = 0, months = 0, hasDate = 0, hasSource = 0, cut = 0;
-    const perLang = {};
-    for (const a of answers) {
-      const spoken = voice.speakableText(a.text, a.lang);
-      const n = spoken.split(/\s+/).filter(Boolean).length;
-      words.push(n);
-      if (n > 60) long.push(a.question);
-      if (symbol.test(spoken)) symbols += 1;
-      if (abbreviation.test(spoken)) { abbreviations += 1; perLang[a.lang] = (perLang[a.lang] || 0) + 1; }
-      if (monthAbbr.test(spoken)) months += 1;
-      if (/\d{1,2} [A-Z][a-z]{2} \d{4}|\d{4}-\d\d-\d\d|\bon \d/.test(spoken)) hasDate += 1;
-      if ((a.sources || []).length) hasSource += 1;
-      if (/The rest is in the written answer/.test(spoken)) cut += 1;
-    }
-    const mean = Math.round(words.reduce((x, y) => x + y, 0) / words.length);
-    show(`Answers read aloud (${answers.length})`, [["average spoken words", mean], ["answers over 60 spoken words", `${long.length}/${answers.length}`], ["answers still holding symbols or table marks", `${symbols}/${answers.length}`],
-      ["answers with an unspoken-out abbreviation or unit (mg, g/dL, HbA1c, ...)", `${abbreviations}/${answers.length}`], ["answers with an abbreviated month (Oct, Mar, ...)", `${months}/${answers.length}`],
-      ["answers cut off by the length limit", `${cut}/${answers.length}`], ["answers that carry a source", `${hasSource}/${answers.length}`], ["... of which a date is spoken", hasDate]]);
-    out.spoken = { n: answers.length, mean_words: mean, over_60_words: long.length, with_symbols: symbols, with_abbreviation: abbreviations, abbreviation_by_lang: perLang, with_month_abbreviation: months, cut_off: cut, with_source: hasSource, dates_spoken: hasDate, long };
+    const measure = (title, pick) => {
+      const words = [];
+      const long = [];
+      let symbols = 0, abbreviations = 0, months = 0, hasDate = 0, hasSource = 0, cut = 0, sourceSaid = 0, reminder = 0;
+      const perLang = {};
+      for (const a of answers) {
+        const spoken = voice.speakableText(pick(a), a.lang);
+        const n = spoken.split(/\s+/).filter(Boolean).length;
+        words.push(n);
+        if (n > 60) long.push(a.question);
+        if (symbol.test(spoken)) symbols += 1;
+        if (abbreviation.test(spoken)) { abbreviations += 1; perLang[a.lang] = (perLang[a.lang] || 0) + 1; }
+        if (monthAbbr.test(spoken)) months += 1;
+        const dated = /\d{1,2} (?:[A-Z][a-z]+|[ऀ-ॿ]+) \d{4}|\d{4}-\d\d-\d\d|\bon \d/.test(spoken);
+        if (dated) hasDate += 1;
+        if ((a.sources || []).length) { hasSource += 1; if (dated || /\bFrom your\b|आपके .* से है|तुमच्या .* मधून/.test(spoken)) sourceSaid += 1; }
+        if (/talk to your doctor|डॉक्टर से पूछें|डॉक्टरांना विचारा/.test(spoken)) reminder += 1;
+        if (/The rest is in the written answer/.test(spoken)) cut += 1;
+      }
+      const mean = Math.round(words.reduce((x, y) => x + y, 0) / words.length);
+      show(`${title} (${answers.length})`, [["average spoken words", mean], ["answers over 60 spoken words", `${long.length}/${answers.length}`], ["answers still holding symbols or table marks", `${symbols}/${answers.length}`],
+        ["answers with an unspoken-out abbreviation or unit (mg, g/dL, HbA1c, ...)", `${abbreviations}/${answers.length}`], ["answers with an abbreviated month (Oct, Mar, ...)", `${months}/${answers.length}`],
+        ["answers cut off by the length limit", `${cut}/${answers.length}`], ["answers that carry a source", `${hasSource}/${answers.length}`], ["... of which the source or its date is also SAID", sourceSaid],
+        ["answers that say 'talk to your doctor'", `${reminder}/${answers.length}`]]);
+      return { n: answers.length, mean_words: mean, over_60_words: long.length, with_symbols: symbols, with_abbreviation: abbreviations, abbreviation_by_lang: perLang, with_month_abbreviation: months, cut_off: cut,
+        with_source: hasSource, source_or_date_said: sourceSaid, doctor_reminder_said: reminder, dates_spoken: hasDate, long };
+    };
+    out.spoken = measure("The whole written answer read aloud", (a) => a.text);                       // what "tell me more" reads
+    if (answers.some((a) => a.spoken)) out.spoken_short = measure("The short spoken version (what is read by default)", (a) => a.spoken || a.text);
   });
 
   it("what the voice layer controls in the time from end of speech to the first spoken word (static: from the code, not a stopwatch)", () => {

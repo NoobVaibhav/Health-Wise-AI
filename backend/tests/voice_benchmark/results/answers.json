@@ -4,6 +4,8 @@
   "question": "What did my doctor say at my last checkup",
   "intent": "LAST_CHECKUP",
   "text": "Your most recent visit on record was on 6 Nov 2026 with Dr. Anjali Sharma.\nReason for the visit: Cough and tiredness\nDoctor's note (6 Nov 2026): Review in a week.\nAdvice recorded (6 Nov 2026) - Walk: Walk daily.\nFollow-up date given: 15 Jan 2027\nMedicines prescribed (6 Nov 2026): Tab. Metformin 500 mg, Tab. Atorvastatin 10 mg, Tab. Paracetamol 500 mg\nTests advised: ECG\nNo upcoming appointment is recorded.\nThis is what your records say. I have not added anything of my own. You can open the original from the links below.\nPlease talk to your doctor about what this means for you.",
+  "spoken": "Your most recent visit on record was on 6 Nov 2026 with Dr. Anjali Sharma. Reason for the visit: Cough and tiredness. Doctor's note (6 Nov 2026): Review in a week. Advice recorded (6 Nov 2026) - Walk: Walk daily. Please talk to your doctor about what this means for you.",
+  "more": true,
   "sources": [
    {
     "type": "appointment",
@@ -36,6 +38,8 @@
   "question": "Explain my latest report",
   "intent": "REPORT",
   "text": "Your latest reviewed report is from 12 Sep 2026 (b.txt).\nVitamin D: 18 ng/mL (12 Sep 2026). Lab range: 30 - 100. Lab flag: below the printed range.\nHemoglobin: 12.1 g/dL (12 Sep 2026). Lab range: 13.0 - 17.0. Lab flag: below the printed range.\nTotal Cholesterol: 190 mg/dL (12 Sep 2026). Lab range: < 200. Lab flag: inside the printed range.\nHbA1c: 6.1 % (12 Sep 2026). Lab range: 4.0 - 5.6. Lab flag: above the printed range.\nLDL: 120 mg/dL (12 Sep 2026). Lab range: < 100. Lab flag: above the printed range.\nCreatinine: 1.3 mg/dL (12 Sep 2026). Lab range: 0.7 - 1.3. Lab flag: inside the printed range.\nDoctor's note (6 Nov 2026): Reviewed.\nA value inside or outside the lab's range does not by itself mean illness or good health. Your doctor reads it together with your whole medical picture.\nPlease talk to your doctor about what this means for you.",
+  "spoken": "Your latest reviewed report is from 12 Sep 2026 (b.txt). Vitamin D: 18 ng/mL (12 Sep 2026). Lab range: 30 - 100. Lab flag: below the printed range. Hemoglobin: 12.1 g/dL (12 Sep 2026). Lab range: 13.0 - 17.0. Lab flag: below the printed range. Please talk to your doctor about what this means for you.",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -50,6 +54,8 @@
   "question": "What is my haemoglobin",
   "intent": "TEST",
   "text": "Hemoglobin: 12.1 g/dL (12 Sep 2026). Lab range: 13.0 - 17.0. Lab flag: below the printed range.\nHemoglobin is the protein in red blood cells that carries oxygen around the body.\nA value inside or outside the lab's range does not by itself mean illness or good health. Your doctor reads it together with your whole medical picture.\nPlease talk to your doctor about what this means for you.",
+  "spoken": "Hemoglobin: 12.1 g/dL (12 Sep 2026). Lab range: 13.0 - 17.0. Lab flag: below the printed range. Hemoglobin is the protein in red blood cells that carries oxygen around the body. Please talk to your doctor about what this means for you.",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -64,6 +70,8 @@
   "question": "What is my vitamin D level",
   "intent": "TEST",
   "text": "Vitamin D: 18 ng/mL (12 Sep 2026). Lab range: 30 - 100. Lab flag: below the printed range.\nVitamin D supports bone health and many body functions. The body makes it from sunlight and gets it from some foods.\nA value inside or outside the lab's range does not by itself mean illness or good health. Your doctor reads it together with your whole medical picture.\nPlease talk to your doctor about what this means for you.",
+  "spoken": "Vitamin D: 18 ng/mL (12 Sep 2026). Lab range: 30 - 100. Lab flag: below the printed range. Vitamin D supports bone health and many body functions. The body makes it from sunlight and gets it from some foods. Please talk to your doctor about what this means for you.",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -78,6 +86,8 @@
   "question": "Which of my results are abnormal",
   "intent": "ABNORMAL",
   "text": "Results outside the printed range in your newest reviewed reports:\nHbA1c: 6.1 % (12 Sep 2026). Lab range: 4.0 - 5.6. Lab flag: above the printed range.\nHemoglobin: 12.1 g/dL (12 Sep 2026). Lab range: 13.0 - 17.0. Lab flag: below the printed range.\nLDL: 120 mg/dL (12 Sep 2026). Lab range: < 100. Lab flag: above the printed range.\nVitamin D: 18 ng/mL (12 Sep 2026). Lab range: 30 - 100. Lab flag: below the printed range.\nA value inside or outside the lab's range does not by itself mean illness or good health. Your doctor reads it together with your whole medical picture.\nPlease talk to your doctor about what this means for you.",
+  "spoken": "Results outside the printed range in your newest reviewed reports: HbA1c: 6.1 % (12 Sep 2026). Lab range: 4.0 - 5.6. Lab flag: above the printed range. Hemoglobin: 12.1 g/dL (12 Sep 2026). Lab range: 13.0 - 17.0. Lab flag: below the printed range. Please talk to your doctor about what this means for you.",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -92,6 +102,8 @@
   "question": "Compare my test results",
   "intent": "COMPARE",
   "text": "Results that have more than one value on record:\nCreatinine: 1.3 mg/dL (12 Sep 2026). Lab range: 0.7 - 1.3. Lab flag: inside the printed range.\nEarlier result (15 Jun 2026): 1.1 mg/dL.\nChange: it went up by 0.2 mg/dL.\n\nHbA1c: 6.1 % (12 Sep 2026). Lab range: 4.0 - 5.6. Lab flag: above the printed range.\nEarlier result (15 Jun 2026): 6.8 %.\nChange: it went down by 0.7 %.\n\nHemoglobin: 12.1 g/dL (12 Sep 2026). Lab range: 13.0 - 17.0. Lab flag: below the printed range.\nEarlier result (15 Jun 2026): 14 g/dL.\nChange: it went down by 1.9 g/dL.\n\nLDL: 120 mg/dL (12 Sep 2026). Lab range: < 100. Lab flag: above the printed range.\nEarlier result (15 Jun 2026): 148 mg/dL.\nChange: it went down by 28 mg/dL.\n\nTotal Cholesterol: 190 mg/dL (12 Sep 2026). Lab range: < 200. Lab flag: inside the printed range.\nEarlier result (15 Jun 2026): 215 mg/dL.\nChange: it went down by 25 mg/dL.\n\nVitamin D: 18 ng/mL (12 Sep 2026). Lab range: 30 - 100. Lab flag: below the printed range.\nEarlier result (15 Jun 2026): 24 ng/mL.\nChange: it went down by 6 ng/mL.\n\nA value inside or outside the lab's range does not by itself mean illness or good health. Your doctor reads it together with your whole medical picture.\nPlease talk to your doctor about what this means for you.",
+  "spoken": "Results that have more than one value on record: Creatinine: 1.3 mg/dL (12 Sep 2026). Lab range: 0.7 - 1.3. Lab flag: inside the printed range. Earlier result (15 Jun 2026): 1.1 mg/dL. Change: it went up by 0.2 mg/dL. Please talk to your doctor about what this means for you.",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -112,6 +124,8 @@
   "question": "What medicines do I take",
   "intent": "MEDICINES",
   "text": "Medicines on your prescriptions:\nTab. Atorvastatin 10 mg: 10 mg; Once daily at night; 30 days. Prescribed 6 Nov 2026 by Dr. Anjali Sharma. Prescription status: open. Pharmacy gave 0 of 30.\nTab. Metformin 500 mg: 500 mg; Twice daily; 30 days. Prescribed 6 Nov 2026 by Dr. Anjali Sharma. Prescription status: open. Pharmacy gave 0 of 60.\nTab. Paracetamol 500 mg: 500 mg; When needed; 5 days. Prescribed 6 Nov 2026 by Dr. Anjali Sharma. Prescription status: open. Pharmacy gave 0 of 10.\nA prescription shows what the doctor wrote. What the pharmacy gave and what you actually take can be different, and a medicine on an old prescription may no longer be meant for you. If anything is unclear, please confirm it with your doctor or pharmacist.",
+  "spoken": "Medicines on your prescriptions: Tab. Atorvastatin 10 mg: 10 mg; Once daily at night; 30 days. Prescribed 6 Nov 2026 by Dr. Anjali Sharma. Prescription status: open. Pharmacy gave 0 of 30. Please talk to your doctor about what this means for you.",
+  "more": true,
   "sources": [
    {
     "type": "prescription",
@@ -126,6 +140,8 @@
   "question": "When is my next appointment",
   "intent": "APPOINTMENTS",
   "text": "No upcoming appointment is recorded.\nEarlier: 6 Nov 2026 with Dr. Anjali Sharma (completed).",
+  "spoken": "No upcoming appointment is recorded. Earlier: 6 Nov 2026 with Dr. Anjali Sharma (completed). Please talk to your doctor about what this means for you.",
+  "more": false,
   "sources": [
    {
     "type": "appointment",
@@ -138,21 +154,11 @@
  {
   "lang": "en",
   "question": "What did the doctor advise me",
-  "intent": "LAST_CHECKUP",
-  "text": "Your most recent visit on record was on 6 Nov 2026 with Dr. Anjali Sharma.\nReason for the visit: Cough and tiredness\nDoctor's note (6 Nov 2026): Review in a week.\nAdvice recorded (6 Nov 2026) - Walk: Walk daily.\nFollow-up date given: 15 Jan 2027\nMedicines prescribed (6 Nov 2026): Tab. Metformin 500 mg, Tab. Atorvastatin 10 mg, Tab. Paracetamol 500 mg\nTests advised: ECG\nNo upcoming appointment is recorded.\nThis is what your records say. I have not added anything of my own. You can open the original from the links below.\nPlease talk to your doctor about what this means for you.",
+  "intent": "INSTRUCTIONS",
+  "text": "Advice and instructions your doctor has recorded:\nAdvice recorded (6 Nov 2026) - Walk: Walk daily.\nFollow-up date given: 15 Jan 2027\nTests advised: ECG (6 Nov 2026)\nThis is what your records say. I have not added anything of my own. You can open the original from the links below.",
+  "spoken": "Advice and instructions your doctor has recorded: Advice recorded (6 Nov 2026) - Walk: Walk daily. Follow-up date given: 15 Jan 2027. Tests advised: ECG (6 Nov 2026). Please talk to your doctor about what this means for you.",
+  "more": false,
   "sources": [
-   {
-    "type": "appointment",
-    "id": 1,
-    "label": "Appointment",
-    "date": "2026-11-06"
-   },
-   {
-    "type": "note",
-    "id": 1,
-    "label": "Doctor's note",
-    "date": "2026-11-06"
-   },
    {
     "type": "recommendation",
     "id": 1,
@@ -172,6 +178,8 @@
   "question": "Brief me",
   "intent": "BRIEFING",
   "text": "Good evening, Rahul. Here is your update from your records:\nNo upcoming appointment is recorded.\n4 of your reviewed results are outside the printed range: HbA1c, Hemoglobin, LDL, Vitamin D.\nYour doctor asked for a follow-up by 15 Jan 2027.\nThis is only what your records say. Ask me about any of it, and talk to your doctor about what it means for you.",
+  "spoken": "Good evening, Rahul. Here is your update from your records: No upcoming appointment is recorded. 4 of your reviewed results are outside the printed range: HbA1c, Hemoglobin, LDL, Vitamin D. Your doctor asked for a follow-up by 15 Jan 2027. This is only what your records say. Ask me about any of it, and talk to your doctor about what it means for you. Please talk to your doctor about what this means for you.",
+  "more": false,
   "sources": [
    {
     "type": "report",
@@ -192,6 +200,8 @@
   "question": "Do I have any allergies",
   "intent": "ALLERGY",
   "text": "Also written when you were registered: None known\nPlease talk to your doctor about what this means for you.",
+  "spoken": "Also written when you were registered: None known. Please talk to your doctor about what this means for you.",
+  "more": false,
   "sources": []
  },
  {
@@ -199,6 +209,8 @@
   "question": "पिछले चेकअप में डॉक्टर ने क्या कहा",
   "intent": "LAST_CHECKUP",
   "text": "आपके रिकॉर्ड में सबसे ताज़ा विज़िट 06/11/2026 को Dr. Anjali Sharma के साथ थी।\nविज़िट का कारण: Cough and tiredness\nडॉक्टर का नोट (06/11/2026): Review in a week.\nदर्ज सलाह (06/11/2026) - Walk: Walk daily.\nबताई गई फॉलो-अप तारीख: 15/01/2027\nलिखी गई दवाइयाँ (06/11/2026): Tab. Metformin 500 mg, Tab. Atorvastatin 10 mg, Tab. Paracetamol 500 mg\nसुझाई गई जाँचें: ECG\nकोई आने वाला अपॉइंटमेंट दर्ज नहीं है।\nयह आपके रिकॉर्ड में लिखा है। मैंने अपनी तरफ से कुछ नहीं जोड़ा है। मूल रिकॉर्ड नीचे दिए लिंक से खोल सकते हैं।\nइसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "spoken": "आपके रिकॉर्ड में सबसे ताज़ा विज़िट 06/11/2026 को Dr. Anjali Sharma के साथ थी। विज़िट का कारण: Cough and tiredness. डॉक्टर का नोट (06/11/2026): Review in a week. दर्ज सलाह (06/11/2026) - Walk: Walk daily. बताई गई फॉलो-अप तारीख: 15/01/2027. इसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "more": true,
   "sources": [
    {
     "type": "appointment",
@@ -231,6 +243,8 @@
   "question": "मेरी ताज़ा रिपोर्ट समझाइए",
   "intent": "REPORT",
   "text": "आपकी सबसे ताज़ा समीक्षित रिपोर्ट 12/09/2026 की है (b.txt).\nVitamin D: 18 ng/mL (12/09/2026)। लैब रेंज: 30 - 100। लैब फ्लैग: छपी रेंज से नीचे।\nHemoglobin: 12.1 g/dL (12/09/2026)। लैब रेंज: 13.0 - 17.0। लैब फ्लैग: छपी रेंज से नीचे।\nTotal Cholesterol: 190 mg/dL (12/09/2026)। लैब रेंज: < 200। लैब फ्लैग: छपी रेंज के अंदर।\nHbA1c: 6.1 % (12/09/2026)। लैब रेंज: 4.0 - 5.6। लैब फ्लैग: छपी रेंज से ऊपर।\nLDL: 120 mg/dL (12/09/2026)। लैब रेंज: < 100। लैब फ्लैग: छपी रेंज से ऊपर।\nCreatinine: 1.3 mg/dL (12/09/2026)। लैब रेंज: 0.7 - 1.3। लैब फ्लैग: छपी रेंज के अंदर।\nडॉक्टर का नोट (06/11/2026): Reviewed.\nलैब की रेंज के अंदर या बाहर का मान अपने आप में बीमारी या अच्छी सेहत नहीं बताता। डॉक्टर इसे आपकी पूरी चिकित्सा स्थिति के साथ देखते हैं।\nइसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "spoken": "आपकी सबसे ताज़ा समीक्षित रिपोर्ट 12/09/2026 की है (b.txt). Vitamin D: 18 ng/mL (12/09/2026)। लैब रेंज: 30 - 100। लैब फ्लैग: छपी रेंज से नीचे। Hemoglobin: 12.1 g/dL (12/09/2026)। लैब रेंज: 13.0 - 17.0। लैब फ्लैग: छपी रेंज से नीचे। इसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -245,6 +259,8 @@
   "question": "मेरा हीमोग्लोबिन कितना है",
   "intent": "TEST",
   "text": "Hemoglobin: 12.1 g/dL (12/09/2026)। लैब रेंज: 13.0 - 17.0। लैब फ्लैग: छपी रेंज से नीचे।\nHemoglobin is the protein in red blood cells that carries oxygen around the body. (इस स्पष्टीकरण का पाठ अंग्रेज़ी में है।)\nलैब की रेंज के अंदर या बाहर का मान अपने आप में बीमारी या अच्छी सेहत नहीं बताता। डॉक्टर इसे आपकी पूरी चिकित्सा स्थिति के साथ देखते हैं।\nइसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "spoken": "Hemoglobin: 12.1 g/dL (12/09/2026)। लैब रेंज: 13.0 - 17.0। लैब फ्लैग: छपी रेंज से नीचे। Hemoglobin is the protein in red blood cells that carries oxygen around the body. (इस स्पष्टीकरण का पाठ अंग्रेज़ी में है।). इसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -259,6 +275,8 @@
   "question": "मेरा विटामिन डी कितना है",
   "intent": "TEST",
   "text": "Vitamin D: 18 ng/mL (12/09/2026)। लैब रेंज: 30 - 100। लैब फ्लैग: छपी रेंज से नीचे।\nVitamin D supports bone health and many body functions. The body makes it from sunlight and gets it from some foods. (इस स्पष्टीकरण का पाठ अंग्रेज़ी में है।)\nलैब की रेंज के अंदर या बाहर का मान अपने आप में बीमारी या अच्छी सेहत नहीं बताता। डॉक्टर इसे आपकी पूरी चिकित्सा स्थिति के साथ देखते हैं।\nइसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "spoken": "Vitamin D: 18 ng/mL (12/09/2026)। लैब रेंज: 30 - 100। लैब फ्लैग: छपी रेंज से नीचे। Vitamin D supports bone health and many body functions. The body makes it from sunlight and gets it from some foods. (इस स्पष्टीकरण का पाठ अंग्रेज़ी में है।). इसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -273,6 +291,8 @@
   "question": "कौन से नतीजे असामान्य हैं",
   "intent": "ABNORMAL",
   "text": "आपकी नवीनतम समीक्षित रिपोर्टों में छपी रेंज से बाहर के नतीजे:\nHbA1c: 6.1 % (12/09/2026)। लैब रेंज: 4.0 - 5.6। लैब फ्लैग: छपी रेंज से ऊपर।\nHemoglobin: 12.1 g/dL (12/09/2026)। लैब रेंज: 13.0 - 17.0। लैब फ्लैग: छपी रेंज से नीचे।\nLDL: 120 mg/dL (12/09/2026)। लैब रेंज: < 100। लैब फ्लैग: छपी रेंज से ऊपर।\nVitamin D: 18 ng/mL (12/09/2026)। लैब रेंज: 30 - 100। लैब फ्लैग: छपी रेंज से नीचे।\nलैब की रेंज के अंदर या बाहर का मान अपने आप में बीमारी या अच्छी सेहत नहीं बताता। डॉक्टर इसे आपकी पूरी चिकित्सा स्थिति के साथ देखते हैं।\nइसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "spoken": "आपकी नवीनतम समीक्षित रिपोर्टों में छपी रेंज से बाहर के नतीजे: HbA1c: 6.1 % (12/09/2026)। लैब रेंज: 4.0 - 5.6। लैब फ्लैग: छपी रेंज से ऊपर। Hemoglobin: 12.1 g/dL (12/09/2026)। लैब रेंज: 13.0 - 17.0। लैब फ्लैग: छपी रेंज से नीचे। इसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -287,6 +307,8 @@
   "question": "मेरी दवाइयाँ कौन सी हैं",
   "intent": "MEDICINES",
   "text": "आपके पर्चों पर लिखी दवाइयाँ:\nTab. Atorvastatin 10 mg: 10 mg; Once daily at night; 30 days। 06/11/2026 को Dr. Anjali Sharma ने लिखी। पर्चे की स्थिति: चालू। फार्मेसी ने 30 में से 0 दी।\nTab. Metformin 500 mg: 500 mg; Twice daily; 30 days। 06/11/2026 को Dr. Anjali Sharma ने लिखी। पर्चे की स्थिति: चालू। फार्मेसी ने 60 में से 0 दी।\nTab. Paracetamol 500 mg: 500 mg; When needed; 5 days। 06/11/2026 को Dr. Anjali Sharma ने लिखी। पर्चे की स्थिति: चालू। फार्मेसी ने 10 में से 0 दी।\nपर्चा वही दिखाता है जो डॉक्टर ने लिखा। फार्मेसी ने क्या दिया और आप असल में क्या लेते हैं, यह अलग हो सकता है, और पुराने पर्चे की दवा अब आपके लिए न हो सकती है। कुछ भी अस्पष्ट हो तो डॉक्टर या फार्मासिस्ट से पूछ लें।",
+  "spoken": "आपके पर्चों पर लिखी दवाइयाँ: Tab. Atorvastatin 10 mg: 10 mg; Once daily at night; 30 days। 06/11/2026 को Dr. Anjali Sharma ने लिखी। पर्चे की स्थिति: चालू। फार्मेसी ने 30 में से 0 दी। इसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "more": true,
   "sources": [
    {
     "type": "prescription",
@@ -301,6 +323,8 @@
   "question": "मेरा अगला अपॉइंटमेंट कब है",
   "intent": "APPOINTMENTS",
   "text": "कोई आने वाला अपॉइंटमेंट दर्ज नहीं है।\nपिछला: 06/11/2026, Dr. Anjali Sharma के साथ (पूरा हुआ)।",
+  "spoken": "कोई आने वाला अपॉइंटमेंट दर्ज नहीं है। पिछला: 06/11/2026, Dr. Anjali Sharma के साथ (पूरा हुआ)। इसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "more": false,
   "sources": [
    {
     "type": "appointment",
@@ -315,6 +339,8 @@
   "question": "आज की जानकारी",
   "intent": "BRIEFING",
   "text": "शुभ संध्या, Rahul। आपके रिकॉर्ड से आपका अपडेट:\nकोई आने वाला अपॉइंटमेंट दर्ज नहीं है।\nआपके जाँचे गए नतीजों में से 4 छपी हुई रेंज से बाहर हैं: HbA1c, Hemoglobin, LDL, Vitamin D।\nडॉक्टर ने 15/01/2027 तक फॉलो-अप के लिए कहा है।\nयह सिर्फ़ वही है जो आपके रिकॉर्ड में लिखा है। इनमें से कुछ भी पूछिए, और इसका आपके लिए क्या मतलब है यह डॉक्टर से बात करके जानिए।",
+  "spoken": "शुभ संध्या, Rahul। आपके रिकॉर्ड से आपका अपडेट: कोई आने वाला अपॉइंटमेंट दर्ज नहीं है। आपके जाँचे गए नतीजों में से 4 छपी हुई रेंज से बाहर हैं: HbA1c, Hemoglobin, LDL, Vitamin D। डॉक्टर ने 15/01/2027 तक फॉलो-अप के लिए कहा है। यह सिर्फ़ वही है जो आपके रिकॉर्ड में लिखा है। इनमें से कुछ भी पूछिए, और इसका आपके लिए क्या मतलब है यह डॉक्टर से बात करके जानिए। इसका आपके लिए क्या मतलब है, यह कृपया अपने डॉक्टर से पूछें।",
+  "more": false,
   "sources": [
    {
     "type": "report",
@@ -335,6 +361,8 @@
   "question": "मागील तपासणीत डॉक्टर काय म्हणाले",
   "intent": "LAST_CHECKUP",
   "text": "तुमच्या नोंदींमधील सर्वात अलीकडील भेट 06/11/2026 रोजी Dr. Anjali Sharma यांच्यासोबत होती.\nभेटीचे कारण: Cough and tiredness\nडॉक्टरांची नोंद (06/11/2026): Review in a week.\nनोंदवलेला सल्ला (06/11/2026) - Walk: Walk daily.\nसांगितलेली फॉलो-अप तारीख: 15/01/2027\nलिहून दिलेली औषधे (06/11/2026): Tab. Metformin 500 mg, Tab. Atorvastatin 10 mg, Tab. Paracetamol 500 mg\nसुचवलेल्या तपासण्या: ECG\nपुढील कोणतीही अपॉइंटमेंट नोंदलेली नाही.\nहे तुमच्या नोंदींमध्ये लिहिले आहे. मी स्वतःहून काहीही जोडलेले नाही. मूळ नोंद खालील लिंकवरून उघडू शकता.\nयाचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "spoken": "तुमच्या नोंदींमधील सर्वात अलीकडील भेट 06/11/2026 रोजी Dr. Anjali Sharma यांच्यासोबत होती. भेटीचे कारण: Cough and tiredness. डॉक्टरांची नोंद (06/11/2026): Review in a week. नोंदवलेला सल्ला (06/11/2026) - Walk: Walk daily. सांगितलेली फॉलो-अप तारीख: 15/01/2027. याचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "more": true,
   "sources": [
    {
     "type": "appointment",
@@ -367,6 +395,8 @@
   "question": "माझा ताजा रिपोर्ट समजावून सांगा",
   "intent": "REPORT",
   "text": "तुमचा सर्वात अलीकडील तपासलेला रिपोर्ट 12/09/2026 चा आहे (b.txt).\nVitamin D: 18 ng/mL (12/09/2026). लॅब श्रेणी: 30 - 100. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी.\nHemoglobin: 12.1 g/dL (12/09/2026). लॅब श्रेणी: 13.0 - 17.0. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी.\nTotal Cholesterol: 190 mg/dL (12/09/2026). लॅब श्रेणी: < 200. लॅब फ्लॅग: छापलेल्या श्रेणीत.\nHbA1c: 6.1 % (12/09/2026). लॅब श्रेणी: 4.0 - 5.6. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा जास्त.\nLDL: 120 mg/dL (12/09/2026). लॅब श्रेणी: < 100. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा जास्त.\nCreatinine: 1.3 mg/dL (12/09/2026). लॅब श्रेणी: 0.7 - 1.3. लॅब फ्लॅग: छापलेल्या श्रेणीत.\nडॉक्टरांची नोंद (06/11/2026): Reviewed.\nलॅबच्या श्रेणीत किंवा बाहेरचे मूल्य म्हणजे आपोआप आजार किंवा चांगले आरोग्य असे नाही. डॉक्टर ते तुमच्या संपूर्ण वैद्यकीय स्थितीसह पाहतात.\nयाचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "spoken": "तुमचा सर्वात अलीकडील तपासलेला रिपोर्ट 12/09/2026 चा आहे (b.txt). Vitamin D: 18 ng/mL (12/09/2026). लॅब श्रेणी: 30 - 100. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी. Hemoglobin: 12.1 g/dL (12/09/2026). लॅब श्रेणी: 13.0 - 17.0. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी. याचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -381,6 +411,8 @@
   "question": "माझा हिमोग्लोबिन किती आहे",
   "intent": "TEST",
   "text": "Hemoglobin: 12.1 g/dL (12/09/2026). लॅब श्रेणी: 13.0 - 17.0. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी.\nHemoglobin is the protein in red blood cells that carries oxygen around the body. (या स्पष्टीकरणाचा मजकूर इंग्रजीत आहे.)\nलॅबच्या श्रेणीत किंवा बाहेरचे मूल्य म्हणजे आपोआप आजार किंवा चांगले आरोग्य असे नाही. डॉक्टर ते तुमच्या संपूर्ण वैद्यकीय स्थितीसह पाहतात.\nयाचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "spoken": "Hemoglobin: 12.1 g/dL (12/09/2026). लॅब श्रेणी: 13.0 - 17.0. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी. Hemoglobin is the protein in red blood cells that carries oxygen around the body. (या स्पष्टीकरणाचा मजकूर इंग्रजीत आहे.). याचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -395,6 +427,8 @@
   "question": "माझे व्हिटॅमिन डी किती आहे",
   "intent": "TEST",
   "text": "Vitamin D: 18 ng/mL (12/09/2026). लॅब श्रेणी: 30 - 100. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी.\nVitamin D supports bone health and many body functions. The body makes it from sunlight and gets it from some foods. (या स्पष्टीकरणाचा मजकूर इंग्रजीत आहे.)\nलॅबच्या श्रेणीत किंवा बाहेरचे मूल्य म्हणजे आपोआप आजार किंवा चांगले आरोग्य असे नाही. डॉक्टर ते तुमच्या संपूर्ण वैद्यकीय स्थितीसह पाहतात.\nयाचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "spoken": "Vitamin D: 18 ng/mL (12/09/2026). लॅब श्रेणी: 30 - 100. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी. Vitamin D supports bone health and many body functions. The body makes it from sunlight and gets it from some foods. (या स्पष्टीकरणाचा मजकूर इंग्रजीत आहे.). याचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -409,6 +443,8 @@
   "question": "कोणते निकाल असामान्य आहेत",
   "intent": "ABNORMAL",
   "text": "तुमच्या नवीनतम तपासलेल्या रिपोर्टमध्ये छापलेल्या श्रेणीबाहेरचे निकाल:\nHbA1c: 6.1 % (12/09/2026). लॅब श्रेणी: 4.0 - 5.6. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा जास्त.\nHemoglobin: 12.1 g/dL (12/09/2026). लॅब श्रेणी: 13.0 - 17.0. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी.\nLDL: 120 mg/dL (12/09/2026). लॅब श्रेणी: < 100. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा जास्त.\nVitamin D: 18 ng/mL (12/09/2026). लॅब श्रेणी: 30 - 100. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी.\nलॅबच्या श्रेणीत किंवा बाहेरचे मूल्य म्हणजे आपोआप आजार किंवा चांगले आरोग्य असे नाही. डॉक्टर ते तुमच्या संपूर्ण वैद्यकीय स्थितीसह पाहतात.\nयाचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "spoken": "तुमच्या नवीनतम तपासलेल्या रिपोर्टमध्ये छापलेल्या श्रेणीबाहेरचे निकाल: HbA1c: 6.1 % (12/09/2026). लॅब श्रेणी: 4.0 - 5.6. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा जास्त. Hemoglobin: 12.1 g/dL (12/09/2026). लॅब श्रेणी: 13.0 - 17.0. लॅब फ्लॅग: छापलेल्या श्रेणीपेक्षा कमी. याचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "more": true,
   "sources": [
    {
     "type": "report",
@@ -423,6 +459,8 @@
   "question": "मी कोणती औषधे घेतो",
   "intent": "MEDICINES",
   "text": "तुमच्या प्रिस्क्रिप्शनवरील औषधे:\nTab. Atorvastatin 10 mg: 10 mg; Once daily at night; 30 days. 06/11/2026 रोजी Dr. Anjali Sharma यांनी लिहिले. प्रिस्क्रिप्शन स्थिती: चालू. फार्मसीने 30 पैकी 0 दिले.\nTab. Metformin 500 mg: 500 mg; Twice daily; 30 days. 06/11/2026 रोजी Dr. Anjali Sharma यांनी लिहिले. प्रिस्क्रिप्शन स्थिती: चालू. फार्मसीने 60 पैकी 0 दिले.\nTab. Paracetamol 500 mg: 500 mg; When needed; 5 days. 06/11/2026 रोजी Dr. Anjali Sharma यांनी लिहिले. प्रिस्क्रिप्शन स्थिती: चालू. फार्मसीने 10 पैकी 0 दिले.\nप्रिस्क्रिप्शन म्हणजे डॉक्टरांनी जे लिहिले ते. फार्मसीने काय दिले आणि तुम्ही प्रत्यक्षात काय घेता हे वेगळे असू शकते, आणि जुन्या प्रिस्क्रिप्शनमधील औषध आता तुमच्यासाठी नसू शकते. काही अस्पष्ट असल्यास डॉक्टर किंवा फार्मासिस्टकडून खात्री करा.",
+  "spoken": "तुमच्या प्रिस्क्रिप्शनवरील औषधे: Tab. Atorvastatin 10 mg: 10 mg; Once daily at night; 30 days. 06/11/2026 रोजी Dr. Anjali Sharma यांनी लिहिले. प्रिस्क्रिप्शन स्थिती: चालू. फार्मसीने 30 पैकी 0 दिले. याचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "more": true,
   "sources": [
    {
     "type": "prescription",
@@ -437,6 +475,8 @@
   "question": "माझी पुढची भेट कधी आहे",
   "intent": "APPOINTMENTS",
   "text": "पुढील कोणतीही अपॉइंटमेंट नोंदलेली नाही.\nमागील: 06/11/2026, Dr. Anjali Sharma यांच्यासोबत (पूर्ण झाली).",
+  "spoken": "पुढील कोणतीही अपॉइंटमेंट नोंदलेली नाही. मागील: 06/11/2026, Dr. Anjali Sharma यांच्यासोबत (पूर्ण झाली). याचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "more": false,
   "sources": [
    {
     "type": "appointment",
@@ -451,6 +491,8 @@
   "question": "आजची माहिती",
   "intent": "BRIEFING",
   "text": "शुभ संध्याकाळ, Rahul. तुमच्या नोंदींमधील तुमचे अपडेट:\nपुढील कोणतीही अपॉइंटमेंट नोंदलेली नाही.\nतपासलेल्या निकालांपैकी 4 छापलेल्या श्रेणीबाहेर आहेत: HbA1c, Hemoglobin, LDL, Vitamin D.\nडॉक्टरांनी 15/01/2027 पर्यंत फॉलो-अप सांगितला आहे.\nहे फक्त तुमच्या नोंदींमध्ये जे लिहिले आहे तेच आहे. यातील काहीही विचारा, आणि तुमच्यासाठी याचा अर्थ काय हे डॉक्टरांशी बोलून जाणून घ्या.",
+  "spoken": "शुभ संध्याकाळ, Rahul. तुमच्या नोंदींमधील तुमचे अपडेट: पुढील कोणतीही अपॉइंटमेंट नोंदलेली नाही. तपासलेल्या निकालांपैकी 4 छापलेल्या श्रेणीबाहेर आहेत: HbA1c, Hemoglobin, LDL, Vitamin D. डॉक्टरांनी 15/01/2027 पर्यंत फॉलो-अप सांगितला आहे. हे फक्त तुमच्या नोंदींमध्ये जे लिहिले आहे तेच आहे. यातील काहीही विचारा, आणि तुमच्यासाठी याचा अर्थ काय हे डॉक्टरांशी बोलून जाणून घ्या. याचा तुमच्यासाठी काय अर्थ आहे हे कृपया तुमच्या डॉक्टरांना विचारा.",
+  "more": false,
   "sources": [
    {
     "type": "report",

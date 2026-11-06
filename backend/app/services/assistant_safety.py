@@ -21,8 +21,8 @@ EMERGENCY_PATTERNS = [
     r"बोलता येत नाही", r"रक्तस्राव थांबत नाही", r"रक्त थांबत नाही", r"रक्ताची उलटी", r"घसा सुजला", r"चेहरा सुजला", r"जीव द्यावा", r"स्वतःला संपवा",
     # Hindi and Marathi written in Latin letters (what a recogniser or a keyboard gives for "mujhe saans nahi aa rahi")
     r"\bs(?:aa|a|ah)ns\b.{0,25}\b(?:nahi|nahin|nhi|nai)\b", r"\bs(?:aa|a)ns (?:lene )?(?:me|mein|mai|madhe)\b.{0,15}\b(?:takl[ie]f|dikkat|pareshani|tras)\b",
-    r"\bsee?ne (?:me|mein|mai)\b.{0,15}\bdard\b", r"\bchh?aati (?:me|mein|mai)\b.{0,15}\bdard\b", r"\bchh?atit\b.{0,12}\bdukh", r"\bdil ka daura\b", r"\bb[ae]?h?osh\b", r"\bdaura pad",
-    r"\blakwa\b", r"\bkhoon (?:band )?nahi (?:ruk|band)", r"\bkhoon ki ulti\b", r"\bmarna chahta", r"\bkhud ko (?:khatam|maar)", r"\bshwas (?:gheta )?yet nahi", r"\bb[ae]shudh\b",
+    r"\bsee?ne (?:me|mein|mai)\b.{0,15}\bdard\b", r"\bchh?a{1,2}ti (?:me|mein|mai)\b.{0,15}\bdard\b", r"\bchh?atit\b.{0,12}\bdukh", r"\bdil ka daura\b", r"\bb[ae]?h?osh\b", r"\bdaura pad",
+    r"\blakwa\b", r"\bkhoon (?:band )?nahi (?:ruk|band|ho)", r"\bkhoon ruk(?:ta)? nahi", r"\bkhoon ki ulti\b", r"\bmarna chahta", r"\bkhud ko (?:khatam|maar)", r"\bshwas (?:gheta )?yet nahi", r"\bb[ae]shudh\b",
 ]
 EMERGENCY_RE = re.compile("|".join(EMERGENCY_PATTERNS), re.IGNORECASE)
 
@@ -61,7 +61,7 @@ _MY = r"(?:मेरी|मेरा|मेरे|माझी|माझा|म�
 OWN_ONLY_RE = re.compile("|".join([
     r"\b(?:other|another|all|every|everyone's|everybody's|different) (?:the )?(?:patients?|users?)(?:'s|s')?\b", r"\b(?:dusre|doosre|sabhi|baaki|baki) (?:mareez|mariz|marizon|patients?)\b",
     r"\bpatient (?:number|no\.?|id|#)\s*\d+", r"\bpatients? ?(?:id )?#?\d+\b",
-    r"(?<!\bmy )\b(?:neighbou?r|friend|colleague|brother|sister|wife|husband|mother|father|mom|dad|son|daughter|uncle|aunt|grandfather|grandmother|cousin)(?:'s)?\s+(?:report|result|medicine|medication|tablet|prescription|record|bill|test|blood)",
+    r"\b(?:neighbou?r|friend|colleague|brother|sister|wife|husband|mother|father|mom|dad|son|daughter|uncle|aunt|grandfather|grandmother|cousin)(?:'s)?\s+(?:report|result|medicine|medication|tablet|prescription|record|bill|test|blood)",
     r"\b(?:what|which) (?:medicines?|tablets?|medication|reports?) (?:does|did|is|are) (?:my )?(?:neighbou?r|friend|colleague|brother|sister|wife|husband|mother|father|mom|dad|son|daughter)\b",
     r"(?<!my )(?<!the )(?<!your )(?<!this )(?<!that )\b(?!(?:doctor|doctors|hospital|lab|labs|pharmacy|clinic|my|the|your|this|that|today|yesterday|tomorrow|week|month|year|what|there|here|who|let|latest|recent)\b)[a-z]{3,}'s\s+(?:reports?|results?|medicines?|medication|prescriptions?|records?|bills?|blood)\b",
     r"\bignore (?:all |any |your |the |these |those )*(?:previous |above |earlier |prior |safety )*(?:rules|instructions|guidelines|restrictions|safeguards)\b",

@@ -1,0 +1,79 @@
+{
+ "scenarios": [
+  {
+   "id": "R1",
+   "name": "nothing heard twice in hands-free: ends with a clear message, nothing left running",
+   "ok": true,
+   "note": "state=idle recognisers=2"
+  },
+  {
+   "id": "R2",
+   "name": "microphone permission denied: message shown, back to idle, typing works",
+   "ok": true,
+   "note": "state=idle"
+  },
+  {
+   "id": "R3",
+   "name": "network error while listening: one short retry, then one message, no restart loop",
+   "ok": true,
+   "note": "recognisers started=2, retried quietly=true"
+  },
+  {
+   "id": "R4",
+   "name": "tab goes to the background while listening: listening stops",
+   "ok": true,
+   "note": "state=idle running=0"
+  },
+  {
+   "id": "R5",
+   "name": "leaving the page while listening: recogniser stopped, nothing restarts",
+   "ok": true,
+   "note": "running=0 started=1"
+  },
+  {
+   "id": "R6",
+   "name": "language changed while listening: no second recogniser, and the running one follows the new language",
+   "ok": true,
+   "note": "running=1 language=hi-IN"
+  },
+  {
+   "id": "R7",
+   "name": "the recogniser refuses to start (already started elsewhere, or blocked): message, back to idle",
+   "ok": true,
+   "note": "state=idle"
+  },
+  {
+   "id": "R8",
+   "name": "the engine freezes after start (no result, no end, no error) for 60 seconds: a watchdog ends the round",
+   "ok": true,
+   "note": "state after 60 s of silence from the engine = idle"
+  },
+  {
+   "id": "R9",
+   "name": "tapping the round button while listening stops it at once",
+   "ok": true,
+   "note": "state=idle"
+  },
+  {
+   "id": "R10",
+   "name": "a final result arriving after the person tapped stop is not lost and not sent twice",
+   "ok": true,
+   "note": "sent 1 time(s) for one spoken question that the engine reported twice"
+  },
+  {
+   "id": "R11",
+   "name": "wake phrase with a failing network: gives up with a message after a few tries instead of retrying for ever",
+   "ok": true,
+   "note": "recogniser started 4 times in 60 s"
+  },
+  {
+   "id": "R12",
+   "name": "two answers started close together: only the newest is spoken (no overlapping speech)",
+   "ok": true,
+   "note": "utterances queued at once=1"
+  }
+ ],
+ "ok": 12,
+ "total": 12,
+ "not_ok": []
+}

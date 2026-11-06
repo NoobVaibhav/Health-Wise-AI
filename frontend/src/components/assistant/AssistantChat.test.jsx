@@ -173,7 +173,7 @@ describe("AssistantChat hands-free voice conversation", () => {
     hear(recs[0], "when is my next appointment", true);
     await waitFor(() => expect(sendChat).toHaveBeenCalledWith(expect.objectContaining({ message: "when is my next appointment" })));
     await waitFor(() => expect(said.length).toBe(1));                                   // the answer is read without pressing anything
-    expect(said[0].text).toMatch(/next appointment is on 3 Nov 2026/);
+    expect(said[0].text).toMatch(/next appointment is on 3 November 2026/);                  // the month is said in full, not as "Nov"
     said[0].onend();
     await waitFor(() => expect(recs.length).toBe(2), { timeout: 2000 });                // and it listens again
     sendChat.mockClear();

@@ -11,7 +11,7 @@ from app.services.assistant_text import fdate, t
 SOURCE_WORD = {"report": "src_report", "prescription": "src_prescription", "appointment": "src_appointment", "note": "src_note", "recommendation": "src_recommendation", "history": "src_history"}
 # the closing reminders that every written answer carries: the spoken answer gets its own short one (below), so these lines are not read twice
 FOOTNOTE = re.compile(r"^(?:This is what your records say|Only what is written|Please talk to your doctor|यह आपके रिकॉर्ड|कृपया अपने डॉक्टर|हे तुमच्या नोंदी|कृपया तुमच्या डॉक्टर|"
-                      r"This does not|इसका मतलब|याचा अर्थ)", re.IGNORECASE)
+                      r"This does not|इसका आपके लिए|इसका मतलब|याचा तुमच्यासाठी|याचा अर्थ)", re.IGNORECASE)
 MAX_WORDS = {"BRIEFING": 80}
 DEFAULT_WORDS = 45
 NO_REMINDER = {"GREETING", "THANKS", "BYE", "WHO", "TIME", "NAVIGATE", "EMERGENCY", "REFUSED", "HELP", "TERM_UNKNOWN"}
