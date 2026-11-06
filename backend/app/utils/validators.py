@@ -404,6 +404,7 @@ def _search(value):
 SearchText = Annotated[str | None, Query(max_length=100), AfterValidator(_search)]
 Limit = Annotated[int, Query(ge=1, le=200)]
 Offset = Annotated[int, Query(ge=0, le=10_000_000)]
+PageSize = Annotated[int, Query(ge=1, le=500)]
 
 
 def one_of(*allowed: str, name: str = "value"):

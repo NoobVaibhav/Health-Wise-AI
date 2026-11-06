@@ -1,7 +1,7 @@
 """Doctor module: patient history, report review, notes, recommendations.
 
 Everything a doctor writes is labelled "Doctor's ..." so it can never be confused with AI-generated text."""
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -24,7 +24,8 @@ from app.services.prescription_service import list_prescriptions_for_user
 from app.services.serializers import (
     note_out, patient_for_role, prescription_out, recommendation_out, report_detail, report_list_item,
 )
-from app.utils.validators import PathId, QueryId, SearchText
+from app.utils.paging import DEFAULT_PAGE, page_of_list
+from app.utils.validators import Offset, PageSize, PathId, QueryId, SearchText
 
 router = APIRouter(prefix="/api/doctor", tags=["doctor"])
 directory = APIRouter(prefix="/api/doctors", tags=["doctors"])
@@ -68,7 +69,9 @@ def dashboard(user: User = Depends(doctor_only), db: Session = Depends(get_db)):
 
 
 @router.get("/patients", response_model=list[PatientFull])
-def my_patients(q: SearchText = None, user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+def my_patients(response: Response, q: SearchText = None, limit: PageSize = DEFAULT_PAGE, offset: Offset = 0,
+                user: User = Depends(doctor_only), db: Session = Depends(get_db)):
+    """The doctor's patients by name. Paged: `limit` and `offset`, the whole count is in X-Total-Count."""
     doctor = get_doctor_profile(db, user)
     ids = doctor_patient_ids(db, doctor)
     patients = db.scalars(select(Patient).join(User, Patient.user_id == User.id)
@@ -76,7 +79,7 @@ def my_patients(q: SearchText = None, user: User = Depends(doctor_only), db: Ses
     if q:
         needle = q.strip().lower()
         patients = [p for p in patients if needle in p.user.full_name.lower() or needle in p.patient_code.lower()]
-    return [patient_for_role(p, DOCTOR) for p in patients]
+    return [patient_for_role(p, DOCTOR) for p in page_of_list(response, patients, limit, offset)]
 
 
 @router.get("/patients/{patient_id}/history")

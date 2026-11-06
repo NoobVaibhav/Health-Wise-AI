@@ -55,7 +55,7 @@ app = FastAPI(title="HealthWise AI - Hospital Management", version="2.0.0", life
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in get_settings().cors_origins.split(",") if o.strip()],
-    allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
+    allow_credentials=True, allow_methods=["*"], allow_headers=["*"], expose_headers=["X-Total-Count"],
 )
 
 

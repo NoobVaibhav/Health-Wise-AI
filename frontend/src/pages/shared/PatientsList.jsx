@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import { FolderOpen, Pencil, Search, ShieldCheck } from "lucide-react";
 import PatientRegistryPanel from "../../components/PatientRegistryPanel";
 import useFetch from "../../hooks/useFetch";
+import usePagedFetch from "../../hooks/usePagedFetch";
+import ShowMore from "../../components/ShowMore";
 import { useAuth } from "../../context/AuthContext";
-import { listPatients, updatePatient } from "../../services/patientApi";
+import { listPatientsPage, updatePatient } from "../../services/patientApi";
 import { listDoctors } from "../../services/doctorApi";
 import { getErrorMessage } from "../../services/api";
 import { PersonCard } from "../../components/DataViews";
@@ -16,7 +18,7 @@ import { useToast } from "../../components/Toast";
 export default function PatientsList() {
   const { user } = useAuth();
   const [q, setQ] = useState("");
-  const { data, loading, error, reload } = useFetch(() => listPatients(q), [q]);
+  const { data, total, loading, loadingMore, error, reload, loadMore, hasMore } = usePagedFetch((offset) => listPatientsPage(q, offset), [q]);
   const [editing, setEditing] = useState(null);
   const [registry, setRegistry] = useState(null);
   const toast = useToast();
@@ -48,6 +50,7 @@ export default function PatientsList() {
                 {canEdit && <Button variant="secondary" onClick={() => setRegistry(p)}><ShieldCheck size={15} className="mr-1.5 inline" />Registration</Button>}
               </>} />
           ))}
+          <ShowMore shown={data.length} total={total} hasMore={hasMore} loading={loadingMore} onMore={loadMore} noun="patients" />
         </div>
       )}
       {registry && <PatientRegistryPanel patient={registry} onClose={() => setRegistry(null)} onChanged={reload} />}

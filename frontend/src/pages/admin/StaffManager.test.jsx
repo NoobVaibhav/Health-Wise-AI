@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
 const createStaff = vi.fn();
-vi.mock("../../services/adminApi", () => ({ createStaff: (...a) => createStaff(...a), listPeople: () => Promise.resolve([]), checkDeleteUser: vi.fn(), deleteUser: vi.fn(), updateUser: vi.fn() }));
+vi.mock("../../services/adminApi", () => ({ createStaff: (...a) => createStaff(...a), listPeople: () => Promise.resolve([]), listPeoplePage: () => Promise.resolve({ rows: [], total: 0 }), checkDeleteUser: vi.fn(), deleteUser: vi.fn(), updateUser: vi.fn() }));
 vi.mock("../../services/catalogApi", () => ({
   getDepartments: () => Promise.resolve([{ id: 1, name: "Cardiology" }, { id: 2, name: "Neurology" }]),
   getSpecializations: (id) => Promise.resolve(id === 1 ? [{ id: 11, name: "Interventional Cardiologist" }] : [{ id: 21, name: "Neurologist" }]),

@@ -1,6 +1,8 @@
 import api from "./api";
+import { getPage } from "./paged";
 
 export const listPatients = (q) => api.get("/patients", { params: q ? { q } : {} }).then((r) => r.data);
+export const listPatientsPage = (q, offset = 0) => getPage("/patients", q ? { q } : {}, offset);
 export const getPatient = (id) => api.get(`/patients/${id}`).then((r) => r.data);
 export const registerPatient = (data) => api.post("/patients", data).then((r) => r.data);
 export const updatePatient = (id, data) => api.put(`/patients/${id}`, data).then((r) => r.data);

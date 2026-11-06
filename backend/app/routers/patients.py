@@ -3,7 +3,7 @@ Also holds report comparison and trend charts for one patient."""
 import json
 
 import re
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from app.services import hospital_service, registry_service
 from sqlalchemy import or_, select
@@ -19,7 +19,8 @@ from app.schemas.patient import PatientBasic, PatientCreate, PatientCreated, Pat
 from app.services import audit_service, report_service, user_service
 from app.services.comparison_engine import compare_reports
 from app.services.serializers import patient_basic, patient_for_role, report_list_item
-from app.utils.validators import PathId, SearchText
+from app.utils.paging import DEFAULT_PAGE, page_of_query
+from app.utils.validators import Offset, PageSize, PathId, SearchText
 
 router = APIRouter(prefix="/api/patients", tags=["patients"])
 reception = require_roles(EMPLOYEE, ADMIN)
@@ -39,9 +40,9 @@ def register_patient(data: PatientCreate, request: Request, user: User = Depends
 
 
 @router.get("", response_model=list[PatientBasic])
-def list_patients(q: SearchText = None, user: User = Depends(require_roles(ADMIN, EMPLOYEE, DOCTOR)),
-                  db: Session = Depends(get_db)):
-    """Search by name, patient id, phone or email. Doctors only get their own authorized patients."""
+def list_patients(response: Response, q: SearchText = None, limit: PageSize = DEFAULT_PAGE, offset: Offset = 0,
+                  user: User = Depends(require_roles(ADMIN, EMPLOYEE, DOCTOR)), db: Session = Depends(get_db)):
+    """Search by name, patient id, phone or email. Doctors only get their own authorized patients. Paged: `limit` and `offset`, the whole count is in X-Total-Count."""
     query = select(Patient).join(User, Patient.user_id == User.id).where(Patient.merged_into_id.is_(None)).order_by(User.full_name)
     if user.role == DOCTOR:
         ids = doctor_patient_ids(db, get_doctor_profile(db, user))
@@ -50,7 +51,7 @@ def list_patients(q: SearchText = None, user: User = Depends(require_roles(ADMIN
         like = f"%{q.strip()}%"
         query = query.where(or_(User.full_name.ilike(like), Patient.patient_code.ilike(like),
                                 Patient.phone.ilike(like), User.email.ilike(like), Patient.uhid.ilike(like)))
-    return [patient_basic(p) for p in db.scalars(query)]
+    return [patient_basic(p) for p in page_of_query(db, response, query, limit, offset)]
 
 
 @router.get("/{patient_id}", response_model=PatientFull | PatientBasic)

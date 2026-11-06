@@ -1,9 +1,10 @@
 // Cards for people (doctors, employees, pharmacy staff, patients, admins) with an activate/deactivate button.
 import { useState } from "react";
 import { AlertTriangle, Pencil, Search, Trash2, UserCheck, UserX } from "lucide-react";
-import useFetch from "../hooks/useFetch";
+import usePagedFetch from "../hooks/usePagedFetch";
+import ShowMore from "./ShowMore";
 import { useAuth } from "../context/AuthContext";
-import { checkDeleteUser, deleteUser, listPeople, updateUser } from "../services/adminApi";
+import { checkDeleteUser, deleteUser, listPeoplePage, updateUser } from "../services/adminApi";
 import { getErrorMessage } from "../services/api";
 import { PersonCard, timeAgo } from "./DataViews";
 import { StatusPill } from "./StatusBadge";
@@ -16,7 +17,7 @@ export default function PeopleList({ role, reloadKey, emptyHint }) {
   const { user: me } = useAuth();
   const toast = useToast();
   const [q, setQ] = useState("");
-  const { data, loading, error, reload } = useFetch(() => listPeople(role, q), [role, q, reloadKey]);
+  const { data, total, loading, loadingMore, error, reload, loadMore, hasMore } = usePagedFetch((offset) => listPeoplePage(role, q, offset), [role, q, reloadKey]);
 
   const [removing, setRemoving] = useState(null);      // { person, check } : the person the admin may delete, and why not if not
   const [busy, setBusy] = useState(false);
@@ -62,6 +63,7 @@ export default function PeopleList({ role, reloadKey, emptyHint }) {
                   <Button variant="danger" onClick={() => askDelete(p)} aria-label={`Delete ${p.full_name}`}><Trash2 size={15} className="mr-1.5 inline" /> Delete</Button>
                 </div>)} />
           ))}
+          <ShowMore shown={data.length} total={total} hasMore={hasMore} loading={loadingMore} onMore={loadMore} noun="people" />
         </div>
       )}
 

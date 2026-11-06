@@ -1,5 +1,5 @@
 """Admin: staff accounts, departments, statistics and audit logs."""
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -14,7 +14,8 @@ from app.services.user_service import age_from_dob
 from app.routers.auth import user_out
 from app.schemas.auth import CreatedUserResponse, DepartmentCreate, StaffCreate, UserOut, UserUpdate
 from app.services import audit_service, catalog_service, dashboard_service, grade_service, user_service
-from app.utils.validators import Limit, PathId, SearchText, one_of
+from app.utils.paging import DEFAULT_PAGE, page_of_list
+from app.utils.validators import Limit, Offset, PageSize, PathId, SearchText, one_of
 ROLE_FILTER = one_of("ADMIN", "DOCTOR", "EMPLOYEE", "PATIENT", "PHARMACY", "LAB", "NURSE", "RADIOLOGY", name="role")
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -35,9 +36,9 @@ def list_users(role: ROLE_FILTER = None, _: User = Depends(admin_only), db: Sess
 
 
 @router.get("/people")
-def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(admin_only),
-           db: Session = Depends(get_db)):
-    """Everybody with the details that matter for their role, in a form that is easy to show as cards."""
+def people(response: Response, role: ROLE_FILTER = None, q: SearchText = None, limit: PageSize = DEFAULT_PAGE, offset: Offset = 0,
+           _: User = Depends(admin_only), db: Session = Depends(get_db)):
+    """Everybody with the details that matter for their role, in a form that is easy to show as cards. Paged: `limit` and `offset`, the whole count is in X-Total-Count."""
     query = select(User).order_by(User.full_name)
     if role:
         query = query.where(User.role == role.upper())
@@ -45,6 +46,7 @@ def people(role: ROLE_FILTER = None, q: SearchText = None, _: User = Depends(adm
     if q:
         needle = q.strip().lower()
         users = [u for u in users if needle in u.full_name.lower() or needle in u.email.lower()]
+    users = page_of_list(response, users, limit, offset)
 
     last_login = dict(db.execute(select(AuditLog.user_id, func.max(AuditLog.timestamp))
                                  .where(AuditLog.action == "LOGIN").group_by(AuditLog.user_id)).all())

@@ -1,4 +1,5 @@
 import api from "./api";
+import { getPage } from "./paged";
 
 /** Upload a real file for a patient. onProgress receives 0-100 for the upload part only. */
 export const uploadReport = (file, patientId, doctorId, onProgress) => {
@@ -15,6 +16,8 @@ export const uploadReport = (file, patientId, doctorId, onProgress) => {
 
 export const listReports = (patientId) =>
   api.get("/reports", { params: patientId ? { patient_id: patientId } : {} }).then((r) => r.data);
+export const listReportsPage = ({ needsReview = false, q = "" } = {}, offset = 0) =>
+  getPage("/reports", { ...(needsReview ? { needs_review: true } : {}), ...(q.trim() ? { q: q.trim() } : {}) }, offset);
 export const getReport = (id) => api.get(`/reports/${id}`).then((r) => r.data);
 export const refreshInsights = (id) => api.post(`/reports/${id}/insights/refresh`).then((r) => r.data);
 export const deleteReport = (id) => api.delete(`/reports/${id}`).then((r) => r.data);

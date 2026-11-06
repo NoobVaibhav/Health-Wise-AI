@@ -6,7 +6,7 @@ import os
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
 from app.core.config import from_backend_dir
@@ -25,7 +25,8 @@ from app.services.report_parser import names_match
 from app.services.report_processor import process_report
 from app.services.serializers import analysis_visible_to, report_detail, report_list_item
 from app.utils.file_validation import get_extension, safe_filename, validate_size
-from app.utils.validators import PathId, QueryId
+from app.utils.paging import DEFAULT_PAGE, page_of_list
+from app.utils.validators import Offset, PageSize, PathId, QueryId, SearchText
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
@@ -90,10 +91,18 @@ def upload_report(
 
 
 @router.get("", response_model=list[ReportListItem])
-def list_reports(patient_id: QueryId = None, user: User = Depends(get_current_user),
-                 db: Session = Depends(get_db)):
+def list_reports(response: Response, patient_id: QueryId = None, needs_review: bool = False, q: SearchText = None,
+                 limit: PageSize = DEFAULT_PAGE, offset: Offset = 0,
+                 user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Newest first. `needs_review` keeps the reports still waiting for a doctor, `q` searches the patient's name or ID and the file name.
+    Paged: `limit` and `offset`, the whole count is in X-Total-Count."""
     reports = report_service.list_reports_for_user(db, user, patient_id)
-    return [report_list_item(r) for r in reports]
+    if needs_review:
+        reports = [r for r in reports if r.doctor_review_status == "PENDING"]
+    if q:
+        needle = q.strip().lower()
+        reports = [r for r in reports if needle in r.patient.user.full_name.lower() or needle in r.filename.lower() or needle in r.patient.patient_code.lower()]
+    return [report_list_item(r) for r in page_of_list(response, reports, limit, offset)]
 
 
 @router.get("/{report_id}", response_model=ReportDetail)

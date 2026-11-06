@@ -212,6 +212,10 @@ About 75 places used the server's `date.today()` / `datetime.now()`: date of bir
 * `bandit` HIGH (trojan source): the sanitiser's regex held invisible direction-override characters literally; written as `\u` escapes now (same set), backend and page. The other `bandit` findings (3 medium, 5 low) are false positives: SQL built from the code's own identifiers and integers, and the configurable starting password.
 * `pip-audit`: nothing. `npm audit`: two moderate `react-router` advisories (the fix is a major upgrade; not applied). No secrets in the tree or the history.
 
+## Paging of the long lists
+The four lists that grew with the hospital are paged: patients (`GET /api/patients`), reports (`GET /api/reports`), a doctor's patients (`GET /api/doctor/patients`) and admin people (`GET /api/admin/people`). The answer is still a plain list, so older clients keep working; `limit` (1-500, default 100) and `offset` choose the slice and the size of the whole list is in the `X-Total-Count` header (exposed to the phone app by CORS). Reports also take `needs_review` and `q`, so the doctor's "Reports to review" page and the filter box are applied before paging and a waiting report is never hidden behind the first page. Screens show "Showing 100 of N" with a "Show more" button. Bad values are a 422.
+Measured on 5,000 patients, 10,000 reports and 51,000 values: patients 2.0 s and 1.5 MB became 0.18 s and 30 KB; reports 2.4 s and 1.2 MB became 0.27 s and 48 KB; a doctor's patients 0.5 s became 0.22 s; admin people 0.4 s became 0.24 s. Tests: `tests/test_pagination.py` (backend), `hooks/usePagedFetch.test.jsx` (page). Pickers that search as you type (`PatientPicker`, the registry panel) still take the first 100 matches, which is what a search box needs.
+
 ## Existing data
 In a copy of the development database: 19 appointments, 5 CONFIRMED in the past, no duplicate slots. Proposed, not applied: mark past SCHEDULED/CONFIRMED appointments CANCELLED or a new MISSED status.
 
