@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import { ALL_DEMO, DEMO_GROUPS } from "./demoAccounts";
 
-const GROUP_TONE = ["from-cyan-500 to-sky-600", "from-amber-500 to-orange-500", "from-violet-500 to-fuchsia-500", "from-emerald-500 to-teal-600", "from-slate-600 to-slate-800"];
+const GROUP_TONE = ["from-cyan-500 to-sky-600", "from-amber-500 to-orange-500", "from-violet-500 to-fuchsia-500", "from-emerald-500 to-teal-600", "from-slate-600 to-slate-800", "from-rose-500 to-pink-600", "from-indigo-500 to-blue-600"];
 
 export default function DemoDropdown({ open, onToggle, onClose, picked, onPick, reduced }) {
   const [filter, setFilter] = useState("");

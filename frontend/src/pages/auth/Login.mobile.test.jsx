@@ -1,3 +1,4 @@
+import { ALL_DEMO } from "../../components/auth/demoAccounts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -66,7 +67,7 @@ describe("Login with a mobile code", () => {
     expect(screen.getByLabelText("Email")).toBeTruthy();                                                   // and the form is always there
     await userEvent.click(toggle);
     expect(document.getElementById("demo-sheet").getAttribute("data-open")).toBe("true");
-    expect(document.querySelectorAll("#demo-sheet .hw-demo").length).toBe(20);                              // all of them, no tabs to click through
+    expect(document.querySelectorAll("#demo-sheet .hw-demo").length).toBe(ALL_DEMO.length);                              // all of them, no tabs to click through
     await userEvent.click(screen.getByRole("button", { name: /Fill in Billing: Bina Shah/ }));
     expect(document.getElementById("demo-sheet").getAttribute("data-open")).toBe("false");                 // choosing closes it so the form is in view
     expect(screen.getByLabelText("Email").value).toBe("billing@healthwise.demo.com");
