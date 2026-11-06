@@ -15,7 +15,7 @@ for (const c of CASES) {
   const res = await fetch(`${API}/auth/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: `${c.who}@healthwise.demo.com`, password: "Demo@12345" }) });
   const token = (await res.json()).access_token;
   const context = await browser.newContext({ viewport: { width, height } });
-  await context.addInitScript((t) => localStorage.setItem("healthwise_token", t), token);
+  await context.addInitScript((t) => { localStorage.setItem("healthwise_token", t); sessionStorage.setItem("hw_launch_seen", "1"); }, token);
   const page = await context.newPage();
   await page.goto(BASE + c.route, { waitUntil: "networkidle" });
   await page.waitForFunction(() => !document.querySelector(".skeleton"), null, { timeout: 9000 }).catch(() => {});

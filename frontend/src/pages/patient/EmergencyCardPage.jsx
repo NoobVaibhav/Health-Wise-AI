@@ -1,5 +1,6 @@
 // The printable emergency card (no menus, so it prints on one clean page).
 import { Link } from "react-router-dom";
+import BrandLogo from "../../components/BrandLogo";
 import { Printer } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import { getMyHistory } from "../../services/historyApi";
@@ -18,7 +19,7 @@ export default function EmergencyCardPage() {
         <button onClick={() => printAs(data.card.name, "Emergency card")} className="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 font-bold text-white"><Printer size={16} /> Print this card</button>
       </div>
       <div className="print-area print-compact">
-        <p className="mb-2 text-center text-sm font-extrabold uppercase tracking-widest text-slate-500">Medical emergency card</p>
+        <div className="mb-2 flex items-center justify-between gap-3"><BrandLogo variant="dark" height={28} decorative /><p className="text-sm font-extrabold uppercase tracking-widest text-slate-500">Medical emergency card</p></div>
         <EmergencyCard card={data.card} />
       </div>
     </div>

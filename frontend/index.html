@@ -3,16 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
-    <meta name="theme-color" content="#0e7490" />
+    <meta name="theme-color" content="#164E63" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <meta name="apple-mobile-web-app-title" content="HealthWise" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="HealthWise AI: your health, clearly explained." />
+    <meta property="og:title" content="HealthWise AI" />
+    <meta property="og:description" content="Your health, clearly explained." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/brand/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
+    <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href="/brand/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/brand/icons/icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>HealthWise AI</title>
+    <!-- The first frame, before any script: the brand colour with the heart in place. Same colours and mark size as the launch screen (src/components/launch.css),
+         the manifest and the native splash, so the hand-over from the phone's own splash is seamless. LaunchScreen.jsx removes it once it has taken over. -->
+    <style>
+      html.hw-launching, html.hw-launching body { background: #164E63; }
+      #hw-launch { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; background: linear-gradient(170deg, #164E63 0%, #0A7C99 100%); }
+      #hw-launch svg { width: min(30vmin, 168px); height: min(30vmin, 168px); display: block; }
+    </style>
+    <script>document.documentElement.classList.add("hw-launching");</script>
   </head>
   <body>
+    <div id="hw-launch" aria-hidden="true">
+      <svg viewBox="0 0 64 64" focusable="false"><defs><mask id="hwl-m" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><path d="M21 32H25.5L29.5 22.5L35 41.5L39 32H43" fill="none" stroke="#000" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14.5" cy="32" r="3.1" fill="#000"/><circle cx="49.5" cy="32" r="3.1" fill="none" stroke="#000" stroke-width="2.3"/></mask></defs><path d="M32 57C29 55 5 39 5 22.5C5 13.5 11.5 8 19 8C25 8 29.5 11.5 32 16.5C34.5 11.5 39 8 45 8C52.5 8 59 13.5 59 22.5C59 39 35 55 32 57Z" fill="#fff" mask="url(#hwl-m)"/></svg>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

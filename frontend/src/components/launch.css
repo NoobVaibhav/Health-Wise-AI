@@ -1,0 +1,72 @@
+/* The app launch screen (LaunchScreen.jsx). All of it lives here: tokens, layout and keyframes.
+   Only transform, opacity and stroke-dashoffset move, so it stays on the GPU. The first frame (the brand colour with the mark in place) is also written
+   inline in index.html so it shows before any script loads; keep the two in step (same colours, same mark size). */
+.hw-launch {
+  --hw-a: #164e63; --hw-b: #0a7c99; --hw-cyan: #22d3ee;
+  --hw-mark: min(30vmin, 168px);
+  position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden;
+  background: linear-gradient(170deg, var(--hw-a) 0%, var(--hw-b) 100%);
+  color: #fff; touch-action: manipulation; cursor: default;
+  transition: opacity 360ms cubic-bezier(0.4, 0, 0.2, 1), transform 360ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hw-launch[data-phase="leaving"] { opacity: 0; transform: scale(1.03); pointer-events: none; }
+.hw-launch[data-mode="reduced"] { transition-duration: 300ms; }
+.hw-launch[data-mode="reduced"][data-phase="leaving"], .hw-launch[data-mode="quick"][data-phase="leaving"] { transform: none; }
+.hw-launch[data-mode="quick"] { transition-duration: 200ms; }
+
+/* a slow aurora of two soft discs, and a faint pulse-line pattern: low contrast, never behind text that matters */
+.hw-l-aurora { position: absolute; inset: 0; pointer-events: none; }
+.hw-l-aurora i { position: absolute; width: 90vmax; height: 90vmax; border-radius: 50%; opacity: 0.5; will-change: transform; }
+.hw-l-aurora i:nth-child(1) { left: -45vmax; top: -50vmax; background: radial-gradient(closest-side, rgba(34, 211, 238, 0.34), transparent); }
+.hw-l-aurora i:nth-child(2) { right: -50vmax; bottom: -55vmax; background: radial-gradient(closest-side, rgba(56, 130, 246, 0.30), transparent); }
+.hw-l-lines { position: absolute; inset: 0; opacity: 0.07; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cpath d='M0 60H80L92 34L108 86L120 60H220' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 0 0 / 220px 120px; pointer-events: none; }
+
+.hw-l-stage { position: relative; width: var(--hw-mark); height: var(--hw-mark); }
+.hw-l-mark { position: relative; width: 100%; height: 100%; display: block; transform-origin: 50% 50%; }
+.hw-l-glow { position: absolute; left: -60%; top: -60%; width: 220%; height: 220%; border-radius: 50%; background: radial-gradient(closest-side, rgba(34, 211, 238, 0.55), rgba(34, 211, 238, 0) 70%); opacity: 0; pointer-events: none; }
+.hw-l-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(165, 243, 252, 0.7); opacity: 0; pointer-events: none; }
+.hw-l-trace, .hw-l-nodeR { stroke: var(--hw-cyan); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.hw-l-nodeL { fill: var(--hw-cyan); }
+.hw-l-word { position: absolute; left: 50%; top: calc(100% + 0.16 * var(--hw-mark)); width: calc(2.9 * var(--hw-mark)); max-width: 86vw; transform: translateX(-50%); display: block; overflow: visible; }
+.hw-l-tag { position: absolute; left: 50%; top: calc(100% + 0.16 * var(--hw-mark) + 0.62 * var(--hw-mark)); transform: translateX(-50%); margin: 0; width: max-content; max-width: 86vw; text-align: center; font: 500 clamp(13px, 2.1vmin, 17px) / 1.3 "Manrope", system-ui, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.02em; color: #cffafe; }
+.hw-l-spark { fill: #fff; opacity: 0; }
+
+/* ---- the full sequence (first cold start of a session): about 1.4 s, then a calm breathing pulse until the app is ready ---- */
+.hw-launch[data-mode="full"] .hw-l-stage { animation: hw-l-lift 700ms 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+.hw-launch[data-mode="full"] .hw-l-mark { animation: hw-l-pop 760ms 60ms cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+.hw-launch[data-mode="full"] .hw-l-glow { animation: hw-l-bloom 1100ms 120ms ease-out both; }
+.hw-launch[data-mode="full"] .hw-l-ring { animation: hw-l-ripple 900ms 330ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.hw-launch[data-mode="full"] .hw-l-trace { stroke-dasharray: 1; animation: hw-l-draw 520ms 160ms cubic-bezier(0.3, 0.7, 0.2, 1) both; }
+.hw-launch[data-mode="full"] .hw-l-nodeL { transform-box: fill-box; transform-origin: center; animation: hw-l-nodepop 320ms 160ms cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.hw-launch[data-mode="full"] .hw-l-nodeR { transform-box: fill-box; transform-origin: center; animation: hw-l-nodepop 360ms 620ms cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.hw-launch[data-mode="full"] .hw-l-w1 { animation: hw-l-rise 560ms 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+.hw-launch[data-mode="full"] .hw-l-w2 { animation: hw-l-rise 560ms 500ms cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+.hw-launch[data-mode="full"] .hw-l-w3 { animation: hw-l-rise 560ms 580ms cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+.hw-launch[data-mode="full"] .hw-l-ai { animation: hw-l-fade 420ms 800ms ease-out both; }
+.hw-launch[data-mode="full"] .hw-l-spark { animation: hw-l-sweep 520ms 840ms ease-in-out both; }
+.hw-launch[data-mode="full"] .hw-l-tag { animation: hw-l-tagin 460ms 960ms ease-out both; }
+.hw-launch[data-mode="full"] .hw-l-aurora i:nth-child(1) { animation: hw-l-drift 16s ease-in-out infinite alternate; }
+.hw-launch[data-mode="full"] .hw-l-aurora i:nth-child(2) { animation: hw-l-drift 20s ease-in-out infinite alternate-reverse; }
+.hw-launch[data-mode="full"][data-phase="hold"] .hw-l-mark { animation: hw-l-breathe 1800ms ease-in-out infinite; }
+
+@keyframes hw-l-pop { 0% { transform: scale(1); } 38% { transform: scale(1.09); } 62% { transform: scale(0.985); } 100% { transform: scale(1); } }
+@keyframes hw-l-lift { from { transform: translateY(0); } to { transform: translateY(calc(-0.42 * var(--hw-mark))); } }
+@keyframes hw-l-bloom { 0% { opacity: 0; transform: scale(0.6); } 40% { opacity: 1; transform: scale(1); } 100% { opacity: 0.35; transform: scale(1.12); } }
+@keyframes hw-l-ripple { 0% { opacity: 0.8; transform: scale(0.7); } 100% { opacity: 0; transform: scale(2.4); } }
+@keyframes hw-l-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes hw-l-nodepop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+@keyframes hw-l-rise { from { opacity: 0; transform: translateY(0.42em); } to { opacity: 1; transform: none; } }
+@keyframes hw-l-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hw-l-sweep { 0% { opacity: 0; transform: translateX(0) scale(0.6); } 25% { opacity: 1; transform: translateX(var(--hw-sweep, 20px)) scale(1); } 100% { opacity: 0; transform: translateX(calc(var(--hw-sweep, 20px) * 4)) scale(0.6); } }
+@keyframes hw-l-tagin { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes hw-l-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(6vmax, 4vmax, 0); } }
+@keyframes hw-l-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+
+/* quick return and reduced motion: the logo is simply there, no drawing, no ripple, no movement */
+.hw-launch[data-mode="quick"] .hw-l-stage, .hw-launch[data-mode="reduced"] .hw-l-stage { transform: translateY(calc(-0.42 * var(--hw-mark))); }
+.hw-launch[data-mode="quick"] .hw-l-trace, .hw-launch[data-mode="reduced"] .hw-l-trace { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.hw-launch[data-mode="quick"] .hw-l-aurora i, .hw-launch[data-mode="reduced"] .hw-l-aurora i { animation: none; }
+@media (prefers-reduced-motion: reduce) { .hw-launch *, .hw-launch { animation: none !important; } }
+
+/* while the launch screen is up, the app behind it waits at its first frame, so its own entrance animations play as the screen lifts */
+html.hw-launching #root * { animation-play-state: paused !important; }

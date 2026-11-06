@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import { Circle, Menu } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { ICONS, menuFor } from "./navigation";
+import { BrandMark } from "./BrandLogo";
 
 // Staff on a tablet: a slim icon rail that stays out of the way. Every icon has a name (tooltip and screen reader); the top button opens the full menu over the page.
 export default function NavRail({ onExpand }) {
@@ -13,7 +14,8 @@ export default function NavRail({ onExpand }) {
       <button type="button" onClick={onExpand} aria-label="Open the full menu" title="Menu" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/20 hover:bg-white/25">
         <Menu size={22} aria-hidden="true" />
       </button>
-      <ul className="mt-1 flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto overscroll-contain px-2 pb-2 [scrollbar-width:none]">
+      <BrandMark size={26} variant="white" decorative className="my-1.5 shrink-0 opacity-90" />
+      <ul className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto overscroll-contain px-2 pb-2 [scrollbar-width:none]">
         {links.map(([to, label, icon]) => {
           const Icon = ICONS[icon] || Circle;
           return (

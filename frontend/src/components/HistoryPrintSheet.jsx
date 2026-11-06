@@ -6,6 +6,7 @@
 // Sections about the PAST are marked PAST, sections about this visit are marked TODAY, so history is never read as a current finding.
 // Long sections flow over several pages: only small blocks (one illness, one admission part, one table row) are kept whole.
 import { habitLines } from "./EmergencyCard";
+import BrandLogo from "./BrandLogo";
 import { useAuth } from "../context/AuthContext";
 import { ADHERENCE, ADMISSION_TYPE, ANSWER, CONTROL, SourceBadge, stayText } from "./history/pastKit";
 import { fmtDate, fmtDateTime, fmtUtc } from "./ui";
@@ -174,7 +175,7 @@ export default function HistoryPrintSheet({ data }) {
     <div className="print-area hidden bg-white p-0 text-black print:block">
       {/* header */}
       <div className="mb-2 flex items-end justify-between border-b-4 border-black pb-1.5">
-        <div><p className="text-[19px] font-extrabold leading-none">HealthWise AI</p><p className="text-[13px] font-bold">Medical history summary</p></div>
+        <div><BrandLogo variant="dark" height={30} /><p className="mt-0.5 text-[13px] font-bold">Medical history summary</p></div>
         <p className="text-right text-[11px] text-slate-700">Printed {new Date().toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}{user?.full_name ? <><br />by {user.full_name}</> : null}</p>
       </div>
 

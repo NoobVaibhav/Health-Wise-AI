@@ -1,10 +1,11 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { AlertCircle, ArrowLeft, Check, HeartPulse, KeyRound, Loader2, Lock, Mail, Phone, Send, Smartphone, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, KeyRound, Loader2, Lock, Mail, Phone, Send, Smartphone, Sparkles } from "lucide-react";
 import { ROLE_HOME, useAuth } from "../../context/AuthContext";
 import { getErrorMessage } from "../../services/api";
 import { getSetupStatus, requestOtp } from "../../services/authApi";
 import DisclaimerBanner from "../../components/DisclaimerBanner";
+import { BrandMark } from "../../components/BrandLogo";
 import AuthField from "../../components/auth/AuthField";
 import OtpInput from "../../components/auth/OtpInput";
 import DemoDropdown from "../../components/auth/DemoDropdown";
@@ -43,7 +44,7 @@ export function AuthShell({ title, subtitle, children, shake = false, onShakeEnd
             <span className={`hw-card-edge ${reduced ? "" : "hw-loop"}`} aria-hidden="true" />
             <div className="hw-card-body p-6 sm:p-7">
               <div className={`mb-6 text-center ${rise(3)}`}>
-                <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-sky-600 text-white shadow-lg shadow-cyan-500/30" aria-hidden="true"><HeartPulse size={24} /></span>
+                <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-sky-600 text-white shadow-lg shadow-cyan-500/30" aria-hidden="true"><BrandMark size={28} variant="white" decorative /></span>
                 <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">{title}</h2>
                 {subtitle && <p className="mx-auto mt-2 max-w-sm text-base leading-snug text-slate-600">{subtitle}</p>}
                 <span className="mx-auto mt-4 block h-1 w-14 rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600" aria-hidden="true" />

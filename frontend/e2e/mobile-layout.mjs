@@ -113,7 +113,8 @@ function inspect(touch) {
   const main = document.querySelector("main");
   if (bars.length && main) {
     const top = Math.min(...bars.map((e) => rect(e).top));
-    const last = [...main.querySelectorAll("*")].filter((e) => rect(e).height > 0).map((e) => rect(e).bottom).sort((a, b) => b - a)[0] || 0;
+    const clipped = (e) => { for (let a = e.parentElement; a && a !== main; a = a.parentElement) { const o = getComputedStyle(a); if (/(auto|scroll|hidden)/.test(o.overflowY) && a.getBoundingClientRect().bottom <= top + 1) return true; } return false; };   // things inside a scrolling or clipped box are not "under the bar"
+    const last = [...main.querySelectorAll("*")].filter((e) => rect(e).height > 0 && !clipped(e)).map((e) => rect(e).bottom).sort((a, b) => b - a)[0] || 0;
     if (last > top + 2) problems.push(`content hidden under a fixed bar (${Math.round(last - top)}px)`);
   }
   window.scrollTo(0, 0);
@@ -131,7 +132,7 @@ async function runRole(role) {
   for (const [width, height] of VIEWPORTS) {
     const touch = width <= 1280;                              // phones and tablets (a 1280 x 800 Android tablet is a tablet); 1440 and up is a desktop with a mouse
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: width < 768 });
-    await context.addInitScript((t) => { localStorage.setItem("healthwise_token", t); localStorage.setItem("hw_voice_notice", "yes"); }, token);
+    await context.addInitScript((t) => { localStorage.setItem("healthwise_token", t); localStorage.setItem("hw_voice_notice", "yes"); sessionStorage.setItem("hw_launch_seen", "1"); }, token);   // the launch screen is a quick fade here: these checks are about the screens
     const page = await context.newPage();
     let errors = [];
     page.on("console", (m) => { if (m.type() === "error" && !/WebSocket connection to 'wss?:\/\/[^']*\?token=/.test(m.text())) errors.push(m.text().slice(0, 200)); });   // the dev server's own hot-reload socket is not the app's error

@@ -1,3 +1,5 @@
+<p align="center"><img src="frontend/public/brand/logo-horizontal.svg" alt="HealthWise AI" height="72"></p>
+
 # HealthWise AI
 
 **AI-Powered Hospital Management and Patient Health Report Analysis & History Tracking System**
@@ -7,6 +9,8 @@ B.Tech Data Science Engineering final-year project.
 
 > HealthWise AI provides AI-assisted educational analysis of uploaded health reports. It is not a diagnostic system.
 > AI analysis must be reviewed by a qualified healthcare professional. Prescriptions are created only by authorized doctors.
+
+Brand files (logo, app icons, splash, colours and usage rules): `frontend/public/brand/`.
 
 ## 1. What it does
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { NavLink } from "react-router-dom";
-import { Circle, HeartPulse, LogOut } from "lucide-react";
+import { Circle, LogOut } from "lucide-react";
+import { BrandMark } from "./BrandLogo";
 import { useAuth } from "../context/AuthContext";
 import useMediaQuery from "../hooks/useMediaQuery";
 import useBackClose from "../hooks/useBackClose";
@@ -52,7 +53,7 @@ export default function Sidebar({ open, onClose, staff = false }) {
       <aside ref={ref} aria-label="Menu" {...(modal ? { role: "dialog", "aria-modal": "true" } : {})} {...(drawer && !open ? { inert: "", "aria-hidden": "true" } : {})}
         className={`fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 pt-[var(--safe-top)] text-white transition-transform duration-[var(--duration-base)] ease-[var(--ease-soft)] ${staff ? "xl:w-64 xl:translate-x-0" : "lg:w-64 lg:translate-x-0"} ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center gap-3 px-5 py-5 lg:py-6">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/20"><HeartPulse size={24} aria-hidden="true" /></span>
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/20"><BrandMark size={28} variant="white" decorative /></span>
           <div>
             <p className="text-lg font-extrabold leading-tight">HealthWise AI</p>
             <p className="text-xs leading-tight text-brand-100">{ROLE_LABEL[user.role]} portal</p>

@@ -2,7 +2,7 @@
 // feature cards, a marquee of departments and floating glass tiles. Everything here is decoration or marketing copy; it is loaded only on a desktop-sized screen.
 // Text sits on flat translucent surfaces (no backdrop blur) so it stays sharp, and only transform and opacity move.
 import { useRef } from "react";
-import { FileSearch, HeartPulse, Mic, Pill, ShieldCheck, Stethoscope, Syringe } from "lucide-react";
+import { Activity, FileSearch, Mic, Pill, ShieldCheck, Stethoscope, Syringe } from "lucide-react";
 import { Heartbeat, LogoMark, Trust } from "./AuthArt";
 
 const LEAD = ["Understand", "your"];
@@ -14,7 +14,7 @@ const FEATURES = [
   ["secure", "Secure records", "Private, doctor-reviewed, and never a diagnosis on its own."],
 ];
 // [icon, where, depth (how far it follows the pointer), float style, size]
-const TILES = [[Stethoscope, "right-[7%] top-[9%]", 22, "hw-float-a", "h-16 w-16"], [Pill, "right-[3%] top-[34%]", 12, "hw-float-b", "h-14 w-14"], [HeartPulse, "right-[14%] bottom-[24%]", 30, "hw-float-c", "h-16 w-16"],
+const TILES = [[Stethoscope, "right-[7%] top-[9%]", 22, "hw-float-a", "h-16 w-16"], [Pill, "right-[3%] top-[34%]", 12, "hw-float-b", "h-14 w-14"], [Activity, "right-[14%] bottom-[24%]", 30, "hw-float-c", "h-16 w-16"],
   [Syringe, "left-[46%] top-[6%]", 8, "hw-float-b", "h-12 w-12"], [ShieldCheck, "right-[6%] bottom-[7%]", 16, "hw-float-a", "h-14 w-14"]];
 
 function FeatureIcon({ kind }) {

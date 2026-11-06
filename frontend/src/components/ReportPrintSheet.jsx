@@ -2,6 +2,7 @@
 // It sits on the page all the time but only shows when printing (the app's print rule hides everything except "print-area").
 // The same sheet serves the doctor (points to consider) and the patient (tips); the report data already holds only what that role may see.
 import { fmtDate, fmtUtc } from "./ui";
+import BrandLogo from "./BrandLogo";
 import SummaryPoints from "./SummaryPoints";
 import { groupOtherResults } from "./ReportCoverage";
 
@@ -34,7 +35,8 @@ export default function ReportPrintSheet({ report, role, short = false }) {
     <div className="print-area hidden text-[12px] leading-snug text-slate-900 print:block" aria-hidden="true">
       <div className="mb-3 flex items-end justify-between border-b-4 border-slate-900 pb-2">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">HealthWise AI - Report analysis</p>
+          <BrandLogo variant="dark" height={26} decorative />
+          <p className="mt-0.5 text-[11px] font-bold uppercase tracking-widest text-slate-500">HealthWise AI - Report analysis</p>
           <h1 className="text-xl font-extrabold">{report.patient_name} <span className="text-sm font-semibold text-slate-500">({report.patient_code})</span></h1>
         </div>
         <div className="text-right text-[11px] text-slate-600">

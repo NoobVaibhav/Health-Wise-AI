@@ -1,7 +1,8 @@
 // Small pieces shared by the sign-in pages: motion preferences, the logo, the heartbeat line and the compact header of a phone or tablet.
 // The big decorative brand panel of a desktop lives in BrandPanel.jsx and is loaded only when it is shown. All of it is decoration (aria-hidden) and CSS or SVG only.
 import { useEffect, useRef, useState } from "react";
-import { HeartPulse, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { BrandMark } from "../BrandLogo";
 
 export const TRUST = ["Private by design: only you and your doctors see your records.", "Every AI explanation is checked by a doctor first.", "Reports, medicines and history in one safe place."];
 
@@ -64,7 +65,7 @@ export function LogoMark({ reduced, size = 34, box = "h-16 w-16" }) {
   return (
     <span className={`relative inline-flex ${box} items-center justify-center rounded-3xl bg-white/15 text-white ring-1 ring-white/30 ${reduced ? "" : "hw-logo-in"}`}>
       {!reduced && <span className="hw-logo-ring hw-loop absolute inset-0 rounded-3xl ring-2 ring-white/50" aria-hidden="true" />}
-      <HeartPulse size={size} aria-hidden="true" />
+      <BrandMark size={size} variant="white" decorative />
     </span>
   );
 }

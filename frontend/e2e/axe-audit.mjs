@@ -20,6 +20,7 @@ for (const [width, height] of VIEWPORTS) for (const [who, route] of SCREENS) {
     const res = await fetch(`${API}/auth/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: `${who}@healthwise.demo.com`, password: "Demo@12345" }) });
     await context.addInitScript((t) => localStorage.setItem("healthwise_token", t), (await res.json()).access_token);
   }
+  await context.addInitScript(() => sessionStorage.setItem("hw_launch_seen", "1"));   // the launch screen is a quick fade here
   const page = await context.newPage();
   await page.goto(BASE + route, { waitUntil: "networkidle" });
   await page.waitForFunction(() => !document.querySelector(".skeleton"), null, { timeout: 9000 }).catch(() => {});
