@@ -15,7 +15,8 @@ def from_backend_dir(path: str) -> str:
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # the .env of the backend folder, wherever the server was started from (a relative ".env" was silently skipped from the project root)
+    model_config = SettingsConfigDict(env_file=BACKEND_DIR / ".env", extra="ignore")
 
     # SQLite for local development; use a postgresql:// URL in production.
     database_url: str = f"sqlite:///{BACKEND_DIR / 'healthwise.db'}"
