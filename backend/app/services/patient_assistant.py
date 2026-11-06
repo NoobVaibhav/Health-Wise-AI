@@ -24,7 +24,7 @@ from app.database.models import (
     Appointment, DoctorNote, DoctorRecommendation, HealthReport, Patient, PatientAssistantConversation,
     PatientAssistantEvidence, PatientAssistantMessage, Prescription, PrescriptionItem, utcnow,
 )
-from app.services import assistant_hospital, assistant_safety, assistant_talk, llm_service, medication_history, report_trends
+from app.services import assistant_hospital, assistant_safety, assistant_speech, assistant_talk, assistant_voice, llm_service, medication_history, report_trends
 from app.services.assistant_text import GLOSSARY, LANGUAGES, fdate, has_devanagari, normalise_lang, t
 from app.services.clinical_timeline import source
 from app.services.health_history_service import load_history
@@ -38,20 +38,28 @@ MAX_LINES = 14
 # ------------------------------------------------------------------ intent keywords (English / Hindi / Marathi)
 KEYWORDS = {
     "ALLERGY": ["allerg", "एलर्जी", "एलर्जि", "ॲलर्जी", "अॅलर्जी", "अलर्जी", "reaction history"],
-    "MEDICINES": ["medicine", "medication", "prescri", "tablet", "drug", "pill", "दवा", "दवाई", "गोली", "पर्चा", "औषध", "गोळी", "प्रिस्क्रिप्शन", "dawai", "dawa", "davai", "dava", "goli", "dawaai"],
-    "APPOINTMENTS": ["appointment", "next visit", "next checkup", "next check-up", "upcoming", "prepare", "अपॉइंटमेंट", "अगली मुलाकात", "अगला चेकअप", "तैयारी", "पुढची भेट", "पुढील तपासणी", "तयारी"],
-    "INSTRUCTIONS": ["instruction", "advice", "advised", "follow up", "follow-up", "followup", "recommend", "lifestyle", "which tests", "tests did", "सलाह", "निर्देश", "फॉलो", "सुझा", "सल्ला", "सूचना", "सुचव"],
+    "MEDICINES": ["medicine", "medication", "prescri", "tablet", "drug", "pill", "दवा", "दवाई", "गोली", "पर्चा", "औषध", "गोळी", "प्रिस्क्रिप्शन", "dawai", "dawa", "davai", "dava", "goli", "dawaai",
+                  "dose", "dosage", "kitni baar", "kitni goli", "aushadh", "मात्रा", "डोस"],
+    "APPOINTMENTS": ["appointment", "next visit", "next checkup", "next check-up", "upcoming", "prepare", "अपॉइंटमेंट", "अगली मुलाकात", "अगला चेकअप", "तैयारी", "पुढची भेट", "पुढील तपासणी", "तयारी",
+                     "next time", "when do i go", "when should i go", "have to go", "kab jana", "kab aana", "agli baar", "अगली बार", "पुढच्या वेळी"],
+    "INSTRUCTIONS": ["instruction", "advice", "advis", "follow up", "follow-up", "followup", "recommend", "lifestyle", "which tests", "tests did", "सलाह", "निर्देश", "फॉलो", "सुझा", "सल्ला", "सूचना", "सुचव",
+                     "salah", "sujhav", "nirdesh", "sulla"],
     "HISTORY": ["medical history", "past history", "surgery", "surgeries", "past illness", "conditions", "admission", "इतिहास", "सर्जरी", "ऑपरेशन", "आजार", "शस्त्रक्रिया"],
     "LAST_CHECKUP": ["checkup", "check-up", "consultation", "visit", "doctor say", "doctor said", "doctor write", "doctor wrote", "doctor tell", "doctor told", "bola", "kaha", "doctor", "notes", "जांच", "जाँच", "चेकअप", "डॉक्टर ने", "डॉक्टर", "डॉक्टरांनी", "सांगितले", "बोला", "कहा", "नोट", "तपासणी", "डॉक्टर काय", "भेट"],
     "COMPARE": ["compare", "comparison", "changed", "change", "over time", "trend", "तुलना", "बदल"],
-    "ABNORMAL": ["abnormal", "out of range", "outside the range", "flagged", "marked", "असामान्य", "रेंज से बाहर", "असाधारण", "श्रेणीबाहेर"],
+    "ABNORMAL": ["abnormal", "out of range", "outside the range", "flagged", "marked", "not normal", "not in range", "high or low", "असामान्य", "रेंज से बाहर", "असाधारण", "श्रेणीबाहेर",
+                 "asamanya", "range se bahar", "range ke bahar", "normal nahi", "normal nahin"],
     "REPORT": ["report", "blood", "test", "result", "lab", "रिपोर्ट", "ब्लड", "जांच", "जाँच", "रिजल्ट", "नतीजा", "नतीजे", "निकाल", "तपासणी"],
 }
 KEYWORDS.update(assistant_hospital.KEYWORDS)
 ORDER = ["BILLS", "SCANS", "STAY", "ALLERGY", "MEDICINES", "APPOINTMENTS", "INSTRUCTIONS", "HISTORY", "ABNORMAL", "COMPARE", "LAST_CHECKUP", "REPORT"]
-MEANING = ["what is ", "what does", "meaning of", "meaning", "means", "mean?", "explain the term", "explain this", "medical term", "क्या होता है", "क्या है", "मतलब", "म्हणजे काय", "अर्थ"]
+MEANING = ["what is ", "what does", "meaning of", "meaning", "means", "mean?", "explain the term", "explain this", "medical term", "क्या होता है", "क्या है", "मतलब", "म्हणजे काय", "अर्थ",
+           "matlab", "kya hota hai", "mhanje kay", "mhanje"]
 MINE = ["my ", "mine", "मेरा", "मेरी", "मेरे", "माझा", "माझी", "माझे", "level", "result", "report", "value", "स्तर", "रिपोर्ट", "पातळी", "निकाल"]
-BACK = ["previous", "earlier", "before", "last time", "old", "पिछला", "पिछली", "पहले", "आधी", "मागील", "what about", "और"]
+BACK = ["previous", "earlier", "before", "last time", "old", "पिछला", "पिछली", "पहले", "आधी", "मागील", "what about", "और", "pehle wala", "pichla wala", "aadhi"]
+# "and when was that test done?": a question about the date of the test just talked about (it must point back with a word like "that")
+DATE_WORDS = ["when was", "when did", "which date", "what date", "date of", "on which date", "kab", "कब", "कधी", "तारीख", "tarikh"]
+POINTS_BACK = ["that", "this", "it ", "it?", "the one", "same", "wo ", "woh", "वह", "वो", "ती ", "तो ", "ते ", "त्याची", "तिची"]
 OFF_TOPIC = ["weather", "joke", "cricket", "movie", "news", "song", "recipe", "football", "stock", "price of"]
 LATEST_WORDS = ["last", "latest", "recent", "previous", "पिछली", "पिछले", "आखिरी", "शेवटच्या", "मागील", "ताज़ा", "अलीकडील"]
 
@@ -438,6 +446,8 @@ def guard_text(kind: str, lang: str) -> str:
         return t("emergency", lang, n=n)
     if kind == "REACTION":
         return t("reaction", lang, n=n)
+    if kind == "OWN_ONLY":
+        return t("own_only", lang)
     return t("med_change" if kind == "MED_CHANGE" else "diagnosis", lang)
 
 
@@ -455,6 +465,10 @@ def detect_intent(text: str, series: list[dict], topic: dict) -> tuple[str, list
     if named and not _has(text, KEYWORDS["MEDICINES"] + KEYWORDS["ALLERGY"]):
         return "TEST_MISSING", [], named
     strong = [i for i in ORDER if i != "REPORT" and _has(text, KEYWORDS[i])]
+    if topic.get("parameter") and not strong and _has(text, DATE_WORDS) and _has(text + " ", POINTS_BACK):      # "And when was that test done?"
+        again = [s for s in series if s["name"] == topic["parameter"]]
+        if again:
+            return "TEST", again, "EXPLAIN"
     if topic.get("parameter") and _has(text, BACK) and not strong:          # "What about my previous test?"
         again = [s for s in series if s["name"] == topic["parameter"]]
         if again:
@@ -509,14 +523,23 @@ def answer_briefing(db, patient, lang) -> dict:
     return {"text": "\n".join(lines), "sources": _unique(sources), "topic": {"intent": "BRIEFING"}}
 
 
+def patient_vocabulary(db: Session, patient: Patient) -> list[str]:
+    """The words of THIS patient's own prescriptions (medicine names), used only to put a misheard or split-up word back to the name in their records."""
+    words: list[str] = []
+    for (name,) in db.execute(select(PrescriptionItem.medicine_name).join(Prescription).where(Prescription.patient_id == patient.id)):
+        words += [w for w in medication_history.base_name(name).split() if len(w) >= 4]
+    return words
+
+
 def compose(db: Session, patient: Patient, message: str, lang: str, topic: dict) -> dict:
-    text = _fuzzy_words(_digits(re.sub(r"\s+", " ", message).strip().lower()))
-    talk = assistant_talk.detect(text)
+    heard = assistant_speech.strip_fillers(_digits(re.sub(r"\s+", " ", message).strip().lower()))     # "umm, can you tell me ... please" is just the question
+    talk = assistant_talk.detect(heard)
     if talk and talk[0] != "BRIEFING":                                      # a greeting, thanks, the time, "open my reports" ... needs no record
         spoken = assistant_talk.answer(talk[0], talk[1], lang, assistant_talk.first_name(patient.user.full_name))
         return {**spoken, "sources": [], "topic": topic, "intent": talk[0]}
     if talk:
         return {**answer_briefing(db, patient, lang), "intent": "BRIEFING"}
+    text = _fuzzy_words(assistant_speech.repair(heard, patient_vocabulary(db, patient)))     # split-up or misspelled medicine and test names are put back to the record's names
     series, waiting = reviewed_series(db, patient)
     intent, tests, mode = detect_intent(text, series, topic)
     if intent == "TEST":
@@ -626,6 +649,8 @@ def chat(db: Session, patient: Patient, message: str, language: str | None, conv
     ai_used = False
     if guard == "EMERGENCY":
         out = {"text": guard_text("EMERGENCY", lang), "sources": [], "topic": topic, "intent": "EMERGENCY"}
+    elif guard == "OWN_ONLY":                          # someone else's records, or "ignore your rules": nothing is looked up
+        out = {"text": guard_text("OWN_ONLY", lang), "sources": [], "topic": topic, "intent": "REFUSED"}
     else:
         out = compose(db, patient, message, lang, topic)
         if guard in ("MED_CHANGE", "DIAGNOSIS", "REACTION"):
@@ -646,6 +671,8 @@ def chat(db: Session, patient: Patient, message: str, language: str | None, conv
         db.add(PatientAssistantEvidence(message_id=reply.id, source_type=s["type"], source_id=s["id"], label=s["label"][:200], record_date=s.get("date")))
     db.commit()
     reply_out = message_out(reply, out["sources"], guard, out["intent"], ai_used)
+    voice = assistant_voice.spoken_version(out["text"], lang, out["intent"], out["sources"])              # the short version for reading aloud, cut from the same written answer
+    reply_out["spoken"], reply_out["more"], reply_out["spoken_private"] = voice["text"], voice["more"], voice["private"]
     reply_out["follow_ups"] = [] if guard == "EMERGENCY" else follow_ups(db, patient, lang, out["intent"])
     reply_out["action"] = None if guard == "EMERGENCY" else out.get("action")             # {"type": "navigate", "to": ...} or {"type": "end_conversation"}
     return {"conversation_id": conv.id, "title": conv.title, "message": message_out(patient_msg), "reply": reply_out}

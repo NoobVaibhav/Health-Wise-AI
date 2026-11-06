@@ -14,12 +14,14 @@ GREETING = re.compile(r"^(?:hi+|hello+|hey+|hai|namaste|namaskar|good (?:morning
                       r"(?:\s+(?:there|healthwise|health wise|assistant|friend))?[\s!.,]*$", re.IGNORECASE)
 THANKS = re.compile(r"\b(?:thank|thanks|thx|धन्यवाद|शुक्रिया|आभार)", re.IGNORECASE)
 BYE = re.compile(r"^(?:ok(?:ay)?[, ]*)?(?:bye|goodbye|good bye|see you|that'?s all|that is all|stop listening|talk later|बाय|अलविदा|बस इतना|बस)\b", re.IGNORECASE)
-WHO = re.compile(r"\b(?:who are you|what are you|what can you do|what can i ask|what do you do|how do you work|help me|तुम कौन|आप कौन|आप क्या कर|तू कोण|तुम्ही कोण|तुम्ही काय)", re.IGNORECASE)
+WHO = re.compile(r"\b(?:who are you|what are you|what can you do|what can i ask|what do you do|how do you work|help me|तुम कौन|आप कौन|आप क्या कर|तू कोण|तुम्ही कोण|तुम्ही काय|tum kaun|aap kaun|kya kar sakte)", re.IGNORECASE)
 TIME = re.compile(r"\b(?:what(?:'s| is)? the time|what time|time now|current time|today'?s date|what(?:'s| is)? (?:the )?date|what day|which day|"
-                  r"आज की तारीख|आज कौन सा दिन|समय क्या|कितने बजे|आजची तारीख|किती वाजले|आज कोणता दिवस)", re.IGNORECASE)
+                  r"आज की तारीख|आज कौन सा दिन|समय क्या|कितने बजे|आजची तारीख|किती वाजले|आज कोणता दिवस|"
+                  r"today'?s? date|aaj ki (?:date|tarikh|tareekh)|aaj kya (?:date|tarikh|din)|time kya|kitne baje|tarikh kya|aaj kaun sa din|ajchi tarikh|kiti vajle)", re.IGNORECASE)
 BRIEF = re.compile(r"\b(?:brief me|my briefing|briefing|what(?:'s| is) new|anything new|update me|what do i need to know|what should i know|my day|how am i doing|catch me up|"
-                   r"आज की जानकारी|मेरा अपडेट|ताज़ा जानकारी|माझे अपडेट|आजची माहिती)", re.IGNORECASE)
-OPEN_VERB = re.compile(r"(?<![a-z])(?:open|go to|take me to|navigate to)(?![a-z])|खोलो|खोलें|खोलिए|जाओ|उघडा|उघड", re.IGNORECASE)
+                   r"आज की जानकारी|मेरा अपडेट|ताज़ा जानकारी|माझे अपडेट|आजची माहिती|"
+                   r"aaj ka update|aaj ki (?:jankari|jaankari|update)|(?:mera|meri) update|update batao|kuch naya|aaj ka haal|ajchi mahiti)", re.IGNORECASE)
+OPEN_VERB = re.compile(r"(?<![a-z])(?:open|go to|take me to|navigate to|kholo|kholiye|khol do|khol dijiye|ughda|ughad)(?![a-z])|खोलो|खोलें|खोलिए|जाओ|उघडा|उघड", re.IGNORECASE)
 QUESTION_WORDS = re.compile(r"\b(?:what|why|how many|how much|is my|are my|क्या|क्यों|काय|का)\b", re.IGNORECASE)
 
 # the page names, longest phrase first so "health history" is not taken for "history" or "report"
@@ -28,7 +30,7 @@ PAGES = [
      {"en": "your health history", "hi": "आपका स्वास्थ्य इतिहास", "mr": "तुमचा आरोग्य इतिहास"}),
     ("timeline", r"timeline|टाइमलाइन|टाईमलाईन", "/patient/history", {"en": "your timeline", "hi": "आपकी टाइमलाइन", "mr": "तुमची टाइमलाइन"}),
     ("appointments", r"appointment|अपॉइंटमेंट|अपॉईंटमेंट|भेट", "/patient/appointments", {"en": "your appointments", "hi": "आपके अपॉइंटमेंट", "mr": "तुमचे अपॉइंटमेंट"}),
-    ("medicines", r"medicine|medication|prescription|dawa|दवा|दवाई|औषध|प्रिस्क्रिप्शन", "/patient/prescriptions", {"en": "your medicines", "hi": "आपकी दवाइयाँ", "mr": "तुमची औषधे"}),
+    ("medicines", r"medicine|medication|prescription|dawa|dawai|davai|aushadh|दवा|दवाई|औषध|प्रिस्क्रिप्शन", "/patient/prescriptions", {"en": "your medicines", "hi": "आपकी दवाइयाँ", "mr": "तुमची औषधे"}),
     ("advice", r"advice|recommendation|सलाह|सल्ला|सूचना", "/patient/recommendations", {"en": "your doctor's advice", "hi": "डॉक्टर की सलाह", "mr": "डॉक्टरांचा सल्ला"}),
     ("notes", r"notes?\b|नोट", "/patient/notes", {"en": "your doctor's notes", "hi": "डॉक्टर के नोट", "mr": "डॉक्टरांच्या नोंदी"}),
     ("profile", r"profile|प्रोफाइल|प्रोफाईल", "/patient/profile", {"en": "your profile", "hi": "आपकी प्रोफाइल", "mr": "तुमची प्रोफाइल"}),

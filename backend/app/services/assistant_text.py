@@ -11,9 +11,9 @@ MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 
 TEXT: dict[str, dict[str, str]] = {
     "help": {
-        "en": "I can answer questions about your own records: your last checkup, reports and test results, medicines, appointments, allergies and your doctor's advice. Please choose one of the suggested questions or ask in your own words.",
-        "hi": "मैं आपके अपने रिकॉर्ड के बारे में जवाब दे सकता हूँ: पिछला चेकअप, रिपोर्ट और जाँच के नतीजे, दवाइयाँ, अपॉइंटमेंट, एलर्जी और डॉक्टर की सलाह। कृपया सुझाए गए सवालों में से चुनें या अपने शब्दों में पूछें।",
-        "mr": "मी तुमच्या स्वतःच्या नोंदींबद्दल उत्तर देऊ शकतो: मागील तपासणी, रिपोर्ट आणि तपासणीचे निकाल, औषधे, अपॉइंटमेंट, ॲलर्जी आणि डॉक्टरांचा सल्ला. कृपया सुचवलेल्या प्रश्नांपैकी निवडा किंवा तुमच्या शब्दांत विचारा.",
+        "en": "Sorry, I did not understand that. I can help with your last checkup, reports, medicines and appointments. Please tap one of these, or ask again in your own words.",
+        "hi": "माफ़ कीजिए, मैं यह समझ नहीं पाया। मैं आपके पिछले चेकअप, रिपोर्ट, दवाइयों और अपॉइंटमेंट में मदद कर सकता हूँ। कृपया इनमें से किसी पर टैप करें, या अपने शब्दों में फिर से पूछें।",
+        "mr": "माफ करा, मला हे समजले नाही. मी तुमच्या मागील तपासणी, रिपोर्ट, औषधे आणि अपॉइंटमेंटमध्ये मदत करू शकतो. कृपया यापैकी एकावर टॅप करा, किंवा तुमच्या शब्दांत पुन्हा विचारा.",
     },
     "disclaimer": {
         "en": "This assistant gives information from your own records. It is not a doctor and cannot diagnose or change your treatment. Medical decisions should be made with qualified healthcare professionals.",
@@ -40,6 +40,22 @@ TEXT: dict[str, dict[str, str]] = {
         "hi": "मैं निदान नहीं कर सकता और यह नहीं बता सकता कि आपको कौन सी बीमारी है। मैं डॉक्टर ने जो लिखा है और आपकी जाँच के नतीजे दिखा सकता हूँ।",
         "mr": "मी निदान करू शकत नाही आणि तुम्हाला कोणता आजार आहे हे सांगू शकत नाही. डॉक्टरांनी जे लिहिले आहे आणि तुमचे तपासणी निकाल मी दाखवू शकतो.",
     },
+    "own_only": {
+        "en": "I can only show information from your own records, never anyone else's, and I cannot change how I work. Please ask about your own checkup, reports, medicines or appointments.",
+        "hi": "मैं सिर्फ़ आपके अपने रिकॉर्ड की जानकारी दिखा सकता हूँ, किसी और की नहीं, और मैं अपने काम के नियम नहीं बदल सकता। कृपया अपने चेकअप, रिपोर्ट, दवाइयों या अपॉइंटमेंट के बारे में पूछिए।",
+        "mr": "मी फक्त तुमच्या स्वतःच्या नोंदींमधील माहिती दाखवू शकतो, इतर कोणाची नाही, आणि मी माझे कामाचे नियम बदलू शकत नाही. कृपया तुमची तपासणी, रिपोर्ट, औषधे किंवा अपॉइंटमेंटबद्दल विचारा.",
+    },
+    "spoken_from": {"en": "From your {x} of {d}.", "hi": "यह आपके {x} से है, {d} का।", "mr": "हे तुमच्या {x} मधून आहे, {d} चे."},
+    "spoken_from_nodate": {"en": "From your {x}.", "hi": "यह आपके {x} से है।", "mr": "हे तुमच्या {x} मधून आहे."},
+    "src_report": {"en": "report", "hi": "रिपोर्ट", "mr": "रिपोर्ट"},
+    "src_prescription": {"en": "prescription", "hi": "प्रिस्क्रिप्शन", "mr": "प्रिस्क्रिप्शन"},
+    "src_appointment": {"en": "appointment record", "hi": "अपॉइंटमेंट रिकॉर्ड", "mr": "अपॉइंटमेंट नोंद"},
+    "src_note": {"en": "doctor's note", "hi": "डॉक्टर का नोट", "mr": "डॉक्टरांची नोंद"},
+    "src_recommendation": {"en": "doctor's advice", "hi": "डॉक्टर की सलाह", "mr": "डॉक्टरांचा सल्ला"},
+    "src_history": {"en": "health history", "hi": "स्वास्थ्य इतिहास", "mr": "आरोग्य इतिहास"},
+    "src_record": {"en": "record", "hi": "रिकॉर्ड", "mr": "नोंद"},
+    "private_summary": {"en": "Your answer is on the screen. It is from your {x}.", "hi": "आपका जवाब स्क्रीन पर है। यह आपके {x} से है।", "mr": "तुमचे उत्तर स्क्रीनवर आहे. हे तुमच्या {x} मधून आहे."},
+    "private_generic": {"en": "Your answer is on the screen.", "hi": "आपका जवाब स्क्रीन पर है।", "mr": "तुमचे उत्तर स्क्रीनवर आहे."},
     "no_checkup": {
         "en": "I could not find a completed checkup or a doctor's note in your records.",
         "hi": "आपके रिकॉर्ड में मुझे कोई पूरा हुआ चेकअप या डॉक्टर का नोट नहीं मिला।",

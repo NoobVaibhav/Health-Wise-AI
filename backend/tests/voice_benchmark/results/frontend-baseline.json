@@ -355,7 +355,43 @@
   "numbers_changed": 0
  },
  "spoken": {
-  "skipped": "run the server benchmark with VOICE_BENCH_LABEL set first (it writes results/answers.json)"
+  "n": 27,
+  "mean_words": 89,
+  "over_60_words": 22,
+  "with_symbols": 7,
+  "with_abbreviation": 14,
+  "abbreviation_by_lang": {
+   "hi": 7,
+   "mr": 7
+  },
+  "with_month_abbreviation": 10,
+  "cut_off": 2,
+  "with_source": 26,
+  "dates_spoken": 10,
+  "long": [
+   "What did my doctor say at my last checkup",
+   "Explain my latest report",
+   "What is my haemoglobin",
+   "What is my vitamin D level",
+   "Which of my results are abnormal",
+   "Compare my test results",
+   "What medicines do I take",
+   "What did the doctor advise me",
+   "Brief me",
+   "पिछले चेकअप में डॉक्टर ने क्या कहा",
+   "मेरी ताज़ा रिपोर्ट समझाइए",
+   "मेरा हीमोग्लोबिन कितना है",
+   "मेरा विटामिन डी कितना है",
+   "कौन से नतीजे असामान्य हैं",
+   "मेरी दवाइयाँ कौन सी हैं",
+   "आज की जानकारी",
+   "मागील तपासणीत डॉक्टर काय म्हणाले",
+   "माझा ताजा रिपोर्ट समजावून सांगा",
+   "माझा हिमोग्लोबिन किती आहे",
+   "माझे व्हिटॅमिन डी किती आहे",
+   "कोणते निकाल असामान्य आहेत",
+   "मी कोणती औषधे घेतो"
+  ]
  },
  "latency_static": {
   "browser_final_result_to_send_ms": 0,
