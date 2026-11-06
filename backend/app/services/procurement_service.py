@@ -4,7 +4,7 @@ Flow: someone asks (requisition) -> a manager approves -> a purchase order to a 
 once -> a physical count may find a difference, which changes the stock only after a second person approves it, with a reason.
 Nothing here is edited after it is final and every stock change leaves a StockMovement.
 """
-from datetime import date, timedelta
+from datetime import timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -15,6 +15,7 @@ from app.database.models import (
 )
 from app.services import stock_service
 from app.utils.locking import lock
+from app.utils.clock import hospital_today
 
 
 def conflict(message: str) -> HTTPException:
@@ -25,7 +26,7 @@ def next_number(db: Session, model, prefix: str) -> str:
     count = db.scalar(select(func.count(model.id))) or 0
     while True:
         count += 1
-        number = f"{prefix}-{date.today().year}-{count:05d}"
+        number = f"{prefix}-{hospital_today().year}-{count:05d}"
         if not db.scalar(select(model.id).where(model.number == number)):
             return number
 
@@ -118,7 +119,7 @@ def receive_goods(db: Session, order: PurchaseOrder, user: User, lines: list[dic
         if item.medicine_name:
             if line.get("expiry_date") is None:
                 raise HTTPException(422, f"Please enter the expiry date of {item.medicine_name}.")
-            if line["expiry_date"] <= date.today():
+            if line["expiry_date"] <= hospital_today():
                 raise HTTPException(422, f"{item.medicine_name} has expired: it cannot be received into stock.")
             if not (line.get("batch_number") or "").strip():
                 raise HTTPException(422, f"Please enter the batch number of {item.medicine_name}.")

@@ -876,6 +876,23 @@
  },
  {
   "method": "GET",
+  "path": "/api/appointments/slots",
+  "public": false,
+  "roles": "ANY LOGGED-IN",
+  "results": {
+   "none": 401,
+   "PATIENT": 422,
+   "PHARMACY": 422,
+   "LAB": 422,
+   "INTERN": 422,
+   "NURSE": 422,
+   "EMPLOYEE": 422,
+   "ADMIN": 422,
+   "DOCTOR": 422
+  }
+ },
+ {
+  "method": "GET",
   "path": "/api/appointments",
   "public": false,
   "roles": "ANY LOGGED-IN",

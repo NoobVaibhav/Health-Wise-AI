@@ -9,10 +9,11 @@ from sqlalchemy.orm import Session
 
 from app.core.permissions import DOCTOR, forbidden, get_accessible_patient, get_current_user, get_doctor_profile, nurse_can_access_patient
 from app.database.connection import get_db
-from app.database.models import BloodCrossmatch, BloodDonation, BloodDonor, BloodIssue, BloodRequest, BloodUnit, Patient, Transfusion, User
+from app.database.models import BloodDonation, BloodDonor, BloodIssue, BloodRequest, BloodUnit, Patient, Transfusion, User
 from app.services import audit_service, bloodbank_service as bb
 from app.services.access_service import permissions_of, require_permission
 from app.utils.validators import PathId, SearchText, opt_text, text
+from app.utils.clock import hospital_today
 
 router = APIRouter(prefix="/api/bloodbank", tags=["blood-bank"])
 manage = require_permission("bloodbank.manage")
@@ -102,7 +103,7 @@ def donors(q: SearchText = None, user: User = Depends(manage), db: Session = Dep
 
 @router.post("/donors", status_code=status.HTTP_201_CREATED)
 def add_donor(data: DonorIn, request: Request, user: User = Depends(manage), db: Session = Depends(get_db)):
-    if data.date_of_birth >= date.today():
+    if data.date_of_birth >= hospital_today():
         raise HTTPException(422, "The date of birth must be in the past.")
     donor = bb.register_donor(db, user, data.model_dump())
     audit_service.log_action(db, user, "DONOR_REGISTERED", "blood_donor", donor.id, request, donor.donor_no)

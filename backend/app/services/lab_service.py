@@ -3,7 +3,7 @@
 waiting for the sample -> sample taken (a label code is made) -> being tested -> done (the result report is attached)
 A test can also be rejected (for example a bad sample, a reason is required) and then ordered again.
 The result is an ordinary report: it goes to the doctor for review, and the patient sees it only after that."""
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.database.models import HealthReport, LabTestOrder, Patient, Prescription, User, utcnow
 from app.services import diagnostic_service
 from app.services.serializers import tests_of
+from app.utils.clock import hospital_today
 
 LABELS = {"ORDERED": "Waiting for the sample", "SAMPLE_COLLECTED": "Sample taken", "IN_PROGRESS": "Being tested", "COMPLETED": "Result ready",
           "REJECTED": "Sample rejected", "CANCELLED": "Cancelled"}
@@ -66,7 +67,7 @@ def get_order(db: Session, order_id: int) -> LabTestOrder:
 
 
 def _next_sample_code(db: Session) -> str:
-    stamp = date.today().strftime("%Y%m%d")
+    stamp = hospital_today().strftime("%Y%m%d")
     count = len(db.scalars(select(LabTestOrder.id).where(LabTestOrder.sample_code.like(f"LAB-{stamp}-%"))).all())
     while True:
         count += 1
@@ -162,7 +163,7 @@ def dashboard(db: Session) -> dict:
     counts = {k: 0 for k in LABELS}
     for o in rows:
         counts[o.status] += 1
-    today = date.today()
+    today = hospital_today()
     since = utcnow() - timedelta(days=30)
     done = [o for o in rows if o.status == "COMPLETED" and o.completed_at and o.completed_at >= since and o.collected_at]
     oldest = max((_hours(o.created_at) or 0 for o in rows if o.status in OPEN), default=None)

@@ -1,5 +1,5 @@
 """Numbers and lists for each role's dashboard. Everything is counted from the database."""
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, time, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -15,12 +15,13 @@ from app.services.serializers import (
     REPORT_TYPE_LABELS, appointment_out, effective_report_type, note_out, prescription_out, recommendation_out,
     report_list_item, stored_insights,
 )
+from app.utils.clock import hospital_now, hospital_today
 
 PATIENT_ROLE = "PATIENT"
 
 
 def _today_range() -> tuple[datetime, datetime]:
-    start = datetime.combine(date.today(), time.min)
+    start = datetime.combine(hospital_today(), time.min)
     return start, start + timedelta(days=1)
 
 
@@ -87,7 +88,7 @@ def doctor_dashboard(db: Session, user: User) -> dict:
     reports = report_service.list_reports_for_user(db, user)
     waiting = [r for r in reports if r.doctor_review_status == "PENDING"]
     follow_ups = db.scalars(select(DoctorRecommendation).where(
-        DoctorRecommendation.doctor_id == doctor.id, DoctorRecommendation.follow_up_date >= date.today())
+        DoctorRecommendation.doctor_id == doctor.id, DoctorRecommendation.follow_up_date >= hospital_today())
         .order_by(DoctorRecommendation.follow_up_date).limit(10)).all()
     notes = db.scalars(select(DoctorNote).where(DoctorNote.doctor_id == doctor.id)
                        .order_by(DoctorNote.id.desc()).limit(5)).all()
@@ -143,7 +144,7 @@ def employee_dashboard(db: Session, user: User) -> dict:
 def patient_dashboard(db: Session, user: User) -> dict:
     patient = get_patient_profile(db, user)
     upcoming = db.scalars(select(Appointment).where(
-        Appointment.patient_id == patient.id, Appointment.scheduled_at >= datetime.now(),
+        Appointment.patient_id == patient.id, Appointment.scheduled_at >= hospital_now(),
         Appointment.status.in_(["SCHEDULED", "CONFIRMED"])).order_by(Appointment.scheduled_at).limit(1)).first()
     reports = report_service.list_reports_for_user(db, user)
     notes = db.scalars(select(DoctorNote).where(DoctorNote.patient_id == patient.id)
@@ -167,14 +168,14 @@ def patient_dashboard(db: Session, user: User) -> dict:
 
 # ------------------------------------------------------------------ pharmacy
 def pharmacy_dashboard(db: Session) -> dict:
-    soon = date.today() + timedelta(days=30)
+    soon = hospital_today() + timedelta(days=30)
     low_stock = db.scalars(select(MedicineInventory).where(MedicineInventory.quantity <= 10)
                            .order_by(MedicineInventory.quantity).limit(10)).all()
     expiring = db.scalars(select(MedicineInventory).where(
         MedicineInventory.expiry_date.is_not(None), MedicineInventory.expiry_date <= soon,
         MedicineInventory.quantity > 0).order_by(MedicineInventory.expiry_date).limit(10)).all()
     return {
-        "todays_prescriptions": _count(db, Prescription, Prescription.prescription_date == date.today(),
+        "todays_prescriptions": _count(db, Prescription, Prescription.prescription_date == hospital_today(),
                                        Prescription.status != "CANCELLED"),
         "pending_prescriptions": _count(db, Prescription, Prescription.status == "ACTIVE"),
         "partially_dispensed": _count(db, Prescription, Prescription.status == "PARTIALLY_DISPENSED"),

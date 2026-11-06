@@ -19,6 +19,7 @@ from app.database.models import (
 )
 from app.services import hospital_service
 from app.utils.locking import lock
+from app.utils.clock import hospital_today
 
 METHODS = ("CASH", "UPI", "CARD", "BANK", "ADVANCE")
 NEEDS_REFERENCE = ("UPI", "CARD", "BANK")
@@ -37,7 +38,7 @@ def next_number(db: Session, model, column, prefix: str) -> str:
     count = db.scalar(select(func.count(model.id)).where(column.is_not(None))) or 0         # only numbered rows count: a draft has no number, so the numbers have no gaps
     while True:
         count += 1
-        number = f"{prefix}-{date.today().year}-{count:05d}"
+        number = f"{prefix}-{hospital_today().year}-{count:05d}"
         if not db.scalar(select(model.id).where(column == number)):
             return number
 
@@ -493,7 +494,7 @@ def create_claim(db: Session, user: User, inv: Invoice, policy_id: int) -> Insur
     policy = db.get(PatientInsurance, policy_id)
     if policy is None or policy.patient_id != inv.patient_id:
         raise HTTPException(422, "That policy does not belong to this patient.")
-    if not policy.is_active or (policy.valid_to and policy.valid_to < date.today()) or (policy.valid_from and policy.valid_from > date.today()):
+    if not policy.is_active or (policy.valid_to and policy.valid_to < hospital_today()) or (policy.valid_from and policy.valid_from > hospital_today()):
         raise conflict("This policy is not active or not valid today.")
     claim = InsuranceClaim(claim_number=next_number(db, InsuranceClaim, InsuranceClaim.claim_number, "CLM"), invoice_id=inv.id, patient_insurance_id=policy.id, created_by=user.id,
                            documents=[ClaimDocument(name=n) for n in default_documents(db)])

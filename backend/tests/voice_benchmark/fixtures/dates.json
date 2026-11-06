@@ -1,0 +1,52 @@
+[
+ {
+  "spoken": "twelfth of March",
+  "lang": "en",
+  "value": "12 March"
+ },
+ {
+  "spoken": "12 March",
+  "lang": "en",
+  "value": "12 March"
+ },
+ {
+  "spoken": "बारह मार्च",
+  "lang": "hi",
+  "value": "12 March"
+ },
+ {
+  "spoken": "बारा मार्च",
+  "lang": "mr",
+  "value": "12 March"
+ },
+ {
+  "spoken": "fifteen June twenty twenty six",
+  "lang": "en",
+  "value": "15 June 2026"
+ },
+ {
+  "spoken": "पंद्रह जून दो हज़ार छब्बीस",
+  "lang": "hi",
+  "value": "15 June 2026"
+ },
+ {
+  "spoken": "पंधरा जून दोन हजार सव्वीस",
+  "lang": "mr",
+  "value": "15 June 2026"
+ },
+ {
+  "spoken": "third of October",
+  "lang": "en",
+  "value": "3 October"
+ },
+ {
+  "spoken": "तीन अक्टूबर",
+  "lang": "hi",
+  "value": "3 October"
+ },
+ {
+  "spoken": "तीन ऑक्टोबर",
+  "lang": "mr",
+  "value": "3 October"
+ }
+]

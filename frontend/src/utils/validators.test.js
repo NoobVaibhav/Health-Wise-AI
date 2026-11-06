@@ -36,8 +36,9 @@ describe("dates", () => {
     expect(v.dateOfBirth("1990-05-14")).toBe("");
     expect(v.dateOfBirth(iso(1))).toMatch(/future/);
     expect(v.dateOfBirth("2999-01-01")).toMatch(/future/);
-    expect(v.dateOfBirth("1929-12-31")).toMatch(/before 1930/);
+    expect(v.dateOfBirth("1899-12-31")).toMatch(/before 1900/);
     expect(v.dateOfBirth("1930-01-01")).toBe("");
+    expect(v.dateOfBirth("1900-01-01")).toMatch(/120 years/);       // allowed by the floor, refused by the age limit
     expect(v.dateOfBirth("2026-02-30")).toMatch(/real date/);
     expect(v.dateOfBirth("not a date")).toMatch(/real date/);
     expect(v.dateOfBirth("")).toBe("");
@@ -48,12 +49,26 @@ describe("dates", () => {
     expect(v.ageWarning("1990-01-01")).toBe("");
     expect(v.ageWarning(iso(1))).toBe("");
   });
-  it("appointment time", () => {
-    const at = (days) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 16);
-    expect(v.appointmentTime(at(2))).toBe("");
-    expect(v.appointmentTime(at(-1))).toMatch(/future/);
-    expect(v.appointmentTime(at(400))).toMatch(/1 year/);
-    expect(v.appointmentTime("")).not.toBe("");
+  it("appointment time follows the hospital clock (India), 30 days, opening hours and slots", () => {
+    const now = new Date("2026-11-05T07:04:00Z");                // 12:34 on 5 November at the hospital, but still the early morning of the 5th in UTC
+    expect(v.hospitalNow(now)).toEqual({ date: "2026-11-05", time: "12:34" });
+    expect(v.hospitalNow(new Date("2026-11-05T19:00:00Z")).date).toBe("2026-11-06");      // already tomorrow in India
+    expect(v.appointmentDateBounds(now)).toEqual({ min: "2026-11-05", max: "2026-12-05" });
+    expect(v.appointmentTime("2026-11-05T14:00", now)).toBe("");
+    expect(v.appointmentTime("2026-11-05T12:30", now)).toBe("");                              // inside the 5 minute walk-in grace
+    expect(v.appointmentTime("2026-11-05T12:15", now)).toMatch(/already passed/);
+    expect(v.appointmentTime("2026-11-05T09:00", now)).toMatch(/already passed/);             // later than the UTC clock, earlier than the hospital's
+    expect(v.appointmentTime("2026-11-04T10:00", now)).toMatch(/already passed/);
+    expect(v.appointmentTime("2026-12-05T10:00", now)).toBe("");
+    expect(v.appointmentTime("2026-12-05T14:00", now)).toMatch(/30 days/);
+    expect(v.appointmentTime("2026-11-06T08:45", now)).toMatch(/between 09:00 and 17:00/);
+    expect(v.appointmentTime("2026-11-06T17:00", now)).toMatch(/between 09:00 and 17:00/);
+    expect(v.appointmentTime("2026-11-06T16:45", now)).toBe("");
+    expect(v.appointmentTime("2026-11-06T10:07", now)).toMatch(/slot/);
+    expect(v.appointmentTime("2027-02-29T10:00", now)).toMatch(/real date/);
+    expect(v.appointmentTime("2028-02-29T10:00", new Date("2028-02-28T04:30:00Z"))).toBe("");   // leap day
+    expect(v.appointmentTime("2027-01-01T09:00", new Date("2026-12-31T11:20:00Z"))).toBe("");     // across the new year
+    expect(v.appointmentTime("", now)).not.toBe("");
   });
 });
 

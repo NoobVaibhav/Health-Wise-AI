@@ -17,6 +17,7 @@ from app.services.insight_service import (INSIGHTS_ENGINE, REPORT_TYPE_LABELS, L
 from app.services.parameter_catalog import get_parameter_info
 from app.services.safety_filter import DISCLAIMER
 from app.services.user_service import age_from_dob
+from app.utils.clock import hospital_today
 
 PRESCRIPTION_VALID_DAYS = 30
 
@@ -189,8 +190,7 @@ def dispensed_quantity(item) -> int:
 
 def effective_status(rx: Prescription) -> str:
     """Stored status, except that an old prescription with medicine still undispensed counts as EXPIRED."""
-    from datetime import date
-    if rx.status in ("ACTIVE", "PARTIALLY_DISPENSED") and date.today() > rx.prescription_date + timedelta(
+    if rx.status in ("ACTIVE", "PARTIALLY_DISPENSED") and hospital_today() > rx.prescription_date + timedelta(
             days=PRESCRIPTION_VALID_DAYS):
         return "EXPIRED"
     return rx.status

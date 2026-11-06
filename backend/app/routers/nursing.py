@@ -5,13 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.permissions import DOCTOR, NURSE, get_accessible_patient
+from app.core.permissions import DOCTOR, get_accessible_patient
 from app.database.connection import get_db
-from app.database.models import Admission, ClinicalAlert, EscalationRule, IntakeOutput, MarEntry, MedicationOrder, NursingNote, User
+from app.database.models import Admission, ClinicalAlert, EscalationRule, IntakeOutput, MarEntry, NursingNote, User
 from app.schemas.clinical import AckIn, IntakeOutputIn, MarActIn, NursingNoteIn, RuleIn, VitalsIn
 from app.services import audit_service, encounter_service as enc, ipd_service as ipd, nursing_service as nursing
 from app.services.access_service import require_permission
 from app.utils.validators import PathId
+from app.utils.clock import hospital_today
 
 router = APIRouter(prefix="/api/nursing", tags=["nursing"])
 chart_perm = require_permission("nursing.chart")
@@ -32,7 +33,7 @@ def _admission(db: Session, user: User, admission_id: int) -> Admission:
 def dashboard(user: User = Depends(chart_perm), db: Session = Depends(get_db)):
     """The nurse's first screen: open alerts, then inpatients with their overdue and pending medicines."""
     patients = []
-    day = date.today()
+    day = hospital_today()
     for a in db.scalars(select(Admission).where(Admission.status == "ADMITTED").order_by(Admission.admitted_at)):
         mar = nursing.mar_day(db, a, day)
         latest = db.scalar(select(enc.VitalSet).where(enc.VitalSet.admission_id == a.id).order_by(enc.VitalSet.recorded_at.desc()).limit(1))
@@ -49,7 +50,7 @@ def dashboard(user: User = Depends(chart_perm), db: Session = Depends(get_db)):
 @router.get("/admissions/{admission_id}/chart")
 def get_chart(admission_id: PathId, day: date | None = None, user: User = Depends(view_perm), db: Session = Depends(get_db)):
     a = _admission(db, user, admission_id)
-    return {"admission": ipd.admission_out(db, a), **nursing.chart(db, a, day or date.today())}
+    return {"admission": ipd.admission_out(db, a), **nursing.chart(db, a, day or hospital_today())}
 
 
 @router.post("/admissions/{admission_id}/vitals", status_code=status.HTTP_201_CREATED)
@@ -82,7 +83,7 @@ def add_intake_output(admission_id: PathId, data: IntakeOutputIn, user: User = D
     row = IntakeOutput(admission_id=a.id, patient_id=a.patient_id, kind=data.kind, item=data.item, amount_ml=data.amount_ml, recorded_by=user.id)
     db.add(row)
     db.commit()
-    return {"id": row.id, "totals": nursing.totals(db, a.id, date.today())}
+    return {"id": row.id, "totals": nursing.totals(db, a.id, hospital_today())}
 
 
 @router.post("/mar/{entry_id}/act")

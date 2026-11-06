@@ -29,6 +29,13 @@ DEFAULT_CATALOG: dict[str, list[str]] = {
 }
 
 
+# Departments added after the first default list. Unlike DEFAULT_CATALOG these are added to an EXISTING catalog too (see ensure_additional_departments),
+# because the default list is only written when the database has no specializations yet.
+ADDITIONAL_CATALOG: dict[str, list[str]] = {
+    "General Surgery": ["General Surgeon", "Laparoscopic Surgeon", "Trauma Surgeon"],
+}
+
+
 def name_key(name: str) -> str:
     return " ".join(name.split()).lower()
 
@@ -50,6 +57,26 @@ def ensure_catalog(db: Session) -> None:
         db.flush()
     backfill_doctors(db)
     db.commit()
+
+
+def ensure_additional_departments(db: Session) -> int:
+    """Adds the departments and specializations of ADDITIONAL_CATALOG that are missing (matched ignoring case). Nothing existing is changed.
+    Called by the demo seed, not at every start. Returns how many rows were added."""
+    added = 0
+    for department_name, names in ADDITIONAL_CATALOG.items():
+        department = db.scalar(select(Department).where(func.lower(Department.name) == department_name.lower()))
+        if department is None:
+            department = Department(name=department_name, is_active=True)
+            db.add(department)
+            db.flush()
+            added += 1
+        for name in names:
+            exists = db.scalar(select(Specialization.id).where(Specialization.department_id == department.id, Specialization.name_key == name_key(name)))
+            if exists is None:
+                db.add(Specialization(name=name, name_key=name_key(name), department_id=department.id, is_active=True))
+                added += 1
+    db.commit()
+    return added
 
 
 def backfill_doctors(db: Session) -> None:

@@ -9,6 +9,7 @@ from app.database.models import (
     Admission, ClinicalAlert, IntakeOutput, MarEntry, MedicationOrder, NursingNote, VitalSet,
 )
 from app.services import encounter_service as enc
+from app.utils.clock import hospital_now
 
 OVERDUE_AFTER_MINUTES = 30
 
@@ -35,7 +36,7 @@ def generate_mar(db: Session, admission: Admission, day: date) -> int:
 
 
 def mar_out(e: MarEntry) -> dict:
-    overdue = e.status == "PENDING" and e.scheduled_at < datetime.now() - timedelta(minutes=OVERDUE_AFTER_MINUTES)     # dose times are the ward's clock (local), not UTC
+    overdue = e.status == "PENDING" and e.scheduled_at < hospital_now() - timedelta(minutes=OVERDUE_AFTER_MINUTES)     # dose times are the ward's clock (local), not UTC
     return {"id": e.id, "order_id": e.medication_order_id, "medicine_name": e.order.medicine_name, "dose": e.order.dose, "route": e.order.route, "instructions": e.order.instructions,
             "scheduled_at": e.scheduled_at.isoformat(), "status": e.status, "overdue": overdue, "acted_at": e.acted_at.isoformat() if e.acted_at else None, "note": e.note,
             "order_status": e.order.status}
@@ -56,7 +57,7 @@ def act_on_dose(db: Session, entry: MarEntry, status: str, note: str | None, use
         raise HTTPException(409, f"This dose was already recorded as {entry.status.lower()}.")
     if entry.order.status != "ACTIVE":
         raise HTTPException(409, "The doctor has stopped this medicine.")
-    if entry.scheduled_at > datetime.now() + timedelta(hours=1):
+    if entry.scheduled_at > hospital_now() + timedelta(hours=1):
         raise HTTPException(409, "This dose is not due yet.")
     entry.status, entry.acted_by, entry.acted_at, entry.note = status, user.id, enc.now(), note
     return entry

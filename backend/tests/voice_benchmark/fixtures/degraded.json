@@ -1,0 +1,242 @@
+[
+ {
+  "reference": "Do I take metformin",
+  "heard": "do i take met for min",
+  "lang": "en",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "Do I take metformin",
+  "heard": "do i take met form in",
+  "lang": "en",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "Tell me about atorvastatin",
+  "heard": "tell me about a to ra stat in",
+  "lang": "en",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "Tell me about atorvastatin",
+  "heard": "tell me about atorva statin",
+  "lang": "en",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "Do I take paracetamol",
+  "heard": "do i take para set a mol",
+  "lang": "en",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "Do I take paracetamol",
+  "heard": "do i take paracetamol",
+  "lang": "en",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "What is my haemoglobin",
+  "heard": "what is my hemo globin",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "What is my haemoglobin",
+  "heard": "what is my he moglobin",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "How is my creatinine",
+  "heard": "how is my creatine in",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "How is my creatinine",
+  "heard": "how is my create in in",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "How is my creatinine",
+  "heard": "how is my kreatinin",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "What is my HbA1c",
+  "heard": "what is my h b a 1 c",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "What is my HbA1c",
+  "heard": "what is my hba one c",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "What is my HbA1c",
+  "heard": "what is my a c b a 1 c",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "What is my vitamin D level",
+  "heard": "what is my vitamin dee level",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "What is my vitamin D level",
+  "heard": "what is my vitamin the level",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "Is my cholesterol high",
+  "heard": "is my colesterol high",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "Is my cholesterol high",
+  "heard": "is my cole ester all high",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "What is my LDL",
+  "heard": "what is my l d l",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "What is my TSH",
+  "heard": "what is my t s h",
+  "lang": "en",
+  "intent": "TEST"
+ },
+ {
+  "reference": "Explain my latest report",
+  "heard": "explain my late st report",
+  "lang": "en",
+  "intent": "REPORT"
+ },
+ {
+  "reference": "What did my doctor say at my last checkup",
+  "heard": "what did my doctor say at my last check up",
+  "lang": "en",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "reference": "Which of my results are abnormal",
+  "heard": "which of my results are ab normal",
+  "lang": "en",
+  "intent": "ABNORMAL"
+ },
+ {
+  "reference": "When is my next appointment",
+  "heard": "when is my next a point meant",
+  "lang": "en",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "reference": "मेरा क्रिएटिनिन कैसा है",
+  "heard": "मेरा क्रिएटिन इन कैसा है",
+  "lang": "hi",
+  "intent": "TEST"
+ },
+ {
+  "reference": "मेरा हीमोग्लोबिन कितना है",
+  "heard": "मेरा हिमो ग्लोबिन कितना है",
+  "lang": "hi",
+  "intent": "TEST"
+ },
+ {
+  "reference": "मेरा HbA1c कितना है",
+  "heard": "मेरा एच बी ए वन सी कितना है",
+  "lang": "hi",
+  "intent": "TEST"
+ },
+ {
+  "reference": "मेरी दवाइयाँ कौन सी हैं",
+  "heard": "मेरी दवाइयां कौन सी है",
+  "lang": "hi",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "क्या मैं मेटफॉर्मिन लेता हूँ",
+  "heard": "क्या मैं मेट फॉर्मिन लेता हूं",
+  "lang": "hi",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "मेरा अगला अपॉइंटमेंट कब है",
+  "heard": "मेरा अगला अपॉइंट मेंट कब है",
+  "lang": "hi",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "reference": "माझे क्रिएटिनिन कसे आहे",
+  "heard": "माझे क्रिएटिन इन कसे आहे",
+  "lang": "mr",
+  "intent": "TEST"
+ },
+ {
+  "reference": "माझा हिमोग्लोबिन किती आहे",
+  "heard": "माझा हिमो ग्लोबिन किती आहे",
+  "lang": "mr",
+  "intent": "TEST"
+ },
+ {
+  "reference": "मी कोणती औषधे घेतो",
+  "heard": "मी कोणती औषध घेतो",
+  "lang": "mr",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "माझी पुढची भेट कधी आहे",
+  "heard": "माझी पुढची भेट कधी आहे का",
+  "lang": "mr",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "reference": "mera creatinine kaisa hai",
+  "heard": "mera creatine in kaisa hai",
+  "lang": "hi",
+  "intent": "TEST"
+ },
+ {
+  "reference": "kya main metformin leta hoon",
+  "heard": "kya main met for min leta hoon",
+  "lang": "hi",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "mera hba1c kitna hai",
+  "heard": "mera h b a 1 c kitna hai",
+  "lang": "hi",
+  "intent": "TEST"
+ },
+ {
+  "reference": "meri dawai kaun si hai",
+  "heard": "meri dawa kaun si hai",
+  "lang": "hi",
+  "intent": "MEDICINES"
+ },
+ {
+  "reference": "mera cholesterol high hai",
+  "heard": "mera colesterol high hai",
+  "lang": "hi",
+  "intent": "TEST"
+ },
+ {
+  "reference": "mera next appointment kab hai",
+  "heard": "mera next a point ment kab hai",
+  "lang": "hi",
+  "intent": "APPOINTMENTS"
+ }
+]

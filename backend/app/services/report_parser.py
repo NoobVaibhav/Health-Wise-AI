@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from app.services.normalization_service import match_parameter_name, skip_own_names
+from app.utils.clock import hospital_today
 
 # A number, with optional thousands separators (also Indian grouping): 4000, 4,000, 1,50,000, 11,000.5, 5.6
 NUMBER = r"(?:\d{1,2}(?:,\d{2})+,\d{3}(?:\.\d+)?|\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)"
@@ -368,7 +369,7 @@ def _first_date(text: str) -> date | None:
     for pattern, kind in _DATE_PATTERNS:
         for m in pattern.finditer(text):
             parsed = _try_date(kind, m.groups())
-            if parsed and 2000 <= parsed.year <= date.today().year + 1:
+            if parsed and 2000 <= parsed.year <= hospital_today().year + 1:
                 found.append((m.start(), parsed))
     return min(found, key=lambda f: f[0])[1] if found else None
 

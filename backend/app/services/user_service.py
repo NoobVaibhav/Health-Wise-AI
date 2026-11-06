@@ -10,11 +10,12 @@ from app.core.config import get_settings
 from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY, NURSE, RADIOLOGY
 from app.core.security import hash_password
 from app.database.models import (
-    AuditLog, Department, Doctor, Employee, HistoryRevision, LabStaff, Patient, PatientAssistantConversation, PharmacyStaff, Nurse, RadiologyStaff, User,
+    AuditLog, Doctor, Employee, HistoryRevision, LabStaff, Patient, PatientAssistantConversation, PharmacyStaff, Nurse, RadiologyStaff, User,
 )
 from app.schemas.auth import StaffCreate
 from app.services import catalog_service, grade_service
 from app.schemas.patient import PatientCreate
+from app.utils.clock import hospital_today
 
 
 def generate_password() -> str:
@@ -117,7 +118,7 @@ def create_patient(db: Session, data: PatientCreate) -> tuple[Patient, str | Non
 def age_from_dob(dob: date | None) -> int | None:
     if not dob:
         return None
-    today = date.today()
+    today = hospital_today()
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
 

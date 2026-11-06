@@ -17,6 +17,7 @@ from app.utils.locking import lock
 from app.database.models import (
     ClinicalAlert, ClinicalOrder, Doctor, DiagnosticAnalyte, DiagnosticTest, LabResult, LabStaff, LabTestOrder, Patient, RadiologyOrder, RadiologyReport, RadiologyStaff, User, utcnow,
 )
+from app.utils.clock import hospital_now
 
 LAB_CATEGORIES = ("HAEMATOLOGY", "BIOCHEMISTRY", "CLINICAL_PATHOLOGY", "MICROBIOLOGY", "SEROLOGY", "IMMUNOLOGY", "HISTOPATHOLOGY", "URINE", "CARDIAC_MARKERS")
 MODALITIES = ("XRAY", "ULTRASOUND", "CT", "MRI", "MAMMOGRAPHY", "ECHO", "ECG", "OTHER")
@@ -310,7 +311,7 @@ def radiology_dashboard(db: Session) -> dict:
     counts = {k: 0 for k in RADIOLOGY_LABELS}
     for o in rows:
         counts[o.status] += 1
-    today = datetime.now().date()
+    today = hospital_now().date()
     return {"counts": counts, "open": sum(counts[k] for k in RADIOLOGY_OPEN), "stat_open": sum(1 for o in rows if o.priority in ("URGENT", "STAT") and o.status in RADIOLOGY_OPEN),
             "waiting_for_report": counts["REPORTED"], "done_today": sum(1 for o in rows if o.approved_at and o.approved_at.date() == today)}
 

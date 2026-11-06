@@ -5,13 +5,14 @@ Three kinds of item, each with its source:
 - RECOMMENDATIONS with a follow-up date that no task and no completed appointment covers: shown as "no documented completion"
   (that is not proof that it did not happen);
 - INVESTIGATIONS advised in a doctor's assessment, with no report uploaded since: shown the same careful way."""
-from datetime import date, datetime
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database.models import Appointment, ClinicalAssessment, DoctorRecommendation, FollowUpTask, HealthReport, Patient
 from app.services.clinical_timeline import source
+from app.utils.clock import hospital_now, hospital_today
 
 
 def _task(t: FollowUpTask, today: date) -> dict:
@@ -23,7 +24,7 @@ def _task(t: FollowUpTask, today: date) -> dict:
 
 
 def build(db: Session, patient: Patient) -> dict:
-    today, now = date.today(), datetime.now()
+    today, now = hospital_today(), hospital_now()
     tasks = db.scalars(select(FollowUpTask).where(FollowUpTask.patient_id == patient.id).order_by(FollowUpTask.due_date.is_(None), FollowUpTask.due_date, FollowUpTask.id)).all()
     task_rows = [_task(t, today) for t in tasks]
     covered = {(t.source_type, t.source_id) for t in tasks if t.source_type}

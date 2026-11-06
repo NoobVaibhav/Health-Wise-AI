@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.database.models import MedicineDispensing, Patient, PatientMedication, Prescription
 from app.services.clinical_timeline import source
 from app.services.health_history_service import load_history
+from app.utils.clock import hospital_today
 
 OPEN = ("ACTIVE", "PARTIALLY_DISPENSED")
 NEW_DAYS = 30
@@ -32,7 +33,7 @@ def build(db: Session, patient: Patient) -> dict:
     prescriptions = db.scalars(select(Prescription).where(Prescription.patient_id == patient.id).order_by(Prescription.prescription_date, Prescription.id)).all()
     history = load_history(db, patient)
     allergies = history.get("allergies", [])
-    today = date.today()
+    today = hospital_today()
 
     groups: dict[str, dict] = {}
     for rx in prescriptions:

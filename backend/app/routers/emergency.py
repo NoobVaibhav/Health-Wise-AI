@@ -2,7 +2,6 @@
 Nothing here waits for AI or for any other module: a critical triage raises an alert from plain rules at once."""
 import secrets
 import uuid
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
@@ -16,6 +15,7 @@ from app.schemas.clinical import AssignIn, DispositionIn, EdVisitIn, OrderIn, Ti
 from app.services import audit_service, encounter_service as enc, grade_service, hospital_service, ipd_service as ipd, registry_service
 from app.services.access_service import permissions_of, require_permission
 from app.utils.validators import PathId
+from app.utils.clock import hospital_now
 
 router = APIRouter(prefix="/api/emergency", tags=["emergency"])
 register_perm = require_permission("ed.register")
@@ -32,7 +32,7 @@ def _timeline(db: Session, visit: EdVisit, kind: str, text: str, user: User | No
 def create_unidentified(db: Session, data, user: User) -> Patient:
     """An unknown patient gets a real record at once (UHID included) so treatment is never delayed. The record has no login and no invented details."""
     branch = hospital_service.default_branch(db)
-    stamp = datetime.now().strftime("%H%M")
+    stamp = hospital_now().strftime("%H%M")
     gender = data.gender
     login = User(email=f"unknown-{uuid.uuid4().hex[:10]}@ed.invalid", password_hash=hash_password(secrets.token_urlsafe(16)), full_name=f"Unknown {gender or 'person'} (ED {stamp})",
                  role="PATIENT", is_active=False, must_change_password=True)

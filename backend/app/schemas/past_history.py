@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 from app.utils.validators import check_blood_pressure, opt_text, text, PositiveId, PULSE, SYSTOLIC, DIASTOLIC, SPO2, TEMPERATURE_F, RESP_RATE
+from app.utils.clock import hospital_today
 
 # who the information came from. EARLIER_ENTRY is only set by the migration of records written before these screens existed.
 Source = Literal["PATIENT_REPORTED", "DOCTOR_VERIFIED", "HOSPITAL_RECORD"]
@@ -21,7 +22,7 @@ COMPLICATION_LABELS = {
     "hypoglycemia": "Earlier low sugar (hypoglycaemia) or diabetic emergency",
     "heart_disease": "Heart disease", "stroke": "Stroke", "kidney_damage": "Kidney damage",
 }
-THIS_YEAR = date.today().year
+THIS_YEAR = hospital_today().year
 
 
 class ControlReadings(BaseModel):
@@ -164,11 +165,11 @@ class AdmissionIn(BaseModel):
 
     @model_validator(mode="after")
     def dates_make_sense(self):
-        if self.admitted_at and self.admitted_at.date() > date.today():
+        if self.admitted_at and self.admitted_at.date() > hospital_today():
             raise ValueError("The admission date cannot be in the future.")
         if self.admitted_at and self.discharged_at and self.discharged_at < self.admitted_at:
             raise ValueError("The discharge cannot be earlier than the admission.")
-        if self.discharged_at and self.discharged_at.date() > date.today():
+        if self.discharged_at and self.discharged_at.date() > hospital_today():
             raise ValueError("The discharge date cannot be in the future.")
         return self
 
@@ -196,7 +197,7 @@ class SurgeryIn(BaseModel):
 
     @model_validator(mode="after")
     def check(self):
-        if self.operation_date and self.operation_date > date.today():
+        if self.operation_date and self.operation_date > hospital_today():
             raise ValueError("The operation date cannot be in the future.")
         if self.operation_year is not None and self.operation_year > THIS_YEAR:
             raise ValueError("The operation year cannot be in the future.")

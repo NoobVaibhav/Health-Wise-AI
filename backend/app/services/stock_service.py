@@ -16,6 +16,7 @@ from app.utils.locking import lock
 from app.database.models import (
     Admission, InventoryItem, MedicineInventory, MedicineRequest, MedicineRequestItem, MedicineReturn, SaleItem, StockMovement, User, utcnow,
 )
+from app.utils.clock import hospital_today
 
 DEFAULT_REORDER_LEVEL = 10
 EXPIRY_WARNING_DAYS = 60
@@ -36,7 +37,7 @@ def record(db: Session, *, medicine: MedicineInventory | None = None, item: Inve
 
 
 def is_usable(row: MedicineInventory) -> bool:
-    return row.quantity > 0 and not row.recalled and (row.expiry_date is None or row.expiry_date >= date.today())
+    return row.quantity > 0 and not row.recalled and (row.expiry_date is None or row.expiry_date >= hospital_today())
 
 
 def usable_batches(db: Session, medicine_name: str) -> list[MedicineInventory]:
@@ -46,7 +47,7 @@ def usable_batches(db: Session, medicine_name: str) -> list[MedicineInventory]:
 
 # ------------------------------------------------------------------ alerts
 def alerts(db: Session) -> dict:
-    today = date.today()
+    today = hospital_today()
     soon = today + timedelta(days=EXPIRY_WARNING_DAYS)
     rows = db.scalars(select(MedicineInventory)).all()
     by_name: dict[str, list[MedicineInventory]] = {}
@@ -81,7 +82,7 @@ def recall_batch(db: Session, row: MedicineInventory, reason: str, user: User) -
 
 def write_off(db: Session, row: MedicineInventory, reason: str, user: User) -> MedicineInventory:
     """Remove the stock of a batch that is expired or recalled (the quantity goes to zero, the history keeps what was removed)."""
-    if not row.recalled and not (row.expiry_date and row.expiry_date < date.today()):
+    if not row.recalled and not (row.expiry_date and row.expiry_date < hospital_today()):
         raise conflict("Only an expired or recalled batch can be written off.")
     if row.quantity <= 0:
         raise conflict("There is nothing left in this batch.")
@@ -107,7 +108,7 @@ def return_sold(db: Session, sale_item_id: int, quantity: int, reason: str, user
     if quantity > sale_item.quantity - returned:
         raise conflict(f"Only {sale_item.quantity - returned} of this line can still be returned.")
     row = db.get(MedicineInventory, sale_item.inventory_id) if sale_item.inventory_id else None
-    restock = bool(row and not row.recalled and (row.expiry_date is None or row.expiry_date >= date.today()))
+    restock = bool(row and not row.recalled and (row.expiry_date is None or row.expiry_date >= hospital_today()))
     db.add(MedicineReturn(sale_item_id=sale_item.id, quantity=quantity, reason=reason.strip(), restocked=restock, created_by=user.id))
     if restock:
         row.quantity += quantity

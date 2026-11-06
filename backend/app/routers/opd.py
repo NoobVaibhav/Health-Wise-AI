@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.permissions import DOCTOR, NURSE, forbidden, get_accessible_patient, get_doctor_profile
+from app.core.permissions import DOCTOR, forbidden, get_doctor_profile
 from app.database.connection import get_db
 from app.database.models import (
     Appointment, ClinicalOrder, Consultation, ConsultationAddendum, ConsultationTemplate, Department, Diagnosis, Doctor, Encounter, EncounterCharge, Patient, Prescription, QueueToken, User, VitalSet,
@@ -15,6 +15,7 @@ from app.schemas.clinical import AddendumIn, CheckInIn, ConsultationIn, Diagnosi
 from app.services import audit_service, encounter_service as svc, grade_service
 from app.services.access_service import permissions_of, require_permission
 from app.utils.validators import PathId, QueryId
+from app.utils.clock import hospital_today
 
 router = APIRouter(prefix="/api/opd", tags=["opd"])
 checkin_perm = require_permission("opd.checkin")
@@ -69,7 +70,7 @@ def queue(day: date | None = None, doctor_id: QueryId = None, user: User = Depen
     """The tokens of a day (today by default). A doctor sees only their own queue."""
     if user.role == DOCTOR:
         doctor_id = get_doctor_profile(db, user).id
-    return svc.queue(db, day or date.today(), doctor_id)
+    return svc.queue(db, day or hospital_today(), doctor_id)
 
 
 def _token(db: Session, token_id: int) -> QueueToken:

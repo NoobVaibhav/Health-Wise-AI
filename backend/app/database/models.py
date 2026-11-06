@@ -201,6 +201,10 @@ class Appointment(Base):
     doctor: Mapped[Doctor] = relationship()
     department: Mapped[Department | None] = relationship()
 
+    # the database itself refuses two open appointments of one doctor in one slot, even if two requests arrive at the same moment
+    __table_args__ = (Index("uq_appointment_doctor_slot_open", "doctor_id", "scheduled_at", unique=True,
+                            sqlite_where=text("status IN ('SCHEDULED','CONFIRMED')"), postgresql_where=text("status IN ('SCHEDULED','CONFIRMED')")),)
+
 
 # ------------------------------------------------------------------ reports
 class HealthReport(Base):

@@ -1,0 +1,112 @@
+[
+ {
+  "spoken": "fifteen",
+  "lang": "en",
+  "value": "15"
+ },
+ {
+  "spoken": "pandrah",
+  "lang": "hi",
+  "value": "15"
+ },
+ {
+  "spoken": "पंधरा",
+  "lang": "hi",
+  "value": "15"
+ },
+ {
+  "spoken": "पंधरा",
+  "lang": "mr",
+  "value": "15"
+ },
+ {
+  "spoken": "eleven point two",
+  "lang": "en",
+  "value": "11.2"
+ },
+ {
+  "spoken": "gyarah point do",
+  "lang": "hi",
+  "value": "11.2"
+ },
+ {
+  "spoken": "ग्यारह दशमलव दो",
+  "lang": "hi",
+  "value": "11.2"
+ },
+ {
+  "spoken": "अकरा पूर्णांक दोन",
+  "lang": "mr",
+  "value": "11.2"
+ },
+ {
+  "spoken": "one hundred and twenty",
+  "lang": "en",
+  "value": "120"
+ },
+ {
+  "spoken": "एक सौ बीस",
+  "lang": "hi",
+  "value": "120"
+ },
+ {
+  "spoken": "एकशे वीस",
+  "lang": "mr",
+  "value": "120"
+ },
+ {
+  "spoken": "six point eight",
+  "lang": "en",
+  "value": "6.8"
+ },
+ {
+  "spoken": "chhe point aath",
+  "lang": "hi",
+  "value": "6.8"
+ },
+ {
+  "spoken": "सात दशमलव चार",
+  "lang": "hi",
+  "value": "7.4"
+ },
+ {
+  "spoken": "साडेसात",
+  "lang": "mr",
+  "value": "7.5"
+ },
+ {
+  "spoken": "twenty four",
+  "lang": "en",
+  "value": "24"
+ },
+ {
+  "spoken": "चौबीस",
+  "lang": "hi",
+  "value": "24"
+ },
+ {
+  "spoken": "चोवीस",
+  "lang": "mr",
+  "value": "24"
+ },
+ {
+  "spoken": "five hundred",
+  "lang": "en",
+  "value": "500"
+ },
+ {
+  "spoken": "पाँच सौ",
+  "lang": "hi",
+  "value": "500"
+ },
+ {
+  "spoken": "पाचशे",
+  "lang": "mr",
+  "value": "500"
+ },
+ {
+  "spoken": "thirty",
+  "lang": "en",
+  "value": "30"
+ }
+]

@@ -33,7 +33,7 @@ describe("RegisterPatient form", () => {
     open();
     const dob = screen.getByLabelText("Date of birth");
     expect(dob.getAttribute("max")).toBe(todayISO());
-    expect(dob.getAttribute("min")).toBe("1930-01-01");
+    expect(dob.getAttribute("min")).toBe("1900-01-01");
     await userEvent.type(dob, "2999-01-01");
     await userEvent.tab();
     expect(await screen.findByText("The date of birth cannot be in the future.")).toBeTruthy();

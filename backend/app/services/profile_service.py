@@ -25,6 +25,7 @@ from app.core.permissions import ADMIN, DOCTOR, EMPLOYEE, LAB, PATIENT, PHARMACY
 from app.database.models import AuditLog, Doctor, Employee, LabStaff, Patient, PharmacyStaff, Nurse, RadiologyStaff, User
 from app.utils.validators import clean_text, normalise_phone
 from app.schemas.profile import ProfileField, ProfileOut, ProfileUpdate, ProfileUser
+from app.utils.clock import hospital_today
 
 ROLE_LABELS = {ADMIN: "Administrator", DOCTOR: "Doctor", EMPLOYEE: "Hospital employee", PATIENT: "Patient",
                PHARMACY: "Pharmacy staff", LAB: "Laboratory staff", NURSE: "Nurse", RADIOLOGY: "Radiology staff"}
@@ -52,7 +53,7 @@ def _age(patient: Patient) -> str | None:
     dob = patient.date_of_birth
     if not dob:
         return None
-    today = date.today()
+    today = hospital_today()
     return f"{today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))} years"
 
 

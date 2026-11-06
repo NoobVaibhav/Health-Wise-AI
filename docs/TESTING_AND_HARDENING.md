@@ -189,3 +189,31 @@ Tests: `test_validation_audit.py`, `test_validation_audit_api.py`, `test_validat
 
 ## Not verified
 Real phone hardware, a real on-screen keyboard, a real microphone, real SMS, real iOS, OCR quality on poor scans, and colour contrast by tool. There is no PWA yet, so installability and offline behaviour were not tested.
+
+# Appointment rules and clock re-audit (5-6 Nov 2026)
+
+## The appointment-date bug
+**Before.** The server compared an appointment with its own clock (`datetime.now()` of the machine) and the page had a plain date-time box with no limits. On a server running in UTC (the Docker default; nothing in the repo set a time zone) a time up to 5 h 30 min in the past was accepted, because the hospital's wall-clock time was compared with the UTC clock. Also accepted: 03:00 at night, 10:07, a time 360 days ahead, two bookings 5 minutes apart, one patient with two doctors at the same time, a future appointment marked COMPLETED, COMPLETED turned into CANCELLED or SCHEDULED, and a completed appointment moved to another day. Yesterday and obvious past times were already refused (422).
+
+**After** (`app/utils/clock.py`, `app/utils/appointment_time.py`, `app/services/appointment_rules.py`, `routers/appointments.py`, `services/trainee_service.py`):
+* Every time is the hospital's wall-clock time (`HOSPITAL_TIMEZONE`, default `Asia/Kolkata`). A time with an offset (`Z`, `+05:30`) is converted; a time without one means hospital time. The stored value is the hospital wall-clock time, as it was before, so existing rows stay valid. (The brief asked for UTC storage; that needs a data migration and a change of every reader, so it is listed as a decision.)
+* Past times are refused, today's earlier times too, with a grace of `APPOINTMENT_GRACE_MINUTES` (5) for walk-ins; at most `APPOINTMENT_MAX_ADVANCE_DAYS` (30) ahead; only 15-minute slots (`APPOINTMENT_SLOT_MINUTES`) between 09:00 and 17:00 (`APPOINTMENT_DAY_START`, `APPOINTMENT_DAY_END`); the last slot ends at closing time.
+* One open appointment per doctor and slot is a database rule (partial unique index `uq_appointment_doctor_slot_open`, also added to old databases at start-up) and a locked check; a patient cannot hold two open appointments at the same time with different doctors (409).
+* Status moves forward only: SCHEDULED to CONFIRMED to COMPLETED, or CANCELLED while open (409 otherwise); a future appointment cannot be completed (422); a completed or cancelled appointment cannot be moved (409). Patients may only cancel their own; doctors change the status of their own; reception and admin do both.
+* `GET /api/appointments/slots?doctor_id=&day=` lists the day's slots as free, taken or unavailable.
+* Pages: the booking form's date box runs from today (hospital date) to 30 days ahead, the times are a grid with taken and passed slots disabled, the server's message appears under the Time field, what was typed is kept, and a double click sends one request. The trainee referral time box has the same limits. "Mark done" appears only on a confirmed appointment.
+* Tests (clock frozen, nothing depends on today): `test_appointment_rules.py` (28), `test_hospital_clock.py` (7), `Appointments.test.jsx` (4), `validators.test.js`. Against the old code 22 of the 28 and 6 of the 7 fail. `test_validation.py::test_appointment_time_rules` was rewritten for the new rules (30 days, slots); `future()` in `tests/conftest.py` now returns a real slot.
+
+## Same root cause everywhere
+About 75 places used the server's `date.today()` / `datetime.now()`: date of birth, "not in the future" checks, expired stock, dashboards, queue tokens, follow-ups, medication and nursing schedules. They now use `hospital_today()` / `hospital_now()`. Effect on a UTC server: for the first 5 h 30 min of every Indian day a baby born that morning was refused, and stock that expires today was treated as expired.
+
+## Other findings
+* Date of birth: the floor was 1930, which refused real patients born 1900-1929; it is now 1900 with the 120-year age limit (backend and page).
+* `bandit` HIGH (trojan source): the sanitiser's regex held invisible direction-override characters literally; written as `\u` escapes now (same set), backend and page. The other `bandit` findings (3 medium, 5 low) are false positives: SQL built from the code's own identifiers and integers, and the configurable starting password.
+* `pip-audit`: nothing. `npm audit`: two moderate `react-router` advisories (the fix is a major upgrade; not applied). No secrets in the tree or the history.
+
+## Existing data
+In a copy of the development database: 19 appointments, 5 CONFIRMED in the past, no duplicate slots. Proposed, not applied: mark past SCHEDULED/CONFIRMED appointments CANCELLED or a new MISSED status.
+
+## Not verified here
+A clean-HEAD baseline of the whole backend suite did not finish (the machine was saturated by the emulator; the part that ran, about 28 %, had no failures). The final full run was done in six parallel shards: 1,203 passed, 24 expected failures, 2 failed (both were tests that checked the old rules and are fixed above). Doctor off-days and hospital holidays: no such data exists, so they are not enforced. Real devices, SMS, microphone and OCR quality are as in the earlier section.

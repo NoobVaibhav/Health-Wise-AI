@@ -19,6 +19,7 @@ from app.database.models import (
 from app.schemas.past_history import (
     COMPLICATION_LABELS, DIABETES_COMPLICATIONS, HYPERTENSION_COMPLICATIONS, AdmissionIn, ConditionIn, PastMedicationIn, SurgeryIn,
 )
+from app.utils.clock import hospital_today
 
 SOURCE_LABELS = {"PATIENT_REPORTED": "Told by the patient", "DOCTOR_VERIFIED": "Checked by a doctor", "HOSPITAL_RECORD": "From a hospital record",
                  "EARLIER_ENTRY": "Entered earlier (source not recorded)"}
@@ -88,7 +89,7 @@ def _condition_dict(db: Session, c: ChronicCondition, meds: list[dict] | None = 
     details = json.loads(c.details_json) if c.details_json else {}
     allowed = {"DIABETES": DIABETES_COMPLICATIONS, "HYPERTENSION": HYPERTENSION_COMPLICATIONS}.get(c.kind, ())
     answers = details.get("complications", {})
-    years = date.today().year - c.diagnosis_year if c.diagnosis_year else None
+    years = hospital_today().year - c.diagnosis_year if c.diagnosis_year else None
     return {
         "id": c.id, "kind": c.kind, "name": c.name, "diagnosis_type": c.diagnosis_type, "duration_text": c.duration_text, "diagnosis_year": c.diagnosis_year,
         "years_since_diagnosis": years if years is not None and years >= 0 else None,       # calculated from the year, labelled as such on screen
@@ -427,7 +428,7 @@ def ensure_migrated(db: Session, patient: Patient) -> None:
         if not name:
             continue
         since = (item.get("since") or "").strip()
-        year = int(since) if re.fullmatch(r"(19|20)\d\d", since) and int(since) <= date.today().year else None
+        year = int(since) if re.fullmatch(r"(19|20)\d\d", since) and int(since) <= hospital_today().year else None
         kind = classify(name)
         c = ChronicCondition(patient_id=patient.id, kind=kind, name=STANDARD_NAMES.get(kind, name) if kind != "OTHER" else name,
                              diagnosis_year=year, duration_text=None if year else (since or None), on_treatment=item.get("on_treatment"), notes=item.get("notes"),
@@ -442,7 +443,7 @@ def ensure_migrated(db: Session, patient: Patient) -> None:
         if not what:
             continue
         year = (item.get("year") or "").strip()
-        s = SurgeryRecord(patient_id=patient.id, procedure_name=what, operation_year=int(year) if re.fullmatch(r"(19|20)\d\d", year) and int(year) <= date.today().year else None,
+        s = SurgeryRecord(patient_id=patient.id, procedure_name=what, operation_year=int(year) if re.fullmatch(r"(19|20)\d\d", year) and int(year) <= hospital_today().year else None,
                           hospital=item.get("hospital"), source="EARLIER_ENTRY", is_deleted=False)
         db.add(s)
         db.flush()
@@ -510,7 +511,7 @@ def sync_surgeries(db: Session, patient: Patient, items: list[dict], none_known:
     for item in wanted.values():
         year = (item.get("year") or "").strip()
         s = SurgeryRecord(patient_id=patient.id, procedure_name=item["what"].strip(), hospital=item.get("hospital"), source="PATIENT_REPORTED", created_by=user.id, updated_by=user.id, is_deleted=False,
-                          operation_year=int(year) if re.fullmatch(r"(19|20)\d\d", year) and int(year) <= date.today().year else None)
+                          operation_year=int(year) if re.fullmatch(r"(19|20)\d\d", year) and int(year) <= hospital_today().year else None)
         db.add(s)
         db.flush()
         _log(db, patient.id, "surgery", s.id, "CREATE", None, user)

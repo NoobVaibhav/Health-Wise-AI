@@ -1,5 +1,4 @@
 """Prescriptions are created ONLY by doctors. The system never suggests medicines."""
-from datetime import date
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -12,6 +11,7 @@ from app.database.models import Doctor, HealthReport, Patient, Prescription, Pre
 from app.schemas.prescription import PrescriptionCreate
 from app.services import grade_service
 from app.services.serializers import effective_status
+from app.utils.clock import hospital_today
 
 
 HIDDEN_STATUSES = ("PENDING_COUNTERSIGN", "RETURNED")      # not for the patient, the pharmacy or the lab until a consultant has countersigned
@@ -36,7 +36,7 @@ def create_prescription(db: Session, doctor: Doctor, data: PrescriptionCreate) -
             raise forbidden()
     rx_status = grade_service.prescription_status(doctor)          # an intern cannot prescribe (403); a resident's waits for the consultant
     rx = Prescription(
-        patient_id=patient.id, doctor_id=doctor.id, report_id=data.report_id, encounter_id=data.encounter_id, prescription_date=date.today(),
+        patient_id=patient.id, doctor_id=doctor.id, report_id=data.report_id, encounter_id=data.encounter_id, prescription_date=hospital_today(),
         clinical_indication=data.clinical_indication, notes=data.notes, status=rx_status,
         tests_advised="\n".join(data.tests) or None,
     )

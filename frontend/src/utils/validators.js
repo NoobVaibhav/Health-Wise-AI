@@ -4,7 +4,7 @@
 
 /** Trim, remove HTML tags and control characters. */
 export const cleanText = (value, { multiline = false } = {}) => {
-  const text = String(value ?? "").replace(/<[^>]*>?/g, "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f​-‏‪-‮⁦-⁩]/g, "");
+  const text = String(value ?? "").replace(/<[^>]*>?/g, "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, "");
   return multiline ? text.trim() : text.replace(/\s+/g, " ").trim();
 };
 
@@ -76,7 +76,7 @@ export const bloodGroup = (value) => (empty(value) || BLOOD_GROUPS.includes(Stri
 const pad = (n) => String(n).padStart(2, "0");
 /** Today's date in the person's own calendar (not the UTC date, which is still "yesterday" in the early morning in India). */
 export const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
-export const MIN_DOB = "1930-01-01";         // the earliest date of birth: the date box starts here
+export const MIN_DOB = "1900-01-01";         // the earliest date of birth: the date box starts here
 
 const realDate = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -96,7 +96,7 @@ export function dateOfBirth(value, { required = false } = {}) {
   const d = realDate(String(value));
   if (!d) return "Please enter a real date.";
   if (value > todayISO()) return "The date of birth cannot be in the future.";
-  if (value < MIN_DOB) return "The date of birth cannot be before 1930.";
+  if (value < MIN_DOB) return "The date of birth cannot be before 1900.";
   if (ageOf(value) > 120) return "The age cannot be more than 120 years.";
   return "";
 }
@@ -110,12 +110,33 @@ export function ageWarning(value) {
   return "";
 }
 
-export function appointmentTime(value) {
+// Appointments follow the HOSPITAL's clock (India time), never the browser's: the server checks the same rules again, this only saves a round trip.
+export const APPOINTMENT_RULES = { timeZone: "Asia/Kolkata", maxDays: 30, graceMinutes: 5, dayStart: "09:00", dayEnd: "17:00", slotMinutes: 15 };
+
+/** The date ("YYYY-MM-DD") and time ("HH:MM") at the hospital right now. `now` can be passed in, so tests do not depend on the real clock. */
+export function hospitalNow(now = new Date()) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: APPOINTMENT_RULES.timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(now).map((p) => [p.type, p.value]));
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+}
+export const addDays = (iso, n) => { const [y, m, d] = iso.split("-").map(Number); const t = new Date(Date.UTC(y, m - 1, d + n)); return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`; };
+/** The first and last day the date box offers for an appointment (today at the hospital, and 30 days later). */
+export const appointmentDateBounds = (now = new Date()) => { const min = hospitalNow(now).date; return { min, max: addDays(min, APPOINTMENT_RULES.maxDays) }; };
+const wall = (iso, hhmm) => { const [y, m, d] = iso.split("-").map(Number); const [h, mi] = hhmm.split(":").map(Number); return Date.UTC(y, m - 1, d, h, mi); };   // a wall-clock time as a number, comparable with another one
+
+/** `value` is "YYYY-MM-DDTHH:MM" in hospital time. Returns "" when it can be booked, else the same words the server uses. */
+export function appointmentTime(value, now = new Date()) {
   if (empty(value)) return "Please choose the date and time.";
-  const t = new Date(value);
-  if (Number.isNaN(t.getTime())) return "Please choose a real date and time.";
-  if (t.getTime() < Date.now() - 5 * 60_000) return "The appointment time must be in the future.";
-  if (t.getTime() > Date.now() + 366 * 86_400_000) return "Appointments can be booked up to 1 year ahead.";
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(String(value));
+  if (!m || !realDate(m[1])) return "Please choose a real date and time.";
+  const R = APPOINTMENT_RULES, [, day, hhmm] = m;
+  const minutes = Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
+  const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+  if (minutes % R.slotMinutes) return `Appointments start on a ${R.slotMinutes}-minute slot (for example 10:00, 10:${R.slotMinutes}). Please choose a time from the list.`;
+  if (minutes < toMin(R.dayStart) || minutes + R.slotMinutes > toMin(R.dayEnd)) return `The doctor sees patients between ${R.dayStart} and ${R.dayEnd}. Please choose a time in that period.`;
+  const here = hospitalNow(now), at = wall(day, hhmm), nowWall = wall(here.date, here.time);
+  if (at < nowWall - R.graceMinutes * 60_000) return "That time has already passed. Please choose a time that is still ahead.";
+  if (at > nowWall + R.maxDays * 86_400_000) return `Appointments can be booked up to ${R.maxDays} days ahead.`;
   return "";
 }
 

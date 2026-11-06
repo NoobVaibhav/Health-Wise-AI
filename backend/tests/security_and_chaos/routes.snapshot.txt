@@ -19,6 +19,7 @@ GET /api/admin/people
 GET /api/admin/users
 GET /api/admin/users/{user_id}/delete-check
 GET /api/appointments
+GET /api/appointments/slots
 GET /api/auth/me
 GET /api/auth/setup-status
 GET /api/catalog/departments

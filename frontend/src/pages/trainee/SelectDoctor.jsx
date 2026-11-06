@@ -12,7 +12,7 @@ import { Section } from "../../components/HealthCard";
 import { ErrorBox, Loading, PageTitle } from "../../components/Feedback";
 import { FormField } from "../../components/FormField";
 import { Button, Input, Textarea } from "../../components/ui";
-import { appointmentTime } from "../../utils/validators";
+import { appointmentDateBounds, appointmentTime, hospitalNow } from "../../utils/validators";
 
 function DoctorCard({ d, chosen, onChoose }) {
   return (
@@ -77,7 +77,7 @@ export default function SelectDoctor() {
     try {
       await createReferral({ history_id: Number(historyId), doctor_id: doctorId, reason: reason.trim(), urgent, suggested_department_id: s.department_id || null, book_at: bookAt || null });
       navigate("/trainee/referrals");
-    } catch (err) { setProblem(getErrorMessage(err)); } finally { setBusy(false); }
+    } catch (err) { const m = getErrorMessage(err); if (bookAt && /time|slot|passed|ahead|patients between|appointment at/i.test(m)) setErrors({ book_at: m }); else setProblem(m); } finally { setBusy(false); }
   };
 
   if (loading) return <Loading />;
@@ -108,7 +108,7 @@ export default function SelectDoctor() {
         <div className="space-y-4">
           <FormField label="Reason for the referral *" name="reason" error={errors.reason}><Textarea rows={2} maxLength={300} value={reason} onChange={(e) => { setReason(e.target.value); setReasonEdited(true); }} /></FormField>
           <label className="flex items-center gap-2 font-semibold text-red-700"><input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} className="h-5 w-5" /> Urgent: show at the top of the doctor's list</label>
-          <FormField label="Book an appointment time (optional)" name="book_at" error={errors.book_at} hint="Leave empty to only send the patient and the history to the doctor."><Input type="datetime-local" value={bookAt} onChange={(e) => setBookAt(e.target.value)} /></FormField>
+          <FormField label="Book an appointment time (optional)" name="book_at" error={errors.book_at} hint="Leave empty to only send the patient and the history to the doctor."><Input type="datetime-local" step={900} min={`${appointmentDateBounds().min}T${hospitalNow().time}`} max={`${appointmentDateBounds().max}T17:00`} value={bookAt} aria-invalid={!!errors.book_at} onChange={(e) => { setBookAt(e.target.value); setErrors({ ...errors, book_at: "" }); }} /></FormField>
         </div>
       </Section>
       {problem && <ErrorBox message={problem} />}

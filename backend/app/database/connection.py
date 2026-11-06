@@ -41,6 +41,13 @@ def init_db() -> None:
         access_service.seed_access(db)
         db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_patients_uhid ON patients (uhid)"))   # an old database got the column without the unique rule
         db.execute(text("CREATE INDEX IF NOT EXISTS ix_patients_assigned_doctor_id ON patients (assigned_doctor_id)"))   # an old database never got this index
+        try:                                                   # an old database: add the one-doctor-one-slot rule (skipped, and logged, if old data already breaks it)
+            db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_appointment_doctor_slot_open ON appointments (doctor_id, scheduled_at) WHERE status IN ('SCHEDULED','CONFIRMED')"))
+            db.commit()
+        except Exception:
+            db.rollback()
+            import logging
+            logging.getLogger(__name__).warning("Could not add uq_appointment_doctor_slot_open: two open appointments of one doctor share a slot. Fix them and restart.")
         registry_service.backfill_uhids(db)
         from app.services import encounter_service
         encounter_service.seed_rules(db)

@@ -1,0 +1,230 @@
+[
+ {
+  "text": "stop",
+  "type": "stop"
+ },
+ {
+  "text": "stop please",
+  "type": "stop"
+ },
+ {
+  "text": "umm stop",
+  "type": "stop"
+ },
+ {
+  "text": "okay stop",
+  "type": "stop"
+ },
+ {
+  "text": "please stop talking",
+  "type": "stop"
+ },
+ {
+  "text": "be quiet",
+  "type": "stop"
+ },
+ {
+  "text": "that is enough",
+  "type": "stop"
+ },
+ {
+  "text": "रुको",
+  "type": "stop"
+ },
+ {
+  "text": "बस करो",
+  "type": "stop"
+ },
+ {
+  "text": "चुप",
+  "type": "stop"
+ },
+ {
+  "text": "थांबा",
+  "type": "stop"
+ },
+ {
+  "text": "band karo",
+  "type": "stop"
+ },
+ {
+  "text": "ruko",
+  "type": "stop"
+ },
+ {
+  "text": "repeat",
+  "type": "repeat"
+ },
+ {
+  "text": "repeat that please",
+  "type": "repeat"
+ },
+ {
+  "text": "can you say that again",
+  "type": "repeat"
+ },
+ {
+  "text": "say again",
+  "type": "repeat"
+ },
+ {
+  "text": "what did you say",
+  "type": "repeat"
+ },
+ {
+  "text": "once more please",
+  "type": "repeat"
+ },
+ {
+  "text": "फिर से बोलो",
+  "type": "repeat"
+ },
+ {
+  "text": "दोबारा बोलो",
+  "type": "repeat"
+ },
+ {
+  "text": "पुन्हा सांग",
+  "type": "repeat"
+ },
+ {
+  "text": "dobara bolo",
+  "type": "repeat"
+ },
+ {
+  "text": "phir se bolo",
+  "type": "repeat"
+ },
+ {
+  "text": "speak slower",
+  "type": "slower"
+ },
+ {
+  "text": "please speak a bit slower",
+  "type": "slower"
+ },
+ {
+  "text": "slow down",
+  "type": "slower"
+ },
+ {
+  "text": "धीरे बोलो",
+  "type": "slower"
+ },
+ {
+  "text": "हळू बोला",
+  "type": "slower"
+ },
+ {
+  "text": "dheere bolo",
+  "type": "slower"
+ },
+ {
+  "text": "thoda slow bolo",
+  "type": "slower"
+ },
+ {
+  "text": "speak faster",
+  "type": "faster"
+ },
+ {
+  "text": "go a little faster",
+  "type": "faster"
+ },
+ {
+  "text": "तेज़ बोलो",
+  "type": "faster"
+ },
+ {
+  "text": "जलद बोला",
+  "type": "faster"
+ },
+ {
+  "text": "tez bolo",
+  "type": "faster"
+ },
+ {
+  "text": "clear the chat",
+  "type": "clear"
+ },
+ {
+  "text": "start over",
+  "type": "clear"
+ },
+ {
+  "text": "चैट साफ करो",
+  "type": "clear"
+ },
+ {
+  "text": "चॅट साफ करा",
+  "type": "clear"
+ },
+ {
+  "text": "switch to Hindi",
+  "type": "language"
+ },
+ {
+  "text": "speak in Marathi",
+  "type": "language"
+ },
+ {
+  "text": "change language to English",
+  "type": "language"
+ },
+ {
+  "text": "हिंदी",
+  "type": "language"
+ },
+ {
+  "text": "मराठी",
+  "type": "language"
+ },
+ {
+  "text": "hindi me bolo",
+  "type": "language"
+ },
+ {
+  "text": "that's all",
+  "type": "exit"
+ },
+ {
+  "text": "i am done",
+  "type": "exit"
+ },
+ {
+  "text": "एवढेच",
+  "type": "exit"
+ },
+ {
+  "text": "stop taking my medicine",
+  "type": null
+ },
+ {
+  "text": "can I stop my tablets",
+  "type": null
+ },
+ {
+  "text": "what is my hba1c",
+  "type": null
+ },
+ {
+  "text": "repeat my last blood test result",
+  "type": null
+ },
+ {
+  "text": "clear my doubt about the report",
+  "type": null
+ },
+ {
+  "text": "tell me slowly what the doctor said",
+  "type": null
+ },
+ {
+  "text": "when is the next appointment",
+  "type": null
+ },
+ {
+  "text": "मुझे सीने में दर्द है",
+  "type": null
+ }
+]

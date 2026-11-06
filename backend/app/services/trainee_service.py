@@ -1,6 +1,6 @@
 """Junior doctors (interns and residents): which patients they may work on, the history drafts, the doctor suggestion and the referral."""
 import json
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, or_, select
@@ -13,6 +13,7 @@ from app.database.models import (
 from app.schemas.trainee import TraineeHistoryData
 from app.services import referral_rules
 from app.services.health_history_service import age_of
+from app.utils.clock import hospital_today
 
 OPEN_APPOINTMENT = ("SCHEDULED", "CONFIRMED")
 STATUS_LABEL = {"SENT": "Sent", "SEEN": "Seen by doctor", "COMPLETED": "Completed"}
@@ -128,7 +129,7 @@ def complete_history(db: Session, h: TraineeHistory) -> TraineeHistory:
 
 # ------------------------------------------------------------------ suggestion and referral
 def _day_range() -> tuple[datetime, datetime]:
-    start = datetime.combine(date.today(), datetime.min.time())
+    start = datetime.combine(hospital_today(), datetime.min.time())
     return start, start + timedelta(days=1)
 
 
@@ -172,8 +173,11 @@ def create_referral(db: Session, trainee: Doctor, h: TraineeHistory, doctor: Doc
     patient = h.patient
     appointment = None
     if book_at is not None:
-        if book_at < datetime.now() - timedelta(minutes=5):
-            raise HTTPException(422, "The appointment time must be in the future.")
+        from app.services import appointment_rules
+        from app.utils.clock import to_hospital_time
+        book_at = to_hospital_time(book_at)
+        appointment_rules.check_bookable(book_at)                      # the same rules as every other booking
+        appointment_rules.check_patient_free(db, patient.id, book_at)
         if db.scalar(select(Appointment.id).where(Appointment.doctor_id == doctor.id, Appointment.scheduled_at == book_at,
                                                   Appointment.status.in_(OPEN_APPOINTMENT))):
             raise HTTPException(status.HTTP_409_CONFLICT, "This doctor already has an appointment at that time.")

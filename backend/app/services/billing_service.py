@@ -23,12 +23,13 @@ from app.services import dispensing_service
 from app.services.prescription_service import is_open
 from app.services import stock_service
 from app.services.serializers import dispensed_quantity
+from app.utils.clock import hospital_today
 
 DEFAULT_SHOP = "HealthWise Pharmacy"
 
 
 def _usable(row: MedicineInventory) -> bool:
-    return row.quantity > 0 and not row.recalled and (row.expiry_date is None or row.expiry_date >= date.today())
+    return row.quantity > 0 and not row.recalled and (row.expiry_date is None or row.expiry_date >= hospital_today())
 
 
 def _order(rows: list[MedicineInventory]) -> list[MedicineInventory]:
@@ -64,7 +65,7 @@ def lookup(db: Session, code: str) -> StockLookup:
         gst_percent=first.gst_percent or 0, available=sum(r.quantity for r in rows if _usable(r)),
         batches=[StockLookupBatch(id=r.id, batch_number=r.batch_number, quantity=r.quantity, expiry_date=r.expiry_date,
                                   unit_price=r.unit_price,
-                                  expired=r.expiry_date is not None and r.expiry_date < date.today()) for r in rows],
+                                  expired=r.expiry_date is not None and r.expiry_date < hospital_today()) for r in rows],
     )
 
 
@@ -128,7 +129,7 @@ def backfill_barcodes(db: Session) -> int:
 
 # ------------------------------------------------------------------ selling
 def _next_bill_number(db: Session) -> str:
-    stamp = date.today().strftime("%Y%m%d")
+    stamp = hospital_today().strftime("%Y%m%d")
     count = db.scalar(select(func.count(Sale.id)).where(Sale.bill_number.like(f"BILL-{stamp}-%"))) or 0
     number = f"BILL-{stamp}-{count + 1:04d}"
     while db.scalar(select(Sale.id).where(Sale.bill_number == number)):
@@ -219,7 +220,7 @@ def _price_row(db: Session, medicine_name: str) -> MedicineInventory | None:
     rows = _order(list(db.scalars(select(MedicineInventory).where(
         func.lower(MedicineInventory.medicine_name) == medicine_name.strip().lower())).all()))
     priced = [r for r in rows if r.unit_price is not None]
-    fresh = [r for r in priced if r.expiry_date is None or r.expiry_date >= date.today()]
+    fresh = [r for r in priced if r.expiry_date is None or r.expiry_date >= hospital_today()]
     return (fresh or priced or [None])[0]
 
 
@@ -330,7 +331,7 @@ def list_sales(db: Session, q: str | None, day: date | None) -> list[SaleListIte
 
 
 def summary_today(db: Session) -> SalesSummary:
-    start = _local_day_start_utc(date.today())
+    start = _local_day_start_utc(hospital_today())
     sales = db.scalars(select(Sale).where(Sale.created_at >= start)).all()
     by_method: dict[str, float] = defaultdict(float)
     units: dict[str, int] = defaultdict(int)

@@ -1,17 +1,9 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
-from app.utils.validators import check_appointment_time, opt_text, text, PositiveId
-
-def local_time(value: datetime) -> datetime:
-    """A time that carries a time zone (for example ...Z) is turned into the server's local time, so it can be compared with 'now'."""
-    if not value.tzinfo:
-        return value
-    try:
-        return value.astimezone().replace(tzinfo=None)
-    except (OSError, OverflowError, ValueError):          # a year the operating system cannot convert (before 1970 on Windows): the plain time is enough, it is refused as "past" anyway
-        return value.replace(tzinfo=None)
-
+from app.utils.appointment_time import check_appointment_time
+from app.utils.clock import to_hospital_time
+from app.utils.validators import opt_text, text, PositiveId
 
 STATUSES = ("SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED")
 
@@ -29,7 +21,7 @@ class AppointmentCreate(BaseModel):
     @field_validator("scheduled_at")
     @classmethod
     def _time(cls, value):
-        return check_appointment_time(local_time(value))
+        return check_appointment_time(to_hospital_time(value))          # with or without an offset: the hospital's wall-clock time; then past / slot / opening hours / 30 days ahead
 
 
 class AppointmentUpdate(BaseModel):
@@ -49,7 +41,7 @@ class AppointmentUpdate(BaseModel):
     @field_validator("scheduled_at")
     @classmethod
     def _time(cls, value):
-        return None if value is None else check_appointment_time(local_time(value))
+        return None if value is None else check_appointment_time(to_hospital_time(value))
 
 
 class AppointmentOut(BaseModel):

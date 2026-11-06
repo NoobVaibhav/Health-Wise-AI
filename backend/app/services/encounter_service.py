@@ -1,20 +1,21 @@
 """Encounters (the shared spine of OPD, emergency and inpatient care), the OPD queue, vitals with alert rules, consultations, diagnoses, orders and charges."""
 import json
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 
 from fastapi import HTTPException
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.permissions import DOCTOR, NURSE, forbidden, get_doctor_profile, get_accessible_patient
 from app.database.models import (
-    Appointment, Branch, ClinicalAlert, ClinicalOrder, Consultation, ConsultationAddendum, ConsultationTemplate, Department, Diagnosis, Doctor, Encounter, EncounterCharge,
+    Appointment, ClinicalAlert, Consultation, ConsultationTemplate, Department, Diagnosis, Doctor, Encounter, EncounterCharge,
     EscalationRule, FollowUpTask, Patient, QueueToken, ServiceCatalog, User, VitalSet,
 )
 from app.schemas.clinical import ConsultationIn, VitalsIn
 from app.services import hospital_service
 from app.services.health_history_service import age_of
+from app.utils.clock import hospital_today
 
 DEFAULT_RULES = [   # the hospital reviews and changes these in the admin screen; they are plain numbers, no AI
     ("spo2", "LT", 90, "CRITICAL", "Oxygen level below 90 %"), ("spo2", "LT", 94, "WARNING", "Oxygen level below 94 %"),
@@ -80,7 +81,7 @@ def open_encounter(db: Session, patient: Patient, enc_type: str, *, doctor: Doct
 def issue_token(db: Session, encounter: Encounter, doctor: Doctor, urgent: bool = False) -> QueueToken:
     """The next number of this doctor for today. The unique rule (doctor, day, number) means two people checked in at the same moment can never get the same token;
     the loser of the race simply takes the next number."""
-    today = date.today()
+    today = hospital_today()
     for _ in range(5):
         number = (db.scalar(select(func.max(QueueToken.number)).where(QueueToken.doctor_id == doctor.id, QueueToken.token_date == today)) or 0) + 1
         token = QueueToken(encounter_id=encounter.id, doctor_id=doctor.id, branch_id=encounter.branch_id, token_date=today, number=number, urgent=urgent, status="WAITING")
@@ -125,7 +126,7 @@ def call_token(db: Session, token: QueueToken) -> QueueToken:
 
 
 def next_waiting(db: Session, doctor: Doctor) -> QueueToken | None:
-    rows = db.scalars(select(QueueToken).where(QueueToken.doctor_id == doctor.id, QueueToken.token_date == date.today(), QueueToken.status == "WAITING")).all()
+    rows = db.scalars(select(QueueToken).where(QueueToken.doctor_id == doctor.id, QueueToken.token_date == hospital_today(), QueueToken.status == "WAITING")).all()
     rows.sort(key=lambda t: (not t.urgent, t.number))
     return rows[0] if rows else None
 
@@ -219,7 +220,7 @@ def get_or_create_consultation(db: Session, encounter: Encounter, doctor: Doctor
 def save_consultation(db: Session, c: Consultation, data: ConsultationIn) -> Consultation:
     if c.status == "SIGNED":
         raise HTTPException(409, "This consultation is signed. Please add a dated addendum instead of changing it.")
-    if data.follow_up_date and data.follow_up_date < date.today():
+    if data.follow_up_date and data.follow_up_date < hospital_today():
         raise HTTPException(422, "The follow-up date cannot be in the past.")
     for key in ("complaint", "hpi", "past_history", "family_history", "examination", "assessment", "plan", "advice", "follow_up_date"):
         setattr(c, key, getattr(data, key))

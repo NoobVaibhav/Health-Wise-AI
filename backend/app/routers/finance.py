@@ -1,6 +1,6 @@
 """Finance: charges, invoices, payments and receipts, advances, refunds, packages and the reports.
 Billing staff see bills and money, never clinical notes. A patient sees only their own bills and receipts."""
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
@@ -13,6 +13,7 @@ from app.database.models import BillingPackage, Deposit, Invoice, Patient, Payme
 from app.services import audit_service, finance_service as fin
 from app.services.access_service import permissions_of, require_permission
 from app.utils.validators import PathId, QueryId, SearchText, one_of, opt_text, text
+from app.utils.clock import hospital_today
 
 INVOICE_STATUS = one_of("DRAFT", "FINAL", "CANCELLED", name="status")
 
@@ -115,7 +116,7 @@ def find_patients(q: SearchText = None, user: User = Depends(view), db: Session 
 
 @router.get("/patients/{patient_id}/overview")
 def overview(patient_id: PathId, user: User = Depends(view), db: Session = Depends(get_db)):
-    from app.database.models import Admission, InsuranceClaim, PatientInsurance
+    from app.database.models import Admission, PatientInsurance
     p = _patient(db, patient_id)
     deposits = db.scalars(select(Deposit).where(Deposit.patient_id == p.id).order_by(Deposit.id.desc())).all()
     return {"patient": {"id": p.id, "full_name": p.user.full_name, "patient_code": p.patient_code, "uhid": p.uhid},
@@ -290,7 +291,7 @@ def add_package(data: PackageIn, request: Request, user: User = Depends(require_
 # ------------------------------------------------------------------ reports
 @router.get("/reports/daily-cash")
 def daily_cash(day: date | None = None, user: User = Depends(report), db: Session = Depends(get_db)):
-    return fin.daily_cash(db, day or date.today())
+    return fin.daily_cash(db, day or hospital_today())
 
 
 @router.get("/reports/outstanding")
@@ -300,7 +301,7 @@ def outstanding(user: User = Depends(report), db: Session = Depends(get_db)):
 
 @router.get("/reports/revenue")
 def revenue(from_day: date | None = None, to_day: date | None = None, user: User = Depends(report), db: Session = Depends(get_db)):
-    end = to_day or date.today()
+    end = to_day or hospital_today()
     start = from_day or (end - timedelta(days=30))
     if start > end or (end - start).days > 366:
         raise HTTPException(422, "Choose a period of at most a year, from earlier to later.")

@@ -5,7 +5,6 @@ Rules:
 - you cannot dispense more than the remaining quantity
 - if the pharmacy keeps stock for that medicine, stock is deducted (earliest expiry first); not enough stock -> error
 """
-from datetime import date
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -16,6 +15,7 @@ from app.schemas.pharmacy import DispenseRequest
 from app.services import stock_service
 from app.services.prescription_service import is_open
 from app.services.serializers import dispensed_quantity, effective_status
+from app.utils.clock import hospital_today
 
 
 def _deduct_stock(db: Session, medicine_name: str, quantity: int, rx_id: int | None = None, user_id: int | None = None) -> None:
@@ -29,13 +29,13 @@ def _deduct_stock(db: Session, medicine_name: str, quantity: int, rx_id: int | N
         func.lower(MedicineInventory.medicine_name) == medicine_name.lower()))
     if not tracked:
         return  # this medicine is not in the stock table: nothing to deduct
-    available = sum(b.quantity for b in batches if b.expiry_date is None or b.expiry_date >= date.today())
+    available = sum(b.quantity for b in batches if b.expiry_date is None or b.expiry_date >= hospital_today())
     if available < quantity:
         raise HTTPException(status.HTTP_409_CONFLICT,
                             f"Not enough stock for {medicine_name}: {available} available, {quantity} requested.")
     remaining = quantity
     for batch in batches:
-        if batch.expiry_date is not None and batch.expiry_date < date.today():
+        if batch.expiry_date is not None and batch.expiry_date < hospital_today():
             continue  # never dispense expired stock
         take = min(batch.quantity, remaining)
         batch.quantity -= take

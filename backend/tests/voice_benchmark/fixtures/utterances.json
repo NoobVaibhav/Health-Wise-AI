@@ -1,0 +1,2102 @@
+[
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "What did my doctor say at my last checkup",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me what did my doctor say at my last checkup",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "What did my doctor say at my last checkup please",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "Explain my latest report",
+  "intent": "REPORT"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me explain my latest report",
+  "intent": "REPORT"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "Explain my latest report please",
+  "intent": "REPORT"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "What is my haemoglobin",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me what is my haemoglobin",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "What is my haemoglobin please",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "What is my HbA1c",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me what is my HbA1c",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "What is my HbA1c please",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "How is my creatinine",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me how is my creatinine",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "How is my creatinine please",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "What is my vitamin D level",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me what is my vitamin D level",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "What is my vitamin D level please",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "Is my cholesterol high",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me is my cholesterol high",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "Is my cholesterol high please",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "What is my sugar level",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me what is my sugar level",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "What is my sugar level please",
+  "intent": "TEST"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "What medicines do I take",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me what medicines do I take",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "What medicines do I take please",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "Do I take metformin",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me do I take metformin",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "Do I take metformin please",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "Tell me about atorvastatin",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me tell me about atorvastatin",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "Tell me about atorvastatin please",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "Which of my results are abnormal",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me which of my results are abnormal",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "Which of my results are abnormal please",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "Compare my test results",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me compare my test results",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "Compare my test results please",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "When is my next appointment",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me when is my next appointment",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "When is my next appointment please",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "What did the doctor advise me",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me what did the doctor advise me",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "What did the doctor advise me please",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "Do I have any allergies",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me do I have any allergies",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "Do I have any allergies please",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "What does creatinine mean",
+  "intent": "TERM"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me what does creatinine mean",
+  "intent": "TERM"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "What does creatinine mean please",
+  "intent": "TERM"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "Brief me",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me brief me",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "Brief me please",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "Open my reports",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me open my reports",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "Open my reports please",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "plain",
+  "text": "What is the date today",
+  "intent": "TIME"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "umm can you tell me what is the date today",
+  "intent": "TIME"
+ },
+ {
+  "group": "en",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "What is the date today please",
+  "intent": "TIME"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "पिछले चेकअप में डॉक्टर ने क्या कहा",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए पिछले चेकअप में डॉक्टर ने क्या कहा",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "पिछले चेकअप में डॉक्टर ने क्या कहा कृपया",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "मेरी ताज़ा रिपोर्ट समझाइए",
+  "intent": "REPORT"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए मेरी ताज़ा रिपोर्ट समझाइए",
+  "intent": "REPORT"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "मेरी ताज़ा रिपोर्ट समझाइए कृपया",
+  "intent": "REPORT"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "मेरा हीमोग्लोबिन कितना है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए मेरा हीमोग्लोबिन कितना है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "मेरा हीमोग्लोबिन कितना है कृपया",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "मेरा HbA1c कितना है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए मेरा HbA1c कितना है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "मेरा HbA1c कितना है कृपया",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "मेरा क्रिएटिनिन कैसा है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए मेरा क्रिएटिनिन कैसा है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "मेरा क्रिएटिनिन कैसा है कृपया",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "मेरा विटामिन डी कितना है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए मेरा विटामिन डी कितना है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "मेरा विटामिन डी कितना है कृपया",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "क्या मेरा कोलेस्ट्रॉल ज़्यादा है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए क्या मेरा कोलेस्ट्रॉल ज़्यादा है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "क्या मेरा कोलेस्ट्रॉल ज़्यादा है कृपया",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "मेरी शुगर कितनी है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए मेरी शुगर कितनी है",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "मेरी शुगर कितनी है कृपया",
+  "intent": "TEST"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "मैं कौन सी दवाइयाँ लेता हूँ",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए मैं कौन सी दवाइयाँ लेता हूँ",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "मैं कौन सी दवाइयाँ लेता हूँ कृपया",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "क्या मैं मेटफॉर्मिन लेता हूँ",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए क्या मैं मेटफॉर्मिन लेता हूँ",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "क्या मैं मेटफॉर्मिन लेता हूँ कृपया",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "अटोरवास्टेटिन के बारे में बताइए",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए अटोरवास्टेटिन के बारे में बताइए",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "अटोरवास्टेटिन के बारे में बताइए कृपया",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "कौन से नतीजे असामान्य हैं",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए कौन से नतीजे असामान्य हैं",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "कौन से नतीजे असामान्य हैं कृपया",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "मेरी जाँच के नतीजों की तुलना करें",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए मेरी जाँच के नतीजों की तुलना करें",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "मेरी जाँच के नतीजों की तुलना करें कृपया",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "मेरा अगला अपॉइंटमेंट कब है",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए मेरा अगला अपॉइंटमेंट कब है",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "मेरा अगला अपॉइंटमेंट कब है कृपया",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "डॉक्टर के निर्देश क्या हैं",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए डॉक्टर के निर्देश क्या हैं",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "डॉक्टर के निर्देश क्या हैं कृपया",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "क्या मुझे कोई एलर्जी है",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए क्या मुझे कोई एलर्जी है",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "क्या मुझे कोई एलर्जी है कृपया",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "क्रिएटिनिन का मतलब क्या है",
+  "intent": "TERM"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए क्रिएटिनिन का मतलब क्या है",
+  "intent": "TERM"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "क्रिएटिनिन का मतलब क्या है कृपया",
+  "intent": "TERM"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "आज की जानकारी",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए आज की जानकारी",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "आज की जानकारी कृपया",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "रिपोर्ट खोलो",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए रिपोर्ट खोलो",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "रिपोर्ट खोलो कृपया",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "plain",
+  "text": "आज की तारीख क्या है",
+  "intent": "TIME"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "अं कृपया बताइए आज की तारीख क्या है",
+  "intent": "TIME"
+ },
+ {
+  "group": "hi",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "आज की तारीख क्या है कृपया",
+  "intent": "TIME"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "मागील तपासणीत डॉक्टर काय म्हणाले",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा मागील तपासणीत डॉक्टर काय म्हणाले",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "मागील तपासणीत डॉक्टर काय म्हणाले सांगा ना",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "माझा ताजा रिपोर्ट समजावून सांगा",
+  "intent": "REPORT"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा माझा ताजा रिपोर्ट समजावून सांगा",
+  "intent": "REPORT"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "माझा ताजा रिपोर्ट समजावून सांगा सांगा ना",
+  "intent": "REPORT"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "माझा हिमोग्लोबिन किती आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा माझा हिमोग्लोबिन किती आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "माझा हिमोग्लोबिन किती आहे सांगा ना",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "माझा HbA1c किती आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा माझा HbA1c किती आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "माझा HbA1c किती आहे सांगा ना",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "माझे क्रिएटिनिन कसे आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा माझे क्रिएटिनिन कसे आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "माझे क्रिएटिनिन कसे आहे सांगा ना",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "माझे व्हिटॅमिन डी किती आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा माझे व्हिटॅमिन डी किती आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "माझे व्हिटॅमिन डी किती आहे सांगा ना",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "माझे कोलेस्ट्रॉल जास्त आहे का",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा माझे कोलेस्ट्रॉल जास्त आहे का",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "माझे कोलेस्ट्रॉल जास्त आहे का सांगा ना",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "माझी साखर किती आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा माझी साखर किती आहे",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "माझी साखर किती आहे सांगा ना",
+  "intent": "TEST"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "मी कोणती औषधे घेतो",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा मी कोणती औषधे घेतो",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "मी कोणती औषधे घेतो सांगा ना",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "मी मेटफॉर्मिन घेतो का",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा मी मेटफॉर्मिन घेतो का",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "मी मेटफॉर्मिन घेतो का सांगा ना",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "अटोरवास्टेटिन बद्दल सांगा",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा अटोरवास्टेटिन बद्दल सांगा",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "अटोरवास्टेटिन बद्दल सांगा सांगा ना",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "कोणते निकाल असामान्य आहेत",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा कोणते निकाल असामान्य आहेत",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "कोणते निकाल असामान्य आहेत सांगा ना",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "माझ्या निकालांची तुलना करा",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा माझ्या निकालांची तुलना करा",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "माझ्या निकालांची तुलना करा सांगा ना",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "माझी पुढची भेट कधी आहे",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा माझी पुढची भेट कधी आहे",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "माझी पुढची भेट कधी आहे सांगा ना",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "डॉक्टरांच्या सूचना काय आहेत",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा डॉक्टरांच्या सूचना काय आहेत",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "डॉक्टरांच्या सूचना काय आहेत सांगा ना",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "मला काही ॲलर्जी आहे का",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा मला काही ॲलर्जी आहे का",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "मला काही ॲलर्जी आहे का सांगा ना",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "क्रिएटिनिन म्हणजे काय",
+  "intent": "TERM"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा क्रिएटिनिन म्हणजे काय",
+  "intent": "TERM"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "क्रिएटिनिन म्हणजे काय सांगा ना",
+  "intent": "TERM"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "आजची माहिती",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा आजची माहिती",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "आजची माहिती सांगा ना",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "रिपोर्ट उघडा",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा रिपोर्ट उघडा",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "रिपोर्ट उघडा सांगा ना",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "plain",
+  "text": "आजची तारीख काय आहे",
+  "intent": "TIME"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_before",
+  "text": "अं कृपया सांगा आजची तारीख काय आहे",
+  "intent": "TIME"
+ },
+ {
+  "group": "mr",
+  "lang": "mr",
+  "form": "filler_after",
+  "text": "आजची तारीख काय आहे सांगा ना",
+  "intent": "TIME"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "doctor ne last checkup me kya bola",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar doctor ne last checkup me kya bola",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "doctor ne last checkup me kya bola bata do please",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "meri latest report samjhao",
+  "intent": "REPORT"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar meri latest report samjhao",
+  "intent": "REPORT"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "meri latest report samjhao bata do please",
+  "intent": "REPORT"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "mera hemoglobin kitna hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar mera hemoglobin kitna hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "mera hemoglobin kitna hai bata do please",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "mera hba1c kitna hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar mera hba1c kitna hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "mera hba1c kitna hai bata do please",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "mera creatinine kaisa hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar mera creatinine kaisa hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "mera creatinine kaisa hai bata do please",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "mera vitamin d kitna hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar mera vitamin d kitna hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "mera vitamin d kitna hai bata do please",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "kya mera cholesterol high hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar kya mera cholesterol high hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "kya mera cholesterol high hai bata do please",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "meri sugar kitni hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar meri sugar kitni hai",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "meri sugar kitni hai bata do please",
+  "intent": "TEST"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "main kaun si dawai leta hoon",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar main kaun si dawai leta hoon",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "main kaun si dawai leta hoon bata do please",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "kya main metformin leta hoon",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar kya main metformin leta hoon",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "kya main metformin leta hoon bata do please",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "atorvastatin ke baare me batao",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar atorvastatin ke baare me batao",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "atorvastatin ke baare me batao bata do please",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "kaun se results abnormal hain",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar kaun se results abnormal hain",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "kaun se results abnormal hain bata do please",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "mere test results compare karo",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar mere test results compare karo",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "mere test results compare karo bata do please",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "mera next appointment kab hai",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar mera next appointment kab hai",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "mera next appointment kab hai bata do please",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "doctor ki instructions kya hain",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar doctor ki instructions kya hain",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "doctor ki instructions kya hain bata do please",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "kya mujhe koi allergy hai",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar kya mujhe koi allergy hai",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "kya mujhe koi allergy hai bata do please",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "creatinine ka matlab kya hai",
+  "intent": "TERM"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar creatinine ka matlab kya hai",
+  "intent": "TERM"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "creatinine ka matlab kya hai bata do please",
+  "intent": "TERM"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "aaj ka update batao",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar aaj ka update batao",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "aaj ka update batao bata do please",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "reports kholo",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar reports kholo",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "reports kholo bata do please",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "plain",
+  "text": "aaj ki date kya hai",
+  "intent": "TIME"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_before",
+  "text": "umm yaar aaj ki date kya hai",
+  "intent": "TIME"
+ },
+ {
+  "group": "hinglish",
+  "lang": "hi",
+  "form": "filler_after",
+  "text": "aaj ki date kya hai bata do please",
+  "intent": "TIME"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "what did the doctor told me in last checkup",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me what did the doctor told me in last checkup",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "what did the doctor told me in last checkup please sir",
+  "intent": "LAST_CHECKUP"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "explain my latest report once",
+  "intent": "REPORT"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me explain my latest report once",
+  "intent": "REPORT"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "explain my latest report once please sir",
+  "intent": "REPORT"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "what is my hemoglobin level",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me what is my hemoglobin level",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "what is my hemoglobin level please sir",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "my hba1c is how much",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me my hba1c is how much",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "my hba1c is how much please sir",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "my creatinine is how much",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me my creatinine is how much",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "my creatinine is how much please sir",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "tell me my vitamin dee level",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me tell me my vitamin dee level",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "tell me my vitamin dee level please sir",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "is my colesterol high",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me is my colesterol high",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "is my colesterol high please sir",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "how much is my sugar",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me how much is my sugar",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "how much is my sugar please sir",
+  "intent": "TEST"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "which tablets i am taking",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me which tablets i am taking",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "which tablets i am taking please sir",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "am i taking metformin",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me am i taking metformin",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "am i taking metformin please sir",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "what is atorvastatin for",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me what is atorvastatin for",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "what is atorvastatin for please sir",
+  "intent": "MEDICINES"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "which reports are not normal",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me which reports are not normal",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "which reports are not normal please sir",
+  "intent": "ABNORMAL"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "compare my last two test",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me compare my last two test",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "compare my last two test please sir",
+  "intent": "COMPARE"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "when i have to go next time to doctor",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me when i have to go next time to doctor",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "when i have to go next time to doctor please sir",
+  "intent": "APPOINTMENTS"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "what doctor has advised me to do",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me what doctor has advised me to do",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "what doctor has advised me to do please sir",
+  "intent": "INSTRUCTIONS"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "do i have allergy for anything",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me do i have allergy for anything",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "do i have allergy for anything please sir",
+  "intent": "ALLERGY"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "what is the meaning of creatinine",
+  "intent": "TERM"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me what is the meaning of creatinine",
+  "intent": "TERM"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "what is the meaning of creatinine please sir",
+  "intent": "TERM"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "tell me what is new today",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me tell me what is new today",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "tell me what is new today please sir",
+  "intent": "BRIEFING"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "please open my report page",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me please open my report page",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "please open my report page please sir",
+  "intent": "NAVIGATE"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "plain",
+  "text": "what is today date",
+  "intent": "TIME"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_before",
+  "text": "sir please tell me what is today date",
+  "intent": "TIME"
+ },
+ {
+  "group": "indian_english",
+  "lang": "en",
+  "form": "filler_after",
+  "text": "what is today date please sir",
+  "intent": "TIME"
+ }
+]

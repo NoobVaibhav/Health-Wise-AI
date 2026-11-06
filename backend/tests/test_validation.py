@@ -94,7 +94,7 @@ TODAY = date.today()
 
 @pytest.mark.parametrize("dob,ok", [
     (TODAY, True), (TODAY - timedelta(days=1), True), (date(1930, 1, 1), True), (date(1990, 5, 14), True),
-    (TODAY + timedelta(days=1), False), (date(2999, 1, 1), False), (date(1929, 12, 31), False), (date(1899, 12, 31), False), (date(1, 1, 1), False), (TODAY.replace(year=TODAY.year - 121), False),
+    (TODAY + timedelta(days=1), False), (date(2999, 1, 1), False), (date(1929, 12, 31), True), (date(1900, 1, 1), False), (date(1899, 12, 31), False), (date(1, 1, 1), False), (TODAY.replace(year=TODAY.year - 121), False),
 ])
 def test_date_of_birth_boundaries(dob, ok):
     assert (accepts(field_model(v.DateOfBirth), value=dob) is not None) == ok
@@ -242,16 +242,20 @@ def test_sale_rules():
 
 # ------------------------------------------------------------------ appointments
 def test_appointment_time_rules():
-    soon = datetime.now() + timedelta(days=2)
+    """The rules changed on purpose: 30 days ahead (was 1 year) and a real 15-minute slot between 09:00 and 17:00 (was any minute). Times are given in hospital time; the full
+    set of cases, with a frozen clock, is in test_appointment_rules.py."""
+    from app.utils.clock import hospital_now
+    day = lambda n: hospital_now().replace(hour=10, minute=0, second=0, microsecond=0) + timedelta(days=n)       # 10:00 on a day, in hospital time
     base = dict(doctor_id=1)
-    assert accepts(AppointmentCreate, **base, scheduled_at=soon) is not None
-    assert accepts(AppointmentCreate, **base, scheduled_at=datetime.now() - timedelta(hours=1)) is None
-    assert accepts(AppointmentCreate, **base, scheduled_at=datetime.now() + timedelta(days=400)) is None
-    assert accepts(AppointmentCreate, **base, scheduled_at=datetime.now() + timedelta(days=364)) is not None
+    assert accepts(AppointmentCreate, **base, scheduled_at=day(2)) is not None
+    assert accepts(AppointmentCreate, **base, scheduled_at=day(-1)) is None                       # yesterday
+    assert accepts(AppointmentCreate, **base, scheduled_at=day(400)) is None
+    assert accepts(AppointmentCreate, **base, scheduled_at=day(29)) is not None
+    assert accepts(AppointmentCreate, **base, scheduled_at=day(364)) is None                      # was accepted under the 1 year rule
     assert accepts(AppointmentCreate, **base, scheduled_at="2999-01-01T10:00:00") is None
-    # a time with a time zone must not crash the comparison with "now"
-    assert accepts(AppointmentCreate, **base, scheduled_at=(datetime.utcnow() + timedelta(days=2)).isoformat() + "Z") is not None
-    assert accepts(AppointmentCreate, **base, scheduled_at=(datetime.utcnow() - timedelta(days=2)).isoformat() + "+05:30") is None
+    # a time with a time zone must not crash the comparison with "now" (10:00 hospital time = 04:30 UTC)
+    assert accepts(AppointmentCreate, **base, scheduled_at=(day(2) - timedelta(hours=5, minutes=30)).isoformat() + "Z") is not None
+    assert accepts(AppointmentCreate, **base, scheduled_at=day(-2).isoformat() + "+05:30") is None
     assert accepts(AppointmentUpdate, status="cancelled").status == "CANCELLED" and accepts(AppointmentUpdate, status="maybe") is None
 
 

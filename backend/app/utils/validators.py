@@ -8,14 +8,15 @@ import re
 from decimal import ROUND_HALF_UP, Decimal
 import unicodedata
 from datetime import date, datetime, timedelta
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import Path, Query
-from pydantic import AfterValidator, BeforeValidator, EmailStr, Field, PositiveInt
+from pydantic import AfterValidator, BeforeValidator, EmailStr, Field
+from app.utils.clock import hospital_now, hospital_today
 
 # ------------------------------------------------------------------ text
 TAG_RE = re.compile(r"<[^>]*>?")                       # a tag, also one that is not closed
-CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f​-‏‪-‮⁦-⁩]")   # control, zero-width and direction-override characters
+CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069]")   # control, zero-width and direction-override characters
 
 
 def clean_text(value, *, multiline: bool = False):
@@ -185,17 +186,17 @@ BloodGroup = Annotated[str | None, BeforeValidator(_blood_group)]
 
 
 # ------------------------------------------------------------------ dates
-MIN_DATE = date(1930, 1, 1)           # the earliest date of birth accepted
+MIN_DATE = date(1900, 1, 1)           # the earliest date of birth accepted (the age limit of 120 years is checked as well)
 
 
 def _date_of_birth(value):
     if value is None:
         return value
-    today = date.today()
+    today = hospital_today()
     if value > today:
         raise ValueError("The date of birth cannot be in the future.")
     if value < MIN_DATE:
-        raise ValueError("The date of birth cannot be before 1930.")
+        raise ValueError("The date of birth cannot be before 1900.")
     age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
     if age > 120:
         raise ValueError("The age cannot be more than 120 years.")
@@ -209,7 +210,7 @@ def age_warning(dob: date | None) -> str | None:
     """A warning (never an error) for an age that is possible but unusual."""
     if dob is None:
         return None
-    today = date.today()
+    today = hospital_today()
     age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
     if age < 1:
         return "This patient is under 1 year old. Please check the date of birth."
@@ -219,7 +220,7 @@ def age_warning(dob: date | None) -> str | None:
 
 
 def _not_future(value):
-    if value is not None and value > date.today():
+    if value is not None and value > hospital_today():
         raise ValueError("This date cannot be in the future.")
     return value
 
@@ -230,14 +231,14 @@ def _planned_date(value):
         return value
     if value < date(1900, 1, 1):
         raise ValueError("Please enter a valid date.")
-    if value > date.today() + timedelta(days=731):
+    if value > hospital_today() + timedelta(days=731):
         raise ValueError("This date is too far ahead. Please choose a date within 2 years.")
     return value
 
 
 def _not_far_future(value):
     """A time recorded after the fact (a timeline entry): not in the future (one hour of grace for clock differences)."""
-    if value is not None and value > datetime.now() + timedelta(hours=1):
+    if value is not None and value > hospital_now() + timedelta(hours=1):
         raise ValueError("This time cannot be in the future.")
     return value
 
@@ -250,7 +251,7 @@ PastOrTodayRequired = Annotated[date, AfterValidator(_not_future)]
 
 def check_appointment_time(value: datetime) -> datetime:
     """Not in the past (a 5 minute grace) and not more than 1 year ahead."""
-    now = datetime.now()
+    now = hospital_now()
     if value < now - timedelta(minutes=5):
         raise ValueError("The appointment time must be in the future.")
     if value > now + timedelta(days=366):

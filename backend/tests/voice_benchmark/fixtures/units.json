@@ -1,0 +1,32 @@
+[
+ {
+  "spoken": "grams per decilitre",
+  "lang": "en",
+  "value": "g/dL"
+ },
+ {
+  "spoken": "milligrams per decilitre",
+  "lang": "en",
+  "value": "mg/dL"
+ },
+ {
+  "spoken": "nanograms per millilitre",
+  "lang": "en",
+  "value": "ng/mL"
+ },
+ {
+  "spoken": "ग्राम प्रति डेसीलीटर",
+  "lang": "hi",
+  "value": "g/dL"
+ },
+ {
+  "spoken": "मिलीग्राम प्रति डेसीलीटर",
+  "lang": "hi",
+  "value": "mg/dL"
+ },
+ {
+  "spoken": "ग्रॅम प्रति डेसीलिटर",
+  "lang": "mr",
+  "value": "g/dL"
+ }
+]

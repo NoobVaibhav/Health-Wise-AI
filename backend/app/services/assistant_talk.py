@@ -7,6 +7,7 @@ import re
 from datetime import datetime
 
 from app.services.assistant_text import fdate
+from app.utils.clock import hospital_now
 
 # ------------------------------------------------------------------ what was said
 GREETING = re.compile(r"^(?:hi+|hello+|hey+|hai|namaste|namaskar|good (?:morning|afternoon|evening|night)|नमस्ते|नमस्कार|हॅलो|हेलो|हैलो|सुप्रभात)"
@@ -131,7 +132,7 @@ def detect(text: str) -> tuple[str, dict] | None:
 
 def answer(intent: str, details: dict, lang: str, name: str, now: datetime | None = None) -> dict:
     """{text, action?} for GREETING, THANKS, BYE, WHO, TIME and NAVIGATE. (BRIEFING is built from the records elsewhere.)"""
-    now = now or datetime.now()
+    now = now or hospital_now()
     name = name or {"en": "there", "hi": "जी", "mr": "तुम्ही"}.get(lang, "there")
     if intent == "GREETING":
         return {"text": say("greet", lang, part=part_of_day(now, lang), name=name)}

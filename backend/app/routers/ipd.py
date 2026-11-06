@@ -1,5 +1,4 @@
 """Inpatient care: wards and beds, admission, staff, progress notes, medication orders and discharge."""
-from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select
@@ -8,14 +7,15 @@ from sqlalchemy.orm import Session
 from app.core.permissions import DOCTOR, NURSE, forbidden, get_accessible_patient, get_doctor_profile
 from app.database.connection import get_db
 from app.database.models import (
-    Admission, AdmissionStaff, Bed, BedAssignment, Branch, ClinicalAlert, ClinicalOrder, DischargeSummary, Doctor, Encounter, MedicationOrder, Nurse, Patient, ProgressNote, User, Ward,
+    Admission, AdmissionStaff, Bed, BedAssignment, Branch, ClinicalAlert, ClinicalOrder, DischargeSummary, Doctor, MedicationOrder, Patient, ProgressNote, User, Ward,
 )
 from app.schemas.clinical import (
     AdmitIn, BedAssignIn, BedIn, BedStatusIn, DischargeIn, DischargeSummaryIn, MedicationOrderIn, OrderIn, ProgressNoteIn, StaffAssignIn, WardIn, WardUpdate,
 )
 from app.services import audit_service, encounter_service as enc, grade_service, hospital_service, ipd_service as ipd, nursing_service
-from app.services.access_service import permissions_of, require_permission
+from app.services.access_service import require_permission
 from app.utils.validators import PathId, QueryId
+from app.utils.clock import hospital_today
 
 router = APIRouter(prefix="/api/ipd", tags=["ipd"])
 bed_perm = require_permission("ipd.bed", "ward.manage")
@@ -285,8 +285,8 @@ def medication_order(admission_id: PathId, data: MedicationOrderIn, request: Req
         raise HTTPException(403, "An intern cannot order medicines. Please ask your consultant.")
     if a.status != "ADMITTED":
         raise HTTPException(409, "This patient has been discharged.")
-    start = data.start_date or date.today()
-    if start < date.today():
+    start = data.start_date or hospital_today()
+    if start < hospital_today():
         raise HTTPException(422, "The start date cannot be in the past.")
     if data.end_date and data.end_date < start:
         raise HTTPException(422, "The end date cannot be before the start date.")
@@ -294,7 +294,7 @@ def medication_order(admission_id: PathId, data: MedicationOrderIn, request: Req
                           instructions=data.instructions, start_date=start, end_date=data.end_date, status="ACTIVE", ordered_by=doctor.id)
     db.add(row)
     db.flush()
-    nursing_service.generate_mar(db, a, date.today())
+    nursing_service.generate_mar(db, a, hospital_today())
     db.commit()
     audit_service.log_action(db, user, audit_service.MEDICATION_ORDERED, "admission", a.id, request, data.medicine_name[:100])
     return nursing_service.med_order_out(row)

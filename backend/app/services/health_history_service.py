@@ -2,7 +2,7 @@
 Employees and administrators never reach this (the router only lets the patient and authorised doctors in)."""
 import json
 import re
-from datetime import date, datetime, time
+from datetime import datetime, time
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -13,6 +13,7 @@ from app.database.models import (
 from app.schemas.health_history import AssessmentIn, HistoryIn
 from app.services import past_history_service as past
 from app.services.history_insights import points_to_check, suggested_tests
+from app.utils.clock import hospital_now, hospital_today
 
 LIST_KEYS = ("conditions", "surgeries", "family", "allergies")
 FLAG_KEYS = ("no_known_conditions", "no_known_allergies", "no_regular_medicines", "no_past_surgery", "no_family_history")
@@ -23,7 +24,7 @@ def age_of(patient: Patient) -> int | None:
     dob = patient.date_of_birth
     if not dob:
         return None
-    today = date.today()
+    today = hospital_today()
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
 
@@ -172,7 +173,7 @@ def list_assessments(db: Session, patient: Patient) -> list[dict]:
 
 def appointment_problem(db: Session, patient: Patient) -> dict | None:
     """What the patient wrote when booking the nearest open appointment: the doctor can start from it."""
-    today = datetime.combine(date.today(), time.min)                 # an appointment that has already passed is not "the next one"
+    today = datetime.combine(hospital_today(), time.min)                 # an appointment that has already passed is not "the next one"
     rows = db.scalars(select(Appointment).where(Appointment.patient_id == patient.id, Appointment.status.in_(["SCHEDULED", "CONFIRMED"]),
                                                 Appointment.scheduled_at >= today).order_by(Appointment.scheduled_at)).all()
     for a in rows:
@@ -229,7 +230,7 @@ def follow_up_block(db: Session, patient: Patient) -> dict:
     recs = db.scalars(select(DoctorRecommendation).where(DoctorRecommendation.patient_id == patient.id).order_by(DoctorRecommendation.id.desc()).limit(5)).all()
     notes = db.scalars(select(DoctorNote).where(DoctorNote.patient_id == patient.id).order_by(DoctorNote.id.desc()).limit(3)).all()
     appts = db.scalars(select(Appointment).where(Appointment.patient_id == patient.id, Appointment.status.in_(["SCHEDULED", "CONFIRMED"]),
-                                                 Appointment.scheduled_at >= datetime.now()).order_by(Appointment.scheduled_at).limit(3)).all()
+                                                 Appointment.scheduled_at >= hospital_now()).order_by(Appointment.scheduled_at).limit(3)).all()
     rxs = db.scalars(select(Prescription).where(Prescription.patient_id == patient.id, Prescription.status.in_(["ACTIVE", "PARTIALLY_DISPENSED"])).order_by(Prescription.id.desc()).limit(3)).all()
     return {
         "recommendations": [{"title": r.title, "text": r.recommendation, "follow_up_date": r.follow_up_date.isoformat() if r.follow_up_date else None,

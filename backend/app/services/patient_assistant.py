@@ -13,7 +13,7 @@ Record text (doctor's notes, report names) is data. It is never given to the mod
 import difflib
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -30,6 +30,7 @@ from app.services.clinical_timeline import source
 from app.services.health_history_service import load_history
 from app.services.parameter_catalog import PARAMETERS
 from app.services.serializers import insights_for_role
+from app.utils.clock import hospital_now
 
 MAX_MESSAGE = 1000
 MAX_LINES = 14
@@ -305,7 +306,7 @@ def answer_checkup(db, patient, lang) -> dict:
         if notes:
             lines.append(t("doctor_wrote", lang, date=fdate(notes[0].created_at.date(), lang), x=notes[0].note))
             sources.append(_src("note", notes[0].id, "Doctor's note", notes[0].created_at.date().isoformat()))
-    upcoming = sorted([a for a in appts if a.scheduled_at >= datetime.now() and a.status in ("SCHEDULED", "CONFIRMED")], key=lambda a: a.scheduled_at)
+    upcoming = sorted([a for a in appts if a.scheduled_at >= hospital_now() and a.status in ("SCHEDULED", "CONFIRMED")], key=lambda a: a.scheduled_at)
     if upcoming:
         lines.append(t("next_appt", lang, date=fdate(upcoming[0].scheduled_at.date(), lang), doctor=upcoming[0].doctor.user.full_name))
         sources.append(_src("appointment", upcoming[0].id, "Appointment", upcoming[0].scheduled_at.date().isoformat()))
@@ -397,7 +398,7 @@ def answer_instructions(db, patient, lang) -> dict:
 
 def answer_appointments(db, patient, lang, prepare=False) -> dict:
     appts = db.scalars(select(Appointment).where(Appointment.patient_id == patient.id).order_by(Appointment.scheduled_at.desc())).all()
-    now = datetime.now()
+    now = hospital_now()
     upcoming = sorted([a for a in appts if a.scheduled_at >= now and a.status in ("SCHEDULED", "CONFIRMED")], key=lambda a: a.scheduled_at)
     past = [a for a in appts if a not in upcoming][:3]
     lines, sources = [], []
@@ -476,7 +477,7 @@ def _mentions_prescribed_medicine(db: Session, patient: Patient, text: str) -> b
 
 def answer_briefing(db, patient, lang) -> dict:
     """The daily update from the patient's own records: the next appointment, results outside the printed range, open medicines, a follow-up date."""
-    now = datetime.now()
+    now = hospital_now()
     name = assistant_talk.first_name(patient.user.full_name)
     lines, sources = [assistant_talk.say("brief_head", lang, part=assistant_talk.part_of_day(now, lang), name=name or {"en": "there", "hi": "जी", "mr": "तुम्ही"}[lang])], []
     upcoming = db.scalars(select(Appointment).where(Appointment.patient_id == patient.id, Appointment.scheduled_at >= now, Appointment.status.in_(("SCHEDULED", "CONFIRMED")))

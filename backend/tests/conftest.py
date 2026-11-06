@@ -96,4 +96,8 @@ def upload(client, auth, patient_id, filename, content, doctor_id=None):
 
 
 def future(hours: int = 48) -> str:
-    return (datetime.now() + timedelta(hours=hours)).replace(microsecond=0).isoformat()
+    """A bookable appointment time about `hours` from now: always a real slot (a quarter hour between 09:00 and 14:45, the day chosen by `hours`),
+    so tests that book appointments keep passing the opening-hours and slot rules. Different `hours` give different slots; negative `hours` is in the past."""
+    from app.utils.clock import hospital_now
+    day = hospital_now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1 + hours // 24)
+    return (day + timedelta(hours=9, minutes=15 * (hours % 24))).isoformat()

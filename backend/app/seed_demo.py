@@ -103,6 +103,8 @@ def seed_demo_phones(db) -> None:
 
 
 def main() -> None:
+    from app.seed_doctors import assert_demo_seed_allowed
+    assert_demo_seed_allowed()                    # demo accounts share a published password: local (SQLite) databases only
     init_db()
     with SessionLocal() as db:
         def exists(email: str) -> bool:
@@ -181,6 +183,9 @@ def main() -> None:
                                          expiry_date=date.today() + timedelta(days=365), manufacturer="Demo Pharma",
                                          unit_price=price))
             db.commit()
+
+        from app.seed_doctors import run as seed_more_doctors
+        print("  more doctors:", seed_more_doctors(db, DEMO_PASSWORD))
 
     print("Demo accounts ready (password for all: %s)" % DEMO_PASSWORD)
     for role, email in (("Admin", "admin@healthwise.demo.com"), ("Doctor", "anjali.sharma@healthwise.demo.com"),

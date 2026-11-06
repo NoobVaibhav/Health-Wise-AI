@@ -16,6 +16,7 @@ from app.database.models import ClinicalAssessment, EmergencyEvent, HealthReport
 from app.services import clinical_timeline, emergency_review, follow_ups, health_history_service, medication_history, report_trends
 from app.services.clinical_timeline import source
 from app.services.history_insights import vitals_points
+from app.utils.clock import hospital_today
 
 DISCLAIMER = ("HealthWise AI assists clinicians by organizing documented patient history and generating evidence-linked summaries. "
               "It does not independently diagnose diseases, establish emergency causation, or replace clinical judgment.")
@@ -54,7 +55,7 @@ def build(db: Session, patient: Patient) -> dict:
     assessments = db.scalars(select(ClinicalAssessment).where(ClinicalAssessment.patient_id == patient.id).order_by(ClinicalAssessment.created_at.desc())).all()
     reports = db.scalars(select(HealthReport).where(HealthReport.patient_id == patient.id)).all()
     age = health_history_service.age_of(patient)
-    today = date.today()
+    today = hospital_today()
 
     # ------------------------------------------------------------ 1. overview
     def eff(r):

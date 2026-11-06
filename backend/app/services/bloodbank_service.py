@@ -7,7 +7,7 @@ Plain rules, no AI. The limits below are common practice defaults and are NOT cl
 - a unit is issued by one person and verified by another; a transfusion is started by a nurse and checked at the bedside by a second person
 - an expired unit is never matched, issued or transfused
 """
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -17,6 +17,7 @@ from app.utils.locking import lock
 from app.database.models import (
     BloodCrossmatch, BloodDonation, BloodDonor, BloodIssue, BloodRequest, BloodUnit, Doctor, Patient, Transfusion, User, utcnow,
 )
+from app.utils.clock import hospital_today
 
 GROUPS = ("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-")
 COMPONENTS = ("WHOLE_BLOOD", "PRBC", "FFP", "PLATELETS")
@@ -29,7 +30,7 @@ def conflict(message: str) -> HTTPException:
 
 
 def age_on(dob: date, day: date | None = None) -> int:
-    day = day or date.today()
+    day = day or hospital_today()
     return day.year - dob.year - ((day.month, day.day) < (dob.month, dob.day))
 
 
@@ -53,7 +54,7 @@ def compatible(unit_group: str, component: str, patient_group: str | None) -> bo
 # ------------------------------------------------------------------ donors
 def eligibility(donor: BloodDonor, haemoglobin: float | None = None, weight_kg: float | None = None, today: date | None = None) -> list[str]:
     """The reasons why this person cannot donate today (empty = eligible)."""
-    today = today or date.today()
+    today = today or hospital_today()
     reasons = []
     age = age_on(donor.date_of_birth, today)
     if age < RULES["min_age"] or age > RULES["max_age"]:
@@ -74,7 +75,7 @@ def next_number(db: Session, model, column, prefix: str) -> str:
     count = db.scalar(select(func.count(model.id))) or 0
     while True:
         count += 1
-        number = f"{prefix}{date.today():%y}{count:06d}"
+        number = f"{prefix}{hospital_today():%y}{count:06d}"
         if not db.scalar(select(model.id).where(column == number)):
             return number
 
@@ -112,7 +113,7 @@ def collect(db: Session, user: User, donor: BloodDonor, volume_ml: int, haemoglo
         donation.units.append(BloodUnit(unit_number=next_number(db, BloodUnit, BloodUnit.unit_number, "U"), donation_id=donation.id, blood_group=donor.blood_group, component=component,
                                         volume_ml=volume_ml if len(components) == 1 else volume_ml // len(components), collected_at=now, expires_at=now + timedelta(days=SHELF_LIFE_DAYS[component])))
         db.flush()
-    donor.last_donation_date = date.today()
+    donor.last_donation_date = hospital_today()
     db.commit()
     return donation
 
@@ -131,7 +132,7 @@ def screen(db: Session, user: User, donation: BloodDonation, result: str, note: 
         else:
             unit.status, unit.discard_reason = "DISCARDED", "Infection screening reactive"
     if result == "REACTIVE":
-        donation.donor.deferred_until, donation.donor.deferral_reason = date.today() + timedelta(days=3650), "Reactive screening: refer to the medical officer"
+        donation.donor.deferred_until, donation.donor.deferral_reason = hospital_today() + timedelta(days=3650), "Reactive screening: refer to the medical officer"
     db.commit()
     return donation
 

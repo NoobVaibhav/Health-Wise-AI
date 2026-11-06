@@ -12,11 +12,10 @@ from sqlalchemy.orm import Session
 from app.core.permissions import get_accessible_patient, get_current_user
 from app.database.connection import get_db
 from app.database.models import Patient, PatientConsent, PatientInsurance, PatientMerge, User
-from app.schemas.patient import PatientBasic
 from app.services import access_service, audit_service, registry_service
 from app.services.access_service import require_permission
-from app.services.serializers import patient_basic
 from app.utils.validators import DateOfBirth, OptionalPhone, PathId, PersonName, PositiveId, opt_text, text
+from app.utils.clock import hospital_today
 
 router = APIRouter(prefix="/api/patient-registry", tags=["patient registry"])
 REGISTRY_PERMISSIONS = {"patient.search", "patient.register", "consent.manage", "insurance.manage", "abha.manage", "patient.merge"}
@@ -67,7 +66,7 @@ def _patient_for(db: Session, user: User, patient_id: int) -> Patient:
 def _insurance_out(i: PatientInsurance) -> dict:
     return {"id": i.id, "insurer_name": i.insurer_name, "tpa_name": i.tpa_name, "policy_number": i.policy_number, "member_id": i.member_id,
             "valid_from": i.valid_from.isoformat() if i.valid_from else None, "valid_to": i.valid_to.isoformat() if i.valid_to else None, "is_active": i.is_active,
-            "expired": bool(i.valid_to and i.valid_to < date.today())}
+            "expired": bool(i.valid_to and i.valid_to < hospital_today())}
 
 
 def _registry_out(db: Session, p: Patient) -> dict:

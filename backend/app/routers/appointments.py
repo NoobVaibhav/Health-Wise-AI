@@ -4,6 +4,7 @@ from datetime import date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.permissions import (
@@ -12,7 +13,8 @@ from app.core.permissions import (
 from app.database.connection import get_db
 from app.database.models import Appointment, Department, Doctor, Patient, User
 from app.schemas.appointment import STATUSES, AppointmentCreate, AppointmentOut, AppointmentUpdate
-from app.services import audit_service
+from app.services import appointment_rules as rules, audit_service
+from app.utils import clock
 from app.services.serializers import appointment_out
 from app.utils.locking import lock
 from app.utils.validators import PathId, QueryId, one_of
@@ -49,18 +51,48 @@ def create_appointment(data: AppointmentCreate, request: Request, user: User = D
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Doctor not found.")
     if data.department_id and not db.get(Department, data.department_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Department not found.")
-    if data.scheduled_at < datetime.now() - timedelta(minutes=5):
-        raise HTTPException(422, "The appointment time must be in the future.")
+    if not db.get(User, patient.user_id).is_active:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found.")
+    rules.check_bookable(data.scheduled_at)                 # past / slot / opening hours / how far ahead, in the hospital's time
     ensure_free(db, doctor, data.scheduled_at)
+    lock(db, patient)
+    rules.check_patient_free(db, patient.id, data.scheduled_at)
     appointment = Appointment(patient_id=patient.id, doctor_id=doctor.id, department_id=data.department_id,
                               scheduled_at=data.scheduled_at, reason=data.reason, status="SCHEDULED",
                               symptoms_json=json.dumps([s.strip() for s in data.symptoms if s.strip()]) if data.symptoms else None,
                               duration=data.duration, details=data.details, created_by=user.id)
     db.add(appointment)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:                                   # the database's own rule (one open appointment per doctor and slot) caught a request that raced past the checks
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "This doctor already has an appointment at that time.")
     db.refresh(appointment)
     audit_service.log_action(db, user, audit_service.APPOINTMENT_CREATED, "appointment", appointment.id, request)
     return appointment_out(appointment, user.role)
+
+
+@router.get("/slots")
+def appointment_slots(doctor_id: QueryId, day: date, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """The day's slots of one doctor, each marked free or not (past, or taken). Used by the booking page; the server checks the same rules again when booking."""
+    if doctor_id is None:
+        raise HTTPException(422, "Choose a doctor.")
+    doctor = db.get(Doctor, doctor_id)
+    if doctor is None or not doctor.user.is_active:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Doctor not found.")
+    now = clock.hospital_now()
+    taken = {a for a in db.scalars(select(Appointment.scheduled_at).where(
+        Appointment.doctor_id == doctor.id, Appointment.status.in_(ACTIVE),
+        Appointment.scheduled_at >= datetime.combine(day, time.min), Appointment.scheduled_at < datetime.combine(day, time.min) + timedelta(days=1)))}
+    out = []
+    for slot in rules.slot_times(day):
+        try:
+            rules.check_bookable(slot)
+            reason = "taken" if slot in taken else None
+        except HTTPException:
+            reason = "taken" if slot in taken else "unavailable"
+        out.append({"time": slot.strftime("%H:%M"), "at": slot.isoformat(), "available": reason is None, "reason": reason})
+    return {"doctor_id": doctor.id, "day": day.isoformat(), "now": now.isoformat(timespec="minutes"), "slots": out}
 
 
 @router.get("", response_model=list[AppointmentOut])
@@ -108,17 +140,27 @@ def update_appointment(appointment_id: PathId, data: AppointmentUpdate, request:
     elif user.role not in (ADMIN, EMPLOYEE):
         raise forbidden()
 
-    # a new time, or a cancelled appointment brought back, must not land on another appointment of the same doctor
-    ends_active = (new_status or appointment.status) in ACTIVE
-    if ends_active and (data.scheduled_at or (new_status in ACTIVE and appointment.status not in ACTIVE)):
-        ensure_free(db, appointment.doctor, data.scheduled_at or appointment.scheduled_at, ignore_id=appointment.id)
+    lock(db, appointment)                                    # two people changing the same appointment take turns
+    moving = data.scheduled_at is not None and data.scheduled_at != appointment.scheduled_at
+    rules.check_status_change(appointment.status, new_status, data.scheduled_at if moving else appointment.scheduled_at)
+    if moving:
+        rules.check_can_reschedule(appointment.status)
+        if new_status and new_status not in rules.ACTIVE:
+            raise HTTPException(422, "An appointment cannot be moved and closed in the same step.")
+        rules.check_bookable(data.scheduled_at)
+        ensure_free(db, appointment.doctor, data.scheduled_at, ignore_id=appointment.id)
+        rules.check_patient_free(db, appointment.patient_id, data.scheduled_at, ignore_id=appointment.id)
     if new_status:
         appointment.status = new_status
-    if data.scheduled_at:
+    if moving:
         appointment.scheduled_at = data.scheduled_at
     if data.reason is not None:
         appointment.reason = data.reason
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "This doctor already has an appointment at that time.")
     audit_service.log_action(db, user, audit_service.APPOINTMENT_UPDATED, "appointment", appointment.id, request,
                              new_status)
     return appointment_out(appointment, user.role)

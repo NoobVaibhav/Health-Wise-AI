@@ -1,0 +1,374 @@
+{
+ "commands": {
+  "n": 57,
+  "match_pct": 71.9,
+  "by_type": {
+   "stop": 61.5,
+   "repeat": 54.5,
+   "slower": 57.1,
+   "faster": 60,
+   "clear": 100,
+   "language": 83.3,
+   "exit": 100,
+   "question (must not match)": 100
+  },
+  "false_positives": 0,
+  "wrong": [
+   {
+    "text": "umm stop",
+    "expected": "stop",
+    "got": null
+   },
+   {
+    "text": "please stop talking",
+    "expected": "stop",
+    "got": null
+   },
+   {
+    "text": "that is enough",
+    "expected": "stop",
+    "got": null
+   },
+   {
+    "text": "band karo",
+    "expected": "stop",
+    "got": null
+   },
+   {
+    "text": "ruko",
+    "expected": "stop",
+    "got": null
+   },
+   {
+    "text": "repeat that please",
+    "expected": "repeat",
+    "got": null
+   },
+   {
+    "text": "can you say that again",
+    "expected": "repeat",
+    "got": null
+   },
+   {
+    "text": "once more please",
+    "expected": "repeat",
+    "got": null
+   },
+   {
+    "text": "dobara bolo",
+    "expected": "repeat",
+    "got": null
+   },
+   {
+    "text": "phir se bolo",
+    "expected": "repeat",
+    "got": null
+   },
+   {
+    "text": "please speak a bit slower",
+    "expected": "slower",
+    "got": null
+   },
+   {
+    "text": "dheere bolo",
+    "expected": "slower",
+    "got": null
+   },
+   {
+    "text": "thoda slow bolo",
+    "expected": "slower",
+    "got": null
+   },
+   {
+    "text": "go a little faster",
+    "expected": "faster",
+    "got": null
+   },
+   {
+    "text": "tez bolo",
+    "expected": "faster",
+    "got": null
+   },
+   {
+    "text": "hindi me bolo",
+    "expected": "language",
+    "got": null
+   }
+  ]
+ },
+ "normalisation": {
+  "numbers": {
+   "n": 22,
+   "ok_pct": 0,
+   "implemented": false,
+   "wrong": [
+    {
+     "spoken": "fifteen",
+     "lang": "en",
+     "expected": "15",
+     "got": null
+    },
+    {
+     "spoken": "pandrah",
+     "lang": "hi",
+     "expected": "15",
+     "got": null
+    },
+    {
+     "spoken": "पंधरा",
+     "lang": "hi",
+     "expected": "15",
+     "got": null
+    },
+    {
+     "spoken": "पंधरा",
+     "lang": "mr",
+     "expected": "15",
+     "got": null
+    },
+    {
+     "spoken": "eleven point two",
+     "lang": "en",
+     "expected": "11.2",
+     "got": null
+    },
+    {
+     "spoken": "gyarah point do",
+     "lang": "hi",
+     "expected": "11.2",
+     "got": null
+    },
+    {
+     "spoken": "ग्यारह दशमलव दो",
+     "lang": "hi",
+     "expected": "11.2",
+     "got": null
+    },
+    {
+     "spoken": "अकरा पूर्णांक दोन",
+     "lang": "mr",
+     "expected": "11.2",
+     "got": null
+    },
+    {
+     "spoken": "one hundred and twenty",
+     "lang": "en",
+     "expected": "120",
+     "got": null
+    },
+    {
+     "spoken": "एक सौ बीस",
+     "lang": "hi",
+     "expected": "120",
+     "got": null
+    },
+    {
+     "spoken": "एकशे वीस",
+     "lang": "mr",
+     "expected": "120",
+     "got": null
+    },
+    {
+     "spoken": "six point eight",
+     "lang": "en",
+     "expected": "6.8",
+     "got": null
+    },
+    {
+     "spoken": "chhe point aath",
+     "lang": "hi",
+     "expected": "6.8",
+     "got": null
+    },
+    {
+     "spoken": "सात दशमलव चार",
+     "lang": "hi",
+     "expected": "7.4",
+     "got": null
+    },
+    {
+     "spoken": "साडेसात",
+     "lang": "mr",
+     "expected": "7.5",
+     "got": null
+    },
+    {
+     "spoken": "twenty four",
+     "lang": "en",
+     "expected": "24",
+     "got": null
+    },
+    {
+     "spoken": "चौबीस",
+     "lang": "hi",
+     "expected": "24",
+     "got": null
+    },
+    {
+     "spoken": "चोवीस",
+     "lang": "mr",
+     "expected": "24",
+     "got": null
+    },
+    {
+     "spoken": "five hundred",
+     "lang": "en",
+     "expected": "500",
+     "got": null
+    },
+    {
+     "spoken": "पाँच सौ",
+     "lang": "hi",
+     "expected": "500",
+     "got": null
+    },
+    {
+     "spoken": "पाचशे",
+     "lang": "mr",
+     "expected": "500",
+     "got": null
+    },
+    {
+     "spoken": "thirty",
+     "lang": "en",
+     "expected": "30",
+     "got": null
+    }
+   ]
+  },
+  "dates": {
+   "n": 10,
+   "ok_pct": 0,
+   "implemented": false,
+   "wrong": [
+    {
+     "spoken": "twelfth of March",
+     "lang": "en",
+     "expected": "12 March",
+     "got": null
+    },
+    {
+     "spoken": "12 March",
+     "lang": "en",
+     "expected": "12 March",
+     "got": null
+    },
+    {
+     "spoken": "बारह मार्च",
+     "lang": "hi",
+     "expected": "12 March",
+     "got": null
+    },
+    {
+     "spoken": "बारा मार्च",
+     "lang": "mr",
+     "expected": "12 March",
+     "got": null
+    },
+    {
+     "spoken": "fifteen June twenty twenty six",
+     "lang": "en",
+     "expected": "15 June 2026",
+     "got": null
+    },
+    {
+     "spoken": "पंद्रह जून दो हज़ार छब्बीस",
+     "lang": "hi",
+     "expected": "15 June 2026",
+     "got": null
+    },
+    {
+     "spoken": "पंधरा जून दोन हजार सव्वीस",
+     "lang": "mr",
+     "expected": "15 June 2026",
+     "got": null
+    },
+    {
+     "spoken": "third of October",
+     "lang": "en",
+     "expected": "3 October",
+     "got": null
+    },
+    {
+     "spoken": "तीन अक्टूबर",
+     "lang": "hi",
+     "expected": "3 October",
+     "got": null
+    },
+    {
+     "spoken": "तीन ऑक्टोबर",
+     "lang": "mr",
+     "expected": "3 October",
+     "got": null
+    }
+   ]
+  },
+  "units": {
+   "n": 6,
+   "ok_pct": 0,
+   "implemented": false,
+   "wrong": [
+    {
+     "spoken": "grams per decilitre",
+     "lang": "en",
+     "expected": "g/dL",
+     "got": null
+    },
+    {
+     "spoken": "milligrams per decilitre",
+     "lang": "en",
+     "expected": "mg/dL",
+     "got": null
+    },
+    {
+     "spoken": "nanograms per millilitre",
+     "lang": "en",
+     "expected": "ng/mL",
+     "got": null
+    },
+    {
+     "spoken": "ग्राम प्रति डेसीलीटर",
+     "lang": "hi",
+     "expected": "g/dL",
+     "got": null
+    },
+    {
+     "spoken": "मिलीग्राम प्रति डेसीलीटर",
+     "lang": "hi",
+     "expected": "mg/dL",
+     "got": null
+    },
+    {
+     "spoken": "ग्रॅम प्रति डेसीलिटर",
+     "lang": "mr",
+     "expected": "g/dL",
+     "got": null
+    }
+   ]
+  }
+ },
+ "repair": {
+  "n": 40,
+  "implemented": false,
+  "wer_before_pct": 58.1,
+  "wer_after_pct": 58.1,
+  "numbers_changed": 0
+ },
+ "spoken": {
+  "skipped": "run the server benchmark with VOICE_BENCH_LABEL set first (it writes results/answers.json)"
+ },
+ "latency_static": {
+  "browser_final_result_to_send_ms": 0,
+  "native_wait_for_final_text_after_speech_ends_ms": 1500,
+  "native_no_speech_timeout_ms": 9000,
+  "native_listening_poll_ms": 800,
+  "hands_free_restart_delays_ms": [
+   200,
+   300,
+   350,
+   700
+  ],
+  "reply_is_spoken_only_after_the_whole_answer_arrives": true,
+  "first_spoken_unit": "a sentence-sized chunk (max 180 characters) of the whole answer"
+ }
+}

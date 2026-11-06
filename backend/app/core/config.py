@@ -48,7 +48,15 @@ class Settings(BaseSettings):
     hospital_phone: str = ""
     hospital_email: str = ""
 
-    emergency_number: str = "112"               # shown in emergency guidance
+    # Appointment rules. Every time the server compares or stores is in the HOSPITAL'S time zone (never the server's own or the browser's).
+    hospital_timezone: str = "Asia/Kolkata"
+    appointment_grace_minutes: int = 5          # a walk-in may be booked this many minutes after the slot began
+    appointment_max_advance_days: int = 30      # the furthest day ahead an appointment can be booked
+    appointment_day_start: str = "09:00"        # first slot of the day
+    appointment_day_end: str = "17:00"          # the last slot must END by this time
+    appointment_slot_minutes: int = 15          # every appointment starts on a slot (09:00, 09:15, ...)
+
+    emergency_number: str = "112"              # shown in emergency guidance
     assistant_retention_days: int = 90          # chats older than this are deleted
     assistant_rate_per_minute: int = 20         # messages per patient per minute
 
