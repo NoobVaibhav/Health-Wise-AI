@@ -20,7 +20,8 @@ TIME = re.compile(r"\b(?:what(?:'s| is)? the time|what time|time now|current tim
                   r"today'?s? date|aaj ki (?:date|tarikh|tareekh)|aaj kya (?:date|tarikh|din)|time kya|kitne baje|tarikh kya|aaj kaun sa din|ajchi tarikh|kiti vajle)", re.IGNORECASE)
 BRIEF = re.compile(r"\b(?:brief me|my briefing|briefing|what(?:'s| is) new|anything new|update me|what do i need to know|what should i know|my day|how am i doing|catch me up|"
                    r"आज की जानकारी|मेरा अपडेट|ताज़ा जानकारी|माझे अपडेट|आजची माहिती|"
-                   r"aaj ka update|aaj ki (?:jankari|jaankari|update)|(?:mera|meri) update|update batao|kuch naya|aaj ka haal|ajchi mahiti)", re.IGNORECASE)
+                   r"aaj ka update|aaj ki (?:jankari|jaankari|update)|(?:mera|meri) update|update batao|kuch naya|aaj ka haal|ajchi mahiti|"
+                   r"my health today|health update|how is my health)", re.IGNORECASE)
 OPEN_VERB = re.compile(r"(?<![a-z])(?:open|go to|take me to|navigate to|kholo|kholiye|khol do|khol dijiye|ughda|ughad)(?![a-z])|खोलो|खोलें|खोलिए|जाओ|उघडा|उघड", re.IGNORECASE)
 QUESTION_WORDS = re.compile(r"\b(?:what|why|how many|how much|is my|are my|क्या|क्यों|काय|का)\b", re.IGNORECASE)
 

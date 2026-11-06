@@ -242,6 +242,10 @@ HELD_OUT = [
     ("kitne baje hain", "hi", "TIME"),
     ("pls tell the tablets i have to take", "en", "MEDICINES"), ("what is the result of my blood test", "en", "REPORT"), ("my last visit details", "en", "LAST_CHECKUP"),
     ("say about my vitamin d", "en", "TEST"), ("do the report have any abnormal", "en", "ABNORMAL"), ("tell me about my health today", "en", "BRIEFING"),
+    # added after the first measurement (which missed "when do i see the doctor again", the Marathi "next checkup" wording and "my health today", now fixed): not seen when the rules were written
+    ("what did the doctor tell me last visit", "en", "LAST_CHECKUP"), ("any tablets for my sugar", "en", "MEDICINES"), ("did my haemoglobin go down", "en", "TEST"), ("show my abnormal results", "en", "ABNORMAL"),
+    ("what are my allergies", "en", "ALLERGY"), ("which tests did the doctor advise", "en", "INSTRUCTIONS"), ("मेरे डॉक्टर ने क्या लिखा था", "hi", "LAST_CHECKUP"), ("मेरी एलर्जी की जानकारी दो", "hi", "ALLERGY"),
+    ("माझ्या रिपोर्टमध्ये काय असामान्य आहे", "mr", "ABNORMAL"), ("mere dawai ki list batao", "hi", "MEDICINES"), ("mera agla checkup kab hai", "hi", "APPOINTMENTS"), ("what is my latest report about", "en", "REPORT"),
 ]
 
 
