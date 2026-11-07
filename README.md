@@ -58,7 +58,6 @@ Frontend: React, Vite, Tailwind CSS, React Router, Axios, Recharts.
 backend/app/{main.py, core/, database/, schemas/, routers/, services/, utils/, seed_demo.py}
 backend/tests/       106 automated tests          backend/schema.sql   PostgreSQL schema
 frontend/src/{components, pages/{auth,admin,doctor,employee,patient,pharmacy,shared}, services, context, routes}
-sample_reports/      synthetic reports for demo uploads (never used by the app itself)
 docs/                ARCHITECTURE.md, SRS.md, PROJECT_REPORT.md
 ```
 
@@ -109,15 +108,15 @@ Install Tesseract (Windows installer: github.com/UB-Mannheim/tesseract/wiki; Ubu
 
 ## 5. Demo script (about 5 minutes)
 
-1. Log in as **Employee** -> *Upload Report* -> pick Rahul Patil -> upload `sample_reports/Report_A_July_Rahul.pdf`, then `Report_B_October_Rahul.pdf`. Try `Not_a_health_report.txt`: it is rejected and not saved.
+1. Log in as **Employee** -> *Upload Report* -> pick Rahul Patil -> upload a real-format laboratory report (for example `backend/tests/fixtures/kamal_diagnostic_sample_report.pdf`, or any open-licence sample report PDF you have). A file that is not a health report is rejected and not saved.
 2. Log in as **Patient**: the reports show "Waiting for doctor review" and no values yet.
 3. Log in as **Doctor**: dashboard shows 2 reports waiting -> open one: extracted values, AI analysis, comparison with the earlier report, trends. Click *Mark as Reviewed*, add a note, a recommendation and a prescription.
 4. **Patient** again: sees the analysis, the doctor's note, recommendation, prescription and the timeline.
 5. **Pharmacy**: open the prescription, dispense part of it (stock goes down). **Patient** sees the status.
 6. **Admin**: dashboard statistics and the audit log of every step.
-7. **Any report type**: as Employee upload `Chest_Xray_Rahul.pdf`, `ECG_Rahul.txt`, `Discharge_Summary_Rahul.pdf` and `Prescription_Rahul.txt`.
+7. **Any report type**: as Employee upload other real-format reports (an X-ray or CT report, an ECG report, a discharge summary, a prescription). No generated text reports are shipped with the project.
    As Doctor open each one: type label, key statements, red flags, suggestions and draft patient tips ("Use as my advice").
-   As Patient (after the doctor reviews) only the general tips appear. `Not_a_health_report.txt` is still rejected.
+   As Patient (after the doctor reviews) only the general tips appear. A file that is not a health report is still rejected.
 
 ## 6. Tests
 

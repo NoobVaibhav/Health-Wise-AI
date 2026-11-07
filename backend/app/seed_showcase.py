@@ -640,69 +640,15 @@ def PID_OF(email: str) -> int:
     return PID[email]
 
 
-LAB_HEAD = ["CITY DIAGNOSTIC LAB (demo)", "Patient Name: {name}", "Report Date: {date}", "", "{section}", "Test Name Result Unit Reference Range"]
-LAB_REPORTS = {   # patient -> (days ago, section, test lines); two dates per patient so the trend and comparison screens have something to show
-    MARKER: [(120, "BIOCHEMISTRY", ["Glycosylated Hemoglobin (HbA1c) 8.4 % 4.0 - 5.6", "Fasting Blood Sugar 172 mg/dL 70 - 100", "Total Cholesterol 232 mg/dL < 200", "LDL Cholesterol 151 mg/dL < 100", "HDL Cholesterol 41 mg/dL > 50"]),
-             (14, "BIOCHEMISTRY", ["Glycosylated Hemoglobin (HbA1c) 7.6 % 4.0 - 5.6", "Fasting Blood Sugar 148 mg/dL 70 - 100", "Total Cholesterol 205 mg/dL < 200", "LDL Cholesterol 126 mg/dL < 100", "HDL Cholesterol 44 mg/dL > 50"])],
-    "lata.pawar@healthwise.demo.com": [(150, "KIDNEY FUNCTION", ["Serum Creatinine 1.3 mg/dL 0.6 - 1.2", "Blood Urea 46 mg/dL 15 - 40", "Uric Acid 7.4 mg/dL 2.4 - 6.0"]),
-                                       (20, "KIDNEY FUNCTION", ["Serum Creatinine 1.6 mg/dL 0.6 - 1.2", "Blood Urea 58 mg/dL 15 - 40", "Uric Acid 7.9 mg/dL 2.4 - 6.0"])],
-    "mohan.deshpande@healthwise.demo.com": [(90, "LIPID PROFILE", ["Total Cholesterol 188 mg/dL < 200", "LDL Cholesterol 112 mg/dL < 100", "HDL Cholesterol 38 mg/dL > 40", "Triglycerides 210 mg/dL < 150"]),
-                                            (10, "LIPID PROFILE", ["Total Cholesterol 164 mg/dL < 200", "LDL Cholesterol 92 mg/dL < 100", "HDL Cholesterol 42 mg/dL > 40", "Triglycerides 168 mg/dL < 150"])],
-    "farida.shaikh@healthwise.demo.com": [(100, "HAEMATOLOGY", ["Hemoglobin 9.1 g/dL 12.0 - 15.5", "WBC Count 7.2 x10^3/uL 4.0 - 11.0", "Platelet Count 310 x10^3/uL 150 - 450", "Serum Ferritin 8 ng/mL 15 - 150"]),
-                                          (12, "HAEMATOLOGY", ["Hemoglobin 10.8 g/dL 12.0 - 15.5", "WBC Count 6.9 x10^3/uL 4.0 - 11.0", "Platelet Count 295 x10^3/uL 150 - 450", "Serum Ferritin 19 ng/mL 15 - 150"])],
-    "kiran.rao@healthwise.demo.com": [(60, "HAEMATOLOGY", ["Hemoglobin 14.6 g/dL 13.0 - 17.0", "WBC Count 12.4 x10^3/uL 4.0 - 11.0", "Eosinophils 9 % 1 - 6"]),
-                                      (6, "HAEMATOLOGY", ["Hemoglobin 14.8 g/dL 13.0 - 17.0", "WBC Count 9.8 x10^3/uL 4.0 - 11.0", "Eosinophils 5 % 1 - 6"])],
-}
-IMAGING = {   # patient -> kinds of invented scan and test reports (tests/sample_reports.py); the patient's own name is put in
-    "mohan.deshpande@healthwise.demo.com": ("ECHO", "TMT"), "kiran.rao@healthwise.demo.com": ("XRAY", "PFT"), "farida.shaikh@healthwise.demo.com": ("USG",),
-    "lata.pawar@healthwise.demo.com": ("MRI", "DEXA"), MARKER: ("XRAY_NORMAL",),
-}
-NAMESAKES = (   # a second, DIFFERENT person with the same name: the registry warns about it and each record keeps its own reports
+NAMESAKES = (   # a second, DIFFERENT person with the same name: the registry warns about it and each record keeps its own data
     ("rahul.patil2@healthwise.demo.com", "Rahul Patil", "male", "1975-11-02", "9822300001", "O+", "88 Kothrud Gaothan, Pune 411038", "Meena Patil (wife) 9822300002", DR, "Chronic obstructive lung disease"),
     ("sneha.kulkarni2@healthwise.demo.com", "Sneha Kulkarni", "female", "1993-02-14", "9822300011", "A+", "C-12, Lotus Park, Wakad, Pune 411057", "Nikhil Kulkarni (brother) 9822300012", DR, "Migraine"),
     ("mohan.deshpande2@healthwise.demo.com", "Mohan Deshpande", "male", "1981-09-09", "9822300021", "B-", "5 Deccan Gymkhana, Pune 411004", "Anita Deshpande (wife) 9822300022", DR2, "Lower back pain"),
 )
-NAMESAKE_LABS = (
-    ("rahul.patil2@healthwise.demo.com", "HAEMATOLOGY", ["Hemoglobin 15.1 g/dL 13.0 - 17.0", "WBC Count 8.4 x10^3/uL 4.0 - 11.0"]),
-    ("sneha.kulkarni2@healthwise.demo.com", "HAEMATOLOGY", ["Hemoglobin 11.4 g/dL 12.0 - 15.5", "WBC Count 6.1 x10^3/uL 4.0 - 11.0"]),
-    ("mohan.deshpande2@healthwise.demo.com", "BIOCHEMISTRY", ["Fasting Blood Sugar 94 mg/dL 70 - 100", "Total Cholesterol 176 mg/dL < 200"]),
-)
-
-
-def report_pdf(lines: list[str]) -> bytes:
-    from reportlab.lib.pagesizes import A4
-    from reportlab.pdfgen import canvas
-    buf = io.BytesIO()
-    pdf = canvas.Canvas(buf, pagesize=A4)
-    y = 800
-    for line in lines:
-        pdf.setFont("Helvetica-Bold" if line.isupper() else "Helvetica", 11)
-        pdf.drawString(50, y, line)
-        y -= 18
-    pdf.save()
-    return buf.getvalue()
-
-
-def upload_report(pid: int, name: str, content: bytes) -> None:
-    res = client.post("/api/reports/upload", headers=H(EMP), data={"patient_id": str(pid)}, files={"file": (name, content, "application/octet-stream")})
-    if res.status_code not in (200, 201):
-        failures.append(f"upload {name}: {res.status_code} {res.text[:140]}")
-
-
-def lab_lines(name: str, when: str, section: str, tests: list[str]) -> list[str]:
-    return [h.format(name=name, date=when, section=section) for h in LAB_HEAD] + tests
-
-
 def reports_and_namesakes():
-    """Different kinds of reports (lab trends as PDF, scans and tests as text and PDF) and patients who share a name. All invented."""
-    import re
+    """Patients who share a name (the registry warns about it). No reports are created here: sample reports are real-format files uploaded by hand, never generated text."""
     if any(p.get("email") == NAMESAKES[0][0] for p in call("GET", "/api/patients", EMP) or []):
         return
-    try:
-        from tests.sample_reports import ALL as imaging_text
-    except ImportError:
-        imaging_text = {}
-        failures.append("tests/sample_reports.py not found: the scan reports were skipped")
     people = {p[0]: (PID_OF(p[0]), p[1]) for p in PATIENTS}
     docs = doctor_ids(EMP)
     for email, name, gender, dob, phone, blood, address, emergency, doc, history in NAMESAKES:
@@ -712,27 +658,6 @@ def reports_and_namesakes():
         if made:
             people[email] = (made["patient"]["id"], name)
             PID[email] = made["patient"]["id"]
-    for email, reports in LAB_REPORTS.items():
-        pid, name = people[email]
-        for days, section, tests in reports:
-            when = (date.today() - timedelta(days=days)).strftime("%d/%m/%Y")
-            upload_report(pid, f"Lab_{section.title().replace(' ', '_')}_{when.replace('/', '-')}.pdf", report_pdf(lab_lines(name, when, section, tests)))
-    for email, kinds in IMAGING.items():
-        pid, name = people[email]
-        for kind in kinds:
-            text = imaging_text.get(kind)
-            if not text:
-                continue
-            text = re.sub(r"(Patient(?: Name)?:\s*)[A-Za-z. ]+?(?=\s{2,}|\n|$)", lambda m: m.group(1) + name, text, count=1)
-            if kind in ("ECHO", "MRI", "TMT"):
-                upload_report(pid, f"{kind.title()}_report.pdf", report_pdf(text.splitlines()))
-            else:
-                upload_report(pid, f"{kind.title()}_report.txt", text.encode("utf-8"))
-    when = (date.today() - timedelta(days=9)).strftime("%d/%m/%Y")
-    for email, section, tests in NAMESAKE_LABS:
-        if email in people:
-            pid, name = people[email]
-            upload_report(pid, f"Lab_{section.title()}_{when.replace('/', '-')}.pdf", report_pdf(lab_lines(name, when, section, tests)))
     for email, doc in (("rahul.patil2@healthwise.demo.com", DR), ("sneha.kulkarni2@healthwise.demo.com", DR), ("mohan.deshpande2@healthwise.demo.com", DR2)):
         if email in people:
             call("POST", "/api/appointments", EMP, ok=(200, 201, 409, 422), json={"patient_id": people[email][0], "doctor_id": docs[doc], "scheduled_at": slot(30), "reason": "New patient consultation"})
@@ -798,7 +723,7 @@ def main() -> None:
             step("doctor notes and the assistant", notes_and_assistant)
             step("patient photos", patient_avatars)
         step("more billing data", more_billing)
-        step("different reports and same-name patients", reports_and_namesakes)
+        step("same-name patients", reports_and_namesakes)
     if failures:
         print(f"\n{len(failures)} step(s) did not apply (the rest did):")
         for line in failures:

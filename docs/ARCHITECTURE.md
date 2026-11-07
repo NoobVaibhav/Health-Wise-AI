@@ -51,7 +51,7 @@ Patients can never edit notes, analysis, prescriptions or recommendations. Pharm
 backend/app/{main.py, core/, database/, schemas/, routers/, services/, utils/}
 backend/tests/ ...  backend/schema.sql  backend/seed_demo.py
 frontend/src/{components, pages/{auth,admin,doctor,employee,patient,pharmacy,shared}, services, context, routes}
-sample_reports/  docs/  docker-compose.yml  README.md
+docs/  docker-compose.yml  README.md
 ```
 
 ## 4. Database (ER)

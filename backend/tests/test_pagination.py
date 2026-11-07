@@ -6,7 +6,7 @@ import pytest
 
 from tests.conftest import PASSWORD, upload
 
-SAMPLE = pathlib.Path(__file__).resolve().parents[2] / "sample_reports" / "Report_A_July_Rahul.pdf"
+SAMPLE = pathlib.Path(__file__).resolve().parent / "fixtures" / "kamal_diagnostic_sample_report.pdf"
 
 
 @pytest.fixture()

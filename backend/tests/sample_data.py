@@ -139,21 +139,3 @@ def lines_to_png(lines: list[str]) -> bytes:
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     return buffer.getvalue()
-
-
-if __name__ == "__main__":
-    # python -m tests.sample_data  -> writes demo files to ../sample_reports
-    from pathlib import Path
-
-    out = Path(__file__).resolve().parents[2] / "sample_reports"
-    out.mkdir(exist_ok=True)
-    (out / "Report_A_July_Rahul.pdf").write_bytes(lines_to_pdf(REPORT_A_LINES))
-    (out / "Report_B_October_Rahul.pdf").write_bytes(lines_to_pdf(REPORT_B_LINES))
-    (out / "Report_C_other_patient.txt").write_bytes(lines_to_text(REPORT_C_LINES))
-    (out / "Report_A_scan.png").write_bytes(lines_to_png(REPORT_A_LINES))
-    (out / "Chest_Xray_Rahul.pdf").write_bytes(lines_to_pdf(CHEST_XRAY_LINES))
-    (out / "ECG_Rahul.txt").write_bytes(lines_to_text(ECG_LINES))
-    (out / "Discharge_Summary_Rahul.pdf").write_bytes(lines_to_pdf(DISCHARGE_LINES))
-    (out / "Prescription_Rahul.txt").write_bytes(lines_to_text(PRESCRIPTION_LINES))
-    (out / "Not_a_health_report.txt").write_bytes(lines_to_text(NOT_A_REPORT_LINES))
-    print("Sample reports written to", out)

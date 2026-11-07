@@ -110,4 +110,4 @@ invalid files are rejected and not saved; each role sees only permitted data; al
 | FR-37 | database/connection.add_missing_columns | test_new_columns_are_added_to_an_existing_database |
 
 ## 12. Appendices
-Sample reports: `sample_reports/`. Supported parameters: `backend/app/services/parameter_catalog.py`. Demo accounts: README.
+Sample reports: a real-format laboratory report is kept as a test fixture in `backend/tests/fixtures/`; no generated text reports are shipped. Supported parameters: `backend/app/services/parameter_catalog.py`. Demo accounts: README.
